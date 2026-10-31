@@ -149,6 +149,9 @@
   .l-title { font:800 clamp(56px,11vw,168px)/.84 var(--display); letter-spacing:-.06em; margin:0; text-transform:uppercase; text-wrap:balance; }
   .l-title.long { font-size:clamp(40px,8.2vw,128px); }
   .l-resume { margin-top:14px; }
+  /* on the Ministry server the server does the scanning, so neither scan button is shown */
+  body.server #scanBig, body.server #scan { display:none; }
+  body.server .l-resume.l-scan { margin-top:0; }
   .l-lede { color:var(--mut); font-size:clamp(15px,1.4vw,18px); max-width:52ch; margin:28px 0 40px; }
   .l-scan { position:relative; width:min(560px,100%); height:84px; padding:0 72px 0 28px; text-align:left; background:#fff; color:#000; border:1px solid #fff; font:600 15px var(--mono); letter-spacing:.18em; cursor:pointer; overflow:hidden; transition:background .3s, color .3s; }
   .l-scan::after { content:"→"; position:absolute; right:28px; top:50%; transform:translateY(-50%); font-size:22px; transition:transform .3s var(--ease); }
@@ -855,6 +858,7 @@ let API = API_CANDIDATES[0];
 let towns = [], tab = "soon", selected = null, view = [];
 
 const $ = id => document.getElementById(id);
+if (window.BH_SERVER) document.body.classList.add("server");
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const status = t => { $("status").textContent = t; const l = $("landStatus"); if (l) l.textContent = t; };
 const progress = f => {
@@ -4665,15 +4669,20 @@ const LANDING = {
     lede:"Scan every town on Terra Nostra to brief the Crown: nation assessments, movements across our borders, intelligence briefings and forecasts." },
 };
 let savedScanAt = null;
+// on the Ministry server the server scans every hour, so the landing has no scan button: just the way in
+const SERVER_LEDE = { attack:"Updated every hour from every town on Terra Nostra: ruins about to fall, land you can overclaim, and the routes to reach them first.",
+  intel:"Updated every hour from every town on Terra Nostra: nation assessments, movements across our borders, intelligence briefings and forecasts." };
 function setLandingFor(m) {
-  const L = LANDING[m] || LANDING.attack, label = m === "intel" ? "Intelligence" : "Attack";
+  const L = LANDING[m] || LANDING.attack, label = m === "intel" ? "Intelligence" : "Attack", srv = !!window.BH_SERVER;
   $("landing").setAttribute("aria-label", MINISTRY_NAME[m] || MINISTRY_NAME.attack);
-  $("landKicker").textContent = L.kicker; $("landTitle").innerHTML = L.title; $("landLede").textContent = L.lede;
+  $("landKicker").textContent = L.kicker; $("landTitle").innerHTML = L.title; $("landLede").textContent = srv ? SERVER_LEDE[m] || SERVER_LEDE.attack : L.lede;
   $("landTitle").classList.toggle("long", m === "intel");
-  $("landMods").innerHTML = L.mods.map(x => `<span><i>${label}</i>${x}</span>`).join("") + `<span class="l-lock">Opens after the scan</span>`;
+  $("landMods").innerHTML = L.mods.map(x => `<span><i>${label}</i>${x}</span>`).join("") + (srv ? "" : `<span class="l-lock">Opens after the scan</span>`);
   const r = $("landResume");
   r.hidden = !(towns.length && savedScanAt);
-  if (!r.hidden) r.textContent = `Or open the latest intelligence, scanned ${fmtDur(Date.now() - savedScanAt)} ago →`;
+  r.classList.toggle("l-scan", srv);
+  if (!r.hidden) r.textContent = srv ? `OPEN THE ${label.toUpperCase()} MINISTRY` : `Or open the latest intelligence, scanned ${fmtDur(Date.now() - savedScanAt)} ago →`;
+  if (srv && r.hidden) $("landStatus").textContent = "Loading the latest scan from the Ministry server…";
 }
 $("landResume").onclick = () => enterApp();
 

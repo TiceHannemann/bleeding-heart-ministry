@@ -69,6 +69,11 @@ global.__collectorRoutes = async ctx => {
   console.log('ministry picker shown:', await p.evaluate(() => document.body.classList.contains('portal')));
   await p.click('[data-ministry="intel"]'); await p.waitForTimeout(800);
   console.log('picked intel, password asked:', await p.evaluate(() => !document.getElementById('gate').hidden), '| in ministry:', await p.evaluate(() => !document.body.classList.contains('portal')));
+  console.log('landing scan buttons visible:', await p.isVisible('#scanBig'), await p.isVisible('#scan'), '| open button:', await p.isVisible('#landResume') && await p.textContent('#landResume'));
+  await p.waitForSelector('#boot.done', { state:'attached', timeout:15000 }).catch(() => {}); await p.waitForTimeout(1500);
+  await p.screenshot({ path:path.join(process.env.DATA_DIR, 'landing.png') }); console.log('landing screenshot:', path.join(process.env.DATA_DIR, 'landing.png'));
+  await p.click('#landResume'); await p.waitForTimeout(1500);
+  console.log('opened ministry:', await p.evaluate(() => !document.body.classList.contains('landing')));
   console.log('checkboxes left:', await p.locator('#watchOn, #mvOn').count(), '| auto-scan says:', await p.textContent('#watchState'));
   await p.evaluate(() => { location.hash = '#moves'; }); await p.waitForTimeout(16000);
   console.log('visitor live feed:', await p.evaluate(() => MOVES.lastOk > 0 ? `ok, ${MOVES.online} online` : 'none: ' + MOVES.err));
