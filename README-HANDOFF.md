@@ -53,7 +53,8 @@ The project is an intelligence and attack website for the nation **Bleeding_Hear
 - **Government website:** `app/earthmc-ruin-scanner.html` opens on a white sign-in page: the crest, the two ministries, and a "Public website" link back. Behind it are the dark ministries.
 
 **Password.**
-- Each ministry asks for the password **`putangina`**. The same password covers both, but each is unlocked separately; moving into the other ministry from the nav asks again.
+- **Hosted (server):** the password is the host's `MINISTRY_PASSWORD` setting, checked on the server (see `server/DEPLOY.md`). It is not stored in this repository.
+- **Opened as a local file:** each ministry asks for the owner's local password (only its hash is in the file). The same password covers both, but each is unlocked separately; moving into the other ministry from the nav asks again.
 - An unlock lasts for that browser tab only (sessionStorage key `bh_unlocked`). **Lock** in the top bar returns to the sign-in page. After five wrong attempts the form waits 30 seconds.
 - After unlocking, the boot sequence plays and the chosen ministry's scan screen appears. If a saved scan exists, it also offers "Or open the latest intelligence".
 - Only `sha256("bh-ministry:" + password)` is stored (`GATE_HASH` in the gate section). To change the password, compute the new hash and replace that value.

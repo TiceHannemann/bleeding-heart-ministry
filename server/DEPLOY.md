@@ -22,7 +22,7 @@ The server in this folder hosts both websites and scans EarthMC every hour on it
 2. On railway.com: **New Project → Deploy from GitHub repo**, and choose the repository. It builds from the Dockerfile.
 3. In the service: **Settings → Volumes → Add volume**, mount path `/data`. Without this, the archive is wiped on every deploy.
 4. **Variables:**
-   - `MINISTRY_PASSWORD`: the ministry password. Choose a new one; without it the old built-in password works.
+   - `MINISTRY_PASSWORD`: the ministry password (required: without it nobody can sign in).
    - `SESSION_SECRET`: optional; a long random string. If unset, one is generated and kept on the volume.
    - `HOME_NATION`: optional; defaults to the site's own setting (`Bleeding_Heart`).
    - `SCAN_EVERY_MINUTES`: optional; default `60`, minimum `15`.

@@ -12,11 +12,12 @@ const collector = require("./collector");
 const PORT = +process.env.PORT || 8080;
 const EVERY_MIN = Math.max(15, +process.env.SCAN_EVERY_MINUTES || 60);
 
-// The ministry password. Set MINISTRY_PASSWORD on the host; without it the site's original password hash is used.
-const GATE_HASH = "3d163ccb31365431e6d456af3f1d3d93f49b9e5fd2bf02231bad7adb8371a1d2"; // sha256("bh-ministry:" + password)
+// The ministry password comes only from MINISTRY_PASSWORD on the host. Without it nobody can sign in.
 const sha = s => crypto.createHash("sha256").update(s).digest("hex");
+if (!process.env.MINISTRY_PASSWORD) console.error("MINISTRY_PASSWORD is not set: sign-in is disabled until it is.");
 const passwordOk = pw => {
-  const want = process.env.MINISTRY_PASSWORD ? sha("bh-ministry:" + process.env.MINISTRY_PASSWORD) : GATE_HASH;
+  if (!process.env.MINISTRY_PASSWORD) return false;
+  const want = sha("bh-ministry:" + process.env.MINISTRY_PASSWORD);
   const got = sha("bh-ministry:" + String(pw || ""));
   return crypto.timingSafeEqual(Buffer.from(got), Buffer.from(want));
 };
@@ -75,6 +76,7 @@ app.get("/login", (req, res) => signedIn(req) ? res.redirect("/gov") : res.type(
 app.post("/login", express.urlencoded({ extended:false, limit:"4kb" }), (req, res) => {
   const ip = req.ip;
   if (tooMany(ip)) return res.status(429).type("html").send(loginPage("Too many attempts. Wait ten minutes and try again.", req.body.next));
+  if (!process.env.MINISTRY_PASSWORD) return res.status(503).type("html").send(loginPage("Sign-in is disabled: the server has no MINISTRY_PASSWORD set.", req.body.next));
   if (!passwordOk(req.body.password)) { tries.get(ip).push(Date.now()); return res.status(401).type("html").send(loginPage("Incorrect password.", req.body.next)); }
   tries.delete(ip); setSession(res);
   const next = String(req.body.next || "/gov");
