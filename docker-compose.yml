@@ -1,5 +1,5 @@
 # Kingdom of The Bleeding Heart — run with `docker compose up -d --build`.
-# Set MINISTRY_PASSWORD in the environment (Docker Manager's variables, or a .env file beside this one).
+# The site is open to everyone. To put the ministries behind a password, add MINISTRY_PASSWORD under environment.
 services:
   bh-ministry:
     # builds straight from GitHub, so this file works on its own (e.g. Hostinger Docker Manager "import from URL")
@@ -9,8 +9,7 @@ services:
     ports:
       - "8080:8080"   # change the first number if Hermes already uses 8080
     environment:
-      MINISTRY_PASSWORD: ${MINISTRY_PASSWORD:?set MINISTRY_PASSWORD in .env}
-      # plain http until a domain with HTTPS is set up; remove this line after that
+      # lets a password sign-in work over plain http; remove once the site has HTTPS
       INSECURE_COOKIE: "1"
     volumes:
       - bh_data:/data

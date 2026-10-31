@@ -4,7 +4,8 @@
 const path = require('path'), fs = require('fs'), os = require('os');
 const { chromium } = require(path.join(__dirname, '../server/node_modules/playwright'));
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'bh-srv-'));
-process.env.PORT = '8799'; process.env.INSECURE_COOKIE = '1'; process.env.MINISTRY_PASSWORD = 'test-pass';
+process.env.PORT = '8799'; process.env.INSECURE_COOKIE = '1'; const OPEN = process.argv.includes('--open'); // --open: no password, the site is open to everyone
+if (!OPEN) process.env.MINISTRY_PASSWORD = 'test-pass';
 
 const now = Date.now(), off = (k, j) => [2, 20 + (k % 25), 35 + (k % 9), 50][j];
 const NAT = ['Bleeding_Heart', 'Rome', 'Carthage', 'Gaul', 'Persia', 'Sparta', 'Troy', 'Ithaca'];
@@ -43,9 +44,15 @@ global.__collectorRoutes = async ctx => {
   await p.route('https://**', r => r.abort());
   const base = 'http://127.0.0.1:8799';
   console.log('archive without sign-in:', (await p.goto(base + '/api/archive')).status());
-  await p.goto(base + '/gov'); console.log('gov redirects to:', new URL(p.url()).pathname);
-  await p.fill('#pw', 'wrong'); await p.click('button'); console.log('wrong password:', /Incorrect/.test(await p.textContent('.e')));
-  await p.fill('#pw', 'test-pass'); await p.click('button'); await p.waitForURL(/\/gov/);
+  if (OPEN) {
+    console.log('import refused when open:', (await p.request.post(base + '/api/import', { data:'{"kind":"bleeding-heart-archive"}' })).status());
+    console.log('scan-now cooldown:', (await p.request.post(base + '/api/scan-now')).status());
+    await p.goto(base + '/gov'); console.log('gov opens directly:', new URL(p.url()).pathname);
+  } else {
+    await p.goto(base + '/gov'); console.log('gov redirects to:', new URL(p.url()).pathname);
+    await p.fill('#pw', 'wrong'); await p.click('button'); console.log('wrong password:', /Incorrect/.test(await p.textContent('.e')));
+    await p.fill('#pw', 'test-pass'); await p.click('button'); await p.waitForURL(/\/gov/);
+  }
   // first load pulls the server's archive and reloads into it
   await p.waitForFunction(() => typeof towns !== 'undefined' && towns.length > 0, null, { timeout:60000 });
   console.log('visitor sees:', await p.evaluate(() => `${towns.length} towns, ${nations.length} nations, ${ARCHIVE.scans} scans, ML made ${mlState().made}`));

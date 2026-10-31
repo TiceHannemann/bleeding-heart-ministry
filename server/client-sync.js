@@ -48,6 +48,7 @@
     let st;
     try { st = await (await fetch("/api/status", { cache:"no-store" })).json(); } catch { return say("Ministry server unreachable; showing the data saved in this browser."); }
     if (st.error) { location.href = "/login?next=/gov"; return; }
+    if (st.open && lock) lock.hidden = true; // nothing to lock when the site has no password
     const line = st.lastOk ? `Server scan ${ago(st.lastOk)}${st.running ? " · scanning now" : st.nextRun ? ` · next in ${Math.max(0, Math.round((st.nextRun - Date.now()) / 6e4))} min` : ""} · <a href="/gov/reports" style="color:#7fe9ff">reports</a>`
       : st.running ? "The server's first scan is running. Reports appear here when it finishes." : "Waiting for the server's first scan.";
     if (!st.archiveVersion || st.archiveVersion === getVer()) return say(line);

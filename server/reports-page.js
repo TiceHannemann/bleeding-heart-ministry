@@ -4,7 +4,7 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&l
 const when = t => new Date(t).toUTCString().replace(":00 GMT", " UTC").replace(" GMT", " UTC");
 const ago = t => { const m = Math.round((Date.now() - t) / 6e4); return m < 60 ? `${m} minute${m === 1 ? "" : "s"} ago` : `${Math.round(m / 60)} hour${Math.round(m / 60) === 1 ? "" : "s"} ago`; };
 
-module.exports = (runs, st) => {
+module.exports = (runs, st, { open = false } = {}) => {
   const [latest, ...older] = runs;
   const doc = r => `<a href="/reports/${r.run}/${esc(r.pdf)}">${esc(r.title || r.kind)}${r.subject ? ` — ${esc(r.subject)}` : ""}</a> <span class="cl ${/KINGDOM EYES/.test(r.classification) ? "s" : "c"}">${/KINGDOM EYES/.test(r.classification) ? "Kingdom eyes only" : "Releasable"}</span> <a class="t" href="/reports/${r.run}/${esc(r.txt)}">text</a>`;
   const state = st.running ? "A scan is running now." : st.nextRun ? `The next scan is due at ${new Date(st.nextRun).toISOString().slice(11, 16)} UTC.` : "";
@@ -34,17 +34,17 @@ details ol{margin-top:10px}.err{color:var(--hq)}
 .imp button:hover,.scan:hover{border-color:var(--mut)}
 </style></head><body><div class="w">
 <header><img src="/assets/logo/logo-128.png" alt=""><div><b>Kingdom of The Bleeding Heart</b><small>Ministry of Intelligence — Hourly Reports</small></div>
-<nav><a href="/gov#dossier">Ministries</a><a href="/gov#briefings">Briefing Room</a><form method="post" action="/logout" style="margin:0"><a href="#" onclick="this.parentNode.submit();return false">Sign out</a></form></nav></header>
+<nav><a href="/gov#dossier">Ministries</a><a href="/gov#briefings">Briefing Room</a>${open ? `<a href="/">Public website</a>` : `<form method="post" action="/logout" style="margin:0"><a href="#" onclick="this.parentNode.submit();return false">Sign out</a></form>`}</nav></header>
 <h1>Hourly intelligence</h1>
-<p class="meta">${latest ? `Last scan ${when(latest.at)} (${ago(latest.at)}) · ${latest.towns.toLocaleString()} towns · ${latest.nations.toLocaleString()} nations · ${latest.scans.toLocaleString()} scans archived · ${latest.events24h.toLocaleString()} events in 24 h` : "No scan has finished yet."} · ${esc(state)} <button class="scan" onclick="fetch('/api/scan-now',{method:'POST'}).then(()=>location.reload())">Scan now</button></p>
+<p class="meta">${latest ? `Last scan ${when(latest.at)} (${ago(latest.at)}) · ${latest.towns.toLocaleString()} towns · ${latest.nations.toLocaleString()} nations · ${latest.scans.toLocaleString()} scans archived · ${latest.events24h.toLocaleString()} events in 24 h` : "No scan has finished yet."} · ${esc(state)} <button class="scan" onclick="fetch('/api/scan-now',{method:'POST'}).then(r=>r.json()).then(j=>{if(j.error)alert(j.error);location.reload()})">Scan now</button></p>
 ${err}
 ${latest ? `${intsum?.lead ? `<p class="lead">${esc(intsum.lead)}</p>` : ""}
 <h2>Latest reports</h2><ol>${latest.reports.map(r => `<li>${doc({ ...r, run:latest.run })}</li>`).join("")}</ol>` : `<p>The server scans EarthMC every hour. The first scan takes a few minutes; this page fills in when it finishes.</p>`}
 ${older.length ? `<h2>Earlier runs</h2>${older.map(o => `<details><summary><b>${when(o.at)}</b> · ${o.towns.toLocaleString()} towns · ${o.events24h} events in 24 h</summary><ol>${o.reports.map(r => `<li>${doc({ ...r, run:o.run })}</li>`).join("")}</ol></details>`).join("")}` : ""}
-<div class="imp"><p>To add collection from a browser's Watch mode, export its archive in the Briefing Room and send it here. It is merged at the next scan.</p>
-<input type="file" id="f" accept="application/json,.json" hidden><button onclick="document.getElementById('f').click()">Send an archive to the server</button> <span id="m"></span></div>
+${open ? "" : `<div class="imp"><p>To add collection from a browser's Watch mode, export its archive in the Briefing Room and send it here. It is merged at the next scan.</p>
+<input type="file" id="f" accept="application/json,.json" hidden><button onclick="document.getElementById('f').click()">Send an archive to the server</button> <span id="m"></span></div>`}
 </div><script>
-document.getElementById("f").onchange = async e => { const f = e.target.files[0]; if (!f) return; const m = document.getElementById("m"); m.textContent = "Uploading…";
+if (document.getElementById("f")) document.getElementById("f").onchange = async e => { const f = e.target.files[0]; if (!f) return; const m = document.getElementById("m"); m.textContent = "Uploading…";
   try { const r = await fetch("/api/import", { method:"POST", body:await f.text(), headers:{ "Content-Type":"application/json" } }); const j = await r.json(); m.textContent = j.message || j.error; } catch (err) { m.textContent = "Upload failed: " + err.message; } };
 </script></body></html>`;
 };

@@ -12,11 +12,12 @@ const collector = require("./collector");
 const PORT = +process.env.PORT || 8080;
 const EVERY_MIN = Math.max(15, +process.env.SCAN_EVERY_MINUTES || 60);
 
-// The ministry password comes only from MINISTRY_PASSWORD on the host. Without it nobody can sign in.
+// The ministry password comes only from MINISTRY_PASSWORD on the host. Without it the whole site is open, with no sign-in.
+const OPEN = !process.env.MINISTRY_PASSWORD;
 const sha = s => crypto.createHash("sha256").update(s).digest("hex");
-if (!process.env.MINISTRY_PASSWORD) console.error("MINISTRY_PASSWORD is not set: sign-in is disabled until it is.");
+if (OPEN) console.log("No MINISTRY_PASSWORD set: the ministries are open to everyone (archive uploads are off).");
 const passwordOk = pw => {
-  if (!process.env.MINISTRY_PASSWORD) return false;
+  if (OPEN) return false;
   const want = sha("bh-ministry:" + process.env.MINISTRY_PASSWORD);
   const got = sha("bh-ministry:" + String(pw || ""));
   return crypto.timingSafeEqual(Buffer.from(got), Buffer.from(want));
@@ -33,6 +34,7 @@ const sign = v => crypto.createHmac("sha256", SECRET).update(v).digest("hex");
 const makeSession = () => { const exp = String(Date.now() + SESSION_DAYS * 864e5); return exp + "." + sign(exp); };
 const cookieOf = (req, name) => (req.headers.cookie || "").split(/;\s*/).map(c => c.split("=")).find(([k]) => k === name)?.[1];
 function signedIn(req) {
+  if (OPEN) return true;
   const v = cookieOf(req, "bh_s"); if (!v) return false;
   const [exp, mac] = v.split(".");
   if (!exp || !mac || +exp < Date.now()) return false;
@@ -74,9 +76,9 @@ button{margin-top:14px;width:100%;padding:11px;font:inherit;font-weight:600;back
 <button>Sign in</button><div class="e">${err || ""}</div><a href="/">← Public website</a></form></body></html>`;
 app.get("/login", (req, res) => signedIn(req) ? res.redirect("/gov") : res.type("html").send(loginPage("", req.query.next)));
 app.post("/login", express.urlencoded({ extended:false, limit:"4kb" }), (req, res) => {
+  if (OPEN) return res.redirect("/gov");
   const ip = req.ip;
   if (tooMany(ip)) return res.status(429).type("html").send(loginPage("Too many attempts. Wait ten minutes and try again.", req.body.next));
-  if (!process.env.MINISTRY_PASSWORD) return res.status(503).type("html").send(loginPage("Sign-in is disabled: the server has no MINISTRY_PASSWORD set.", req.body.next));
   if (!passwordOk(req.body.password)) { tries.get(ip).push(Date.now()); return res.status(401).type("html").send(loginPage("Incorrect password.", req.body.next)); }
   tries.delete(ip); setSession(res);
   const next = String(req.body.next || "/gov");
@@ -98,7 +100,7 @@ app.get(["/gov", "/earthmc-ruin-scanner.html"], (req, res, next) => {
 }, needLogin, (req, res) => res.type("html").setHeader("Cache-Control", "no-store").send(govHtml()));
 
 /* ---------- Intelligence API (signed-in only) ---------- */
-app.get("/api/status", needLogin, (req, res) => res.json(collector.status()));
+app.get("/api/status", needLogin, (req, res) => res.json({ ...collector.status(), open:OPEN }));
 // the browser checks this first, and only downloads the archive when it has changed
 app.get("/api/archive/version", needLogin, (req, res) => res.json({ version:collector.status().archiveVersion || null }));
 app.get("/api/archive", needLogin, (req, res) => {
@@ -110,13 +112,20 @@ app.get("/api/archive", needLogin, (req, res) => {
 });
 // earlier collection from Watch mode in a browser: upload the exported archive and it is merged at the next scan
 app.post("/api/import", needLogin, express.text({ type:"*/*", limit:"200mb" }), (req, res) => {
+  // with no password anyone could send one, so uploads need a password to be set
+  if (OPEN) return res.status(403).json({ error:"Archive uploads are off while the site has no password. Set MINISTRY_PASSWORD to turn them on." });
   let j; try { j = JSON.parse(req.body); } catch { return res.status(400).json({ error:"That isn't JSON." }); }
   if (j?.kind !== "bleeding-heart-archive") return res.status(400).json({ error:"That file isn't an intelligence archive." });
   fs.mkdirSync(path.join(DATA, "imports"), { recursive:true });
   fs.writeFileSync(path.join(DATA, "imports", `${Date.now()}.json`), req.body);
   res.json({ ok:true, message:"Archive received. It will be merged into the server's archive at the next scan." });
 });
-app.post("/api/scan-now", needLogin, (req, res) => { collector.runSoon(); res.json({ ok:true, ...collector.status() }); });
+// at most one extra scan per ten minutes, however many people press the button
+app.post("/api/scan-now", needLogin, (req, res) => {
+  const st = collector.status();
+  if (st.running || (st.lastRun && Date.now() - st.lastRun < 10 * 6e4)) return res.status(429).json({ error:"A scan ran in the last ten minutes. Try again later.", ...st });
+  collector.runSoon(); res.json({ ok:true, ...collector.status() });
+});
 
 /* ---------- Hourly reports ---------- */
 const RUNS = path.join(DATA, "runs");
@@ -132,7 +141,7 @@ app.get("/reports/:run/:file", needLogin, (req, res) => {
   res.setHeader("Cache-Control", "private, max-age=300");
   res.sendFile(f);
 });
-app.get("/gov/reports", needLogin, (req, res) => res.type("html").send(require("./reports-page")(runList().slice(0, 72).map(r => readJSON(path.join(RUNS, r, "manifest.json"))).filter(Boolean), collector.status())));
+app.get("/gov/reports", needLogin, (req, res) => res.type("html").send(require("./reports-page")(runList().slice(0, 72).map(r => readJSON(path.join(RUNS, r, "manifest.json"))).filter(Boolean), collector.status(), { open:OPEN })));
 
 app.use((req, res) => res.status(404).type("text").send("Not found."));
 
