@@ -4,6 +4,8 @@ services:
   bh-ministry:
     # builds straight from GitHub, so this file works on its own (e.g. Hostinger Docker Manager "import from URL")
     build: https://github.com/TiceHannemann/bleeding-heart-ministry.git#main
+    # rebuild from GitHub on every deploy, instead of reusing the image built last time
+    pull_policy: build
     container_name: bh-ministry
     restart: unless-stopped
     ports:
