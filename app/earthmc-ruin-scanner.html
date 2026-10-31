@@ -3555,6 +3555,53 @@ function movementIntsum(doc, releasable) {
   if (fs.length) Para(doc, `The Forecast Lab's incursion model rates the following patterns as the likeliest to precede a hostile move within seven days: ${andList(fs.map(p => `${p.pair[0]} in ${p.pair[1]} (${pct(p.p)})`))}.`);
 }
 
+// ---- open-channel signals: diplomacy and intelligence read from public Discord channels ----
+// Extracted on the Ministry server (server/signals.js) and delivered with the archive as meta "signals".
+// Each: { type, nations, summary, confidence, status, importance, at, last, servers, sources:[{guild, channel, author, role, at}] }
+let SIGNALS = [];
+const sigKey = s => String(s || "").toLowerCase().replace(/[\s_]+/g, " ").trim();
+const signalsFor = (name, since) => SIGNALS.filter(s => s.last >= since && s.nations.some(x => sigKey(x) === sigKey(name)));
+const SIG_CONF = { high:"high confidence", moderate:"moderate confidence", low:"low confidence" };
+const sigOrder = (a, b) => (b.importance || 0) - (a.importance || 0) || b.last - a.last;
+function sigSentence(s) {
+  const where = s.servers > 1 ? `reported in ${plural(s.servers, "server")}` : `reported in ${s.sources[0]?.guild || "one server"}`;
+  const who = s.status === "announced_officially" ? "announced officially, " : s.status === "rumoured" ? "rumoured, " : s.status === "denied" ? "since denied, " : "";
+  // where the server's own alliance lists can confirm or contradict the report, say so
+  let check = "";
+  if (s.type === "alliance" && s.nations.length === 2) {
+    const [A, B] = s.nations.map(findNation);
+    if (A && B) check = A.allies.includes(B.name) || B.allies.includes(A.name) ? " The alliance appears in the server's own records." : " The server's alliance lists do not yet show it.";
+  }
+  // "The leaders of X..." reads "On 30 Oct, the leaders of X..."; names keep their capitals
+  return `On ${fmtDay(s.at)}, ${s.summary.replace(/^(The|A|An|Several|Two|Three|Members|Reports) /, w => w.toLowerCase()).replace(/\.$/, "")} (${who}${SIG_CONF[s.confidence] || "low confidence"}; ${where}).${check}`;
+}
+const SIG_GROUPS = [
+  ["Diplomatic", ["alliance", "non_aggression_pact", "peace_or_truce", "sanctions_or_trade"]],
+  ["Hostile", ["war_or_hostility", "raid_or_attack_plan"]],
+  ["Territorial", ["merger_or_annexation", "town_transfer"]],
+  ["Internal", ["leadership_or_internal", "recruitment"]],
+];
+function signalsSection(doc, n) {
+  const ss = signalsFor(n.name, Date.now() - 7 * DAY).sort(sigOrder);
+  if (!ss.length) return;
+  Head(doc, "Signals from Open Channels");
+  const servers = new Set(ss.flatMap(s => s.sources.map(x => x.guild)));
+  Para(doc, `Over the past week the Ministry recorded ${plural(ss.length, "report")} bearing on ${n.name} in ${plural(servers.size, "public Discord server")}. Reports are read from open channels, sifted for in-game diplomacy and intelligence, and weighed by who said them and how widely they were carried; they have not been verified on the ground.`);
+  for (const [, types] of SIG_GROUPS) {
+    const g = ss.filter(s => types.includes(s.type)).slice(0, 4);
+    if (g.length) Para(doc, g.map(sigSentence).join(" "));
+  }
+  const rest = ss.filter(s => !SIG_GROUPS.some(([, t]) => t.includes(s.type))).slice(0, 3);
+  if (rest.length) Para(doc, rest.map(sigSentence).join(" "));
+}
+function signalsIntsum(doc) {
+  const ss = SIGNALS.filter(s => s.last >= Date.now() - DAY).sort(sigOrder);
+  if (!ss.length) return;
+  Head(doc, "Signals from Open Channels");
+  Para(doc, `Public Discord channels carried ${plural(ss.length, "report")} of in-game diplomacy or intelligence in the last twenty-four hours. The most significant follow.`);
+  for (let i = 0; i < Math.min(ss.length, 9); i += 3) Para(doc, ss.slice(i, i + 3).map(sigSentence).join(" "));
+}
+
 // ---- Intelligence Assessment ----
 function nationAssessment(n, p, releasable) {
   const a = relTo(n, p), X = anticipate(n, p), home = findNation($("myNation").value), persp = p || home;
@@ -3621,6 +3668,7 @@ function nationAssessment(n, p, releasable) {
   Para(doc, `${dip14.length ? `In the past fortnight ${n.name}'s diplomatic position has moved: ${andList(dip14.slice(-4).map(e => `on ${fmtDay(e.at)} it ${eventText(e, n.name)}`))}. ` : "Its diplomatic position has been static for at least a fortnight. "}${partner ? `${partner.text.replace(/\.$/, "")}; the Ministry judges this ${partner.likelihood}.` : ""}`);
 
   movementSection(doc, n, persp);
+  signalsSection(doc, n);
 
   Head(doc, "Military Potential");
   const ratio = persp && persp !== n && persp.active30 ? n.active30 / persp.active30 : null;
@@ -3758,6 +3806,7 @@ function intsum(releasable) {
   const dip7 = ev7.filter(e => /^(ally|enemy)_/.test(e.type) && !ev7.some(o => o.type === e.type && o.ns[0] === e.who && o.who === e.ns[0] && o.ns[0] < e.ns[0]));
   const byDay = [...dip7.slice(-10).reduce((m, e) => m.set(fmtDay(e.at), [...(m.get(fmtDay(e.at)) || []), eventText(e, null)]), new Map())];
   Para(doc, byDay.length ? byDay.map(([d, xs]) => `On ${d}, ${andList(xs)}.`).join(" ") : "No alliances or enmities were made or broken this week.");
+  signalsIntsum(doc);
   movementIntsum(doc, releasable);
   Head(doc, "Forecast for the Next Seventy-Two Hours");
   const vac = nations.filter(n => n.kingLast != null && days() - (Date.now() - n.kingLast) / DAY < 3);
@@ -4440,6 +4489,7 @@ const appReady = (async () => {
   await loadArchive();
   await loadML();
   await loadMoves();
+  try { SIGNALS = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("signals")))) || []; } catch {}
   ARCHIVE.frame7 = await frameNear(Date.now() - 7 * DAY);
   let saved = null;
   try { saved = await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("lastScan"))); } catch {}

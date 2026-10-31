@@ -44,6 +44,17 @@ Then open http://localhost:8080. (`INSECURE_COOKIE=1` is only for plain-http loc
 
 The end-to-end test, with a fake EarthMC API and no network: `node tests/server-test.js` from the project folder after `npm install` in `server/`.
 
+## Open-channel signals (Discord chat)
+
+The server reads Discord chat exports (DiscordChatExporter JSON) each hour and writes what matters into the briefings, as a "Signals from Open Channels" section in each Intelligence Assessment and in the Daily Summary.
+
+1. **Cleanup in code, free:** empty, very short and deleted messages are dropped, and news reposted in several servers is read once and counted as carried by each.
+2. **Claude** (`claude-opus-5-5`) reads the rest in batches. It keeps only in-game diplomacy and intelligence: treaties, NAPs, wars, raids, mergers, recruitment, leadership changes. It drops memes, small talk and real-world politics. Each event cites its source messages and gets a confidence rating from who said it.
+3. **Merging:** the same event reported again later or elsewhere joins the existing one. Reported alliances are checked against the server's own alliance lists.
+4. **Retention:** raw messages are kept for 30 days and events for 90.
+
+Settings: `ANTHROPIC_API_KEY` (without it, chat is collected but not analysed) and `CHAT_UPLOAD_TOKEN` (any long random string; the upload script sends it). Upload from your PC with `tools/send-chat.ps1`. Status: `/api/signals`.
+
 ## Bringing over earlier collection
 
 In a browser that ran Watch mode, open the Briefing Room and export the archive, then on `/gov/reports` press **Send an archive to the server**. It is merged at the next hourly scan.

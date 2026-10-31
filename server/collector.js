@@ -9,6 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
 const { DATA, readJSON, writeJSON } = require("./paths");
+const signals = require("./signals");
 
 const RUNS = path.join(DATA, "runs"), IMPORTS = path.join(DATA, "imports"), PROFILE = path.join(DATA, "profile");
 const STATUS_FILE = path.join(DATA, "status.json");
@@ -25,7 +26,7 @@ function tokenOk(t) {
   tokens.delete(t); // one use only
   return exp > Date.now();
 }
-function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24) }; }
+function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24), signals:signals.status() }; }
 
 function schedule() {
   clearTimeout(timer);
@@ -121,11 +122,18 @@ async function runOnce() {
     if (!ok) throw new Error("Scan did not complete: " + (await page.textContent("#status")).slice(0, 300));
     await page.waitForFunction(() => window.__mlDone > 0, null, { timeout:5 * 6e4, polling:1000 }).catch(() => console.warn("collector: Forecast Lab didn't report back; continuing"));
 
+    // open-channel signals: read new Discord chat with Claude, then hand the events to the page for the briefings
+    try {
+      const names = await page.evaluate(() => nations.map(n => n.name));
+      const sig = await signals.run(names);
+      await page.evaluate(ev => { SIGNALS = ev; return idbDo(["meta"], "readwrite", tx => tx.objectStore("meta").put(ev, "signals")); }, sig);
+    } catch (e) { console.warn("collector: signals step failed:", e.message); }
+
     // the archive, for visitors' browsers: everything the page keeps, including the last scan and the Forecast Lab
     const archive = await page.evaluate(() => idbDo(["meta", "series", "frames", "events", "visits", "predictions"], "readonly", async tx => {
       const m = tx.objectStore("meta");
       return JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now(),
-        stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")),
+        stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")), signals:await reqP(m.get("signals")),
         series:await reqP(tx.objectStore("series").getAll()),
         frameKeys:await reqP(tx.objectStore("frames").getAllKeys()), frames:await reqP(tx.objectStore("frames").getAll()),
         events:await reqP(tx.objectStore("events").getAll()), visits:await reqP(tx.objectStore("visits").getAll()),

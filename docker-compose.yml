@@ -11,6 +11,10 @@ services:
     environment:
       # lets a password sign-in work over plain http; remove once the site has HTTPS
       INSECURE_COOKIE: "1"
+      # open-channel signals: Claude reads uploaded Discord chat each hour (leave empty to collect without analysing)
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # the password your upload script sends with chat exports (any long random string)
+      CHAT_UPLOAD_TOKEN: ${CHAT_UPLOAD_TOKEN:-}
     volumes:
       - bh_data:/data
     mem_limit: 1500m

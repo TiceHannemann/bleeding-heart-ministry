@@ -132,6 +132,19 @@ app.post("/api/import", needLogin, express.text({ type:"*/*", limit:"200mb" }), 
   fs.writeFileSync(path.join(DATA, "imports", `${Date.now()}.json`), req.body);
   res.json({ ok:true, message:"Archive received. It will be merged into the server's archive at the next scan." });
 });
+// Discord chat exports (DiscordChatExporter JSON). Accepted from a signed-in user when the site has a password,
+// or from anything holding CHAT_UPLOAD_TOKEN (sent as the x-chat-token header): with no password, the token is the only way in,
+// so strangers can't feed the briefings.
+const SIG = require("./signals");
+const chatTokenOk = req => !!process.env.CHAT_UPLOAD_TOKEN && typeof req.headers["x-chat-token"] === "string" &&
+  req.headers["x-chat-token"].length === process.env.CHAT_UPLOAD_TOKEN.length && crypto.timingSafeEqual(Buffer.from(req.headers["x-chat-token"]), Buffer.from(process.env.CHAT_UPLOAD_TOKEN));
+app.post("/api/chat-import", express.text({ type:"*/*", limit:"100mb" }), (req, res) => {
+  if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"Chat uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
+  try { res.json({ ok:true, messages:SIG.receive(req.body), message:"Received. It is read at the next hourly run." }); }
+  catch (e) { res.status(400).json({ error:e.message }); }
+});
+app.get("/api/signals", needLogin, (req, res) => res.json({ status:SIG.status(), events:SIG.events().sort((a, b) => b.last - a.last).slice(0, 200) }));
+
 // at most one extra scan per ten minutes, however many people press the button
 app.post("/api/scan-now", needLogin, (req, res) => {
   const st = collector.status();
