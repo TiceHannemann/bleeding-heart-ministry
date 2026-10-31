@@ -86,7 +86,7 @@ app.post("/logout", (req, res) => { res.setHeader("Set-Cookie", "bh_s=; Path=/; 
 // The page is the same standalone file; the server adds a small script that pulls the hourly archive into the browser.
 const SYNC = fs.readFileSync(path.join(__dirname, "client-sync.js"), "utf8");
 const govHtml = () => fs.readFileSync(path.join(APP, "earthmc-ruin-scanner.html"), "utf8")
-  .replace("<head>", `<head>\n<script>window.BH_SERVER = true; try { sessionStorage.setItem("bh_unlocked", '["attack","intel"]'); } catch {}</script>`)
+  .replace("<head>", `<head>\n<script>window.BH_SERVER = true;</script>`)
   .replace(/<\/body>(?![\s\S]*<\/body>)/, `<script>\n${SYNC}\n</script>\n</body>`)
   .replace(/<a href="kingdom-of-the-bleeding-heart.html">[^<]*<\/a>/g, "");
 // the collector signs itself in with a one-time token, so it never needs the password
@@ -97,6 +97,21 @@ app.get(["/", "/index.html", "/gov", "/earthmc-ruin-scanner.html"], (req, res, n
 }, needLogin, (req, res) => res.type("html").setHeader("Cache-Control", "no-store").send(govHtml()));
 
 /* ---------- Intelligence API (signed-in only) ---------- */
+// The live map's player feed, relayed: browsers can't read it directly (CORS). Shared by everyone for a few seconds,
+// so any number of open pages makes at most one request to the map every three seconds.
+const PLAYERS_SRC = process.env.PLAYERS_FEED || "https://map.earthmc.net/tiles/players.json";
+let playersCache = { at:0, body:null, p:null };
+app.get("/api/players", needLogin, async (req, res) => {
+  try {
+    if (Date.now() - playersCache.at > 3000) {
+      playersCache.p ||= fetch(PLAYERS_SRC, { headers:{ "User-Agent":"BleedingHeart-Ministry" }, signal:AbortSignal.timeout(10000) })
+        .then(async r => { if (!r.ok) throw new Error("map answered " + r.status); playersCache = { at:Date.now(), body:await r.text(), p:null }; })
+        .finally(() => { playersCache.p = null; });
+      await playersCache.p;
+    }
+    res.setHeader("Cache-Control", "no-store"); res.type("json").send(playersCache.body);
+  } catch (e) { res.status(502).json({ error:String(e.message || e) }); }
+});
 app.get("/api/status", needLogin, (req, res) => res.json({ ...collector.status(), open:OPEN }));
 // the browser checks this first, and only downloads the archive when it has changed
 app.get("/api/archive/version", needLogin, (req, res) => res.json({ version:collector.status().archiveVersion || null }));

@@ -651,7 +651,7 @@
     <div class="hmeta">
       <button class="scan-btn" id="scan">SCAN ALL TOWNS</button>
       <button class="send-btn" id="sendWR" title="Copy this scan's targets and nation intel, then open the War Room">Send to war room ↗</button>
-      <label class="watch" title="Rescan automatically while this page is open. Every scan is added to the intelligence archive."><input type="checkbox" id="watchOn"> Watch mode <select id="watchEvery"><option value="15">every 15 min</option><option value="30">every 30 min</option><option value="60">every hour</option><option value="120">every 2 hours</option></select> <span id="watchState">off</span></label>
+      <span class="watch" title="Scans run automatically and every scan is added to the intelligence archive.">Auto-scan <span id="watchState"></span></span>
     </div>
   </header>
 
@@ -678,7 +678,7 @@
 
   <section class="only-moves">
     <div class="mv-bar">
-      <label class="mv-on"><input type="checkbox" id="mvOn"> Track live positions</label>
+      <span class="mv-on">Live positions</span>
       <label>every <select id="mvEvery"><option value="5">5 s</option><option value="10">10 s</option><option value="15">15 s</option><option value="30">30 s</option><option value="60">60 s</option></select></label>
       <button class="deep" id="mvNotify">Desktop alerts</button>
       <span id="mvState"></span>
@@ -687,7 +687,7 @@
       <button class="deep" id="mvRelayGet">Download relay.py</button>, run <code>python relay.py</code>, then <button class="deep" id="mvRelayUse">Use relay</button>.</div>
     <details class="mv-src"><summary>Feed source</summary>
       <input id="mvSrc" placeholder="https://map.earthmc.net/tiles/players.json (default)">
-      <p>Positions come from the live server map: every player it shows, refreshed every few seconds. Each position is matched to the claimed chunk under it. A visit is logged when someone stands in a town that isn't theirs and isn't in their nation. Players can be hidden from the live map, so not seeing someone proves nothing. Collection runs only while this page is open.</p>
+      <p>Positions come from the live server map: every player it shows, refreshed every few seconds. Each position is matched to the claimed chunk under it. A visit is logged when someone stands in a town that isn't theirs and isn't in their nation. Players can be hidden from the live map, so not seeing someone proves nothing. On the Ministry server, visits are recorded around the clock; opened as a file, this page records while it is open.</p>
     </details>
     <div class="stats mv-stats" id="mvStats"></div>
   </section>
@@ -780,7 +780,7 @@
       <div class="panel"><h2>Open forecasts</h2><div id="labLive"></div></div>
       <div class="panel"><h2>Recently checked</h2><div id="labDone"></div></div>
     </div>
-    <p class="lab-note">How it works: after every scan each model gives a probability for its event, using what the archive shows about that town or nation. When the event happens, or its window closes, a later scan checks the event log and the model adjusts its weights toward the real outcome. Models start from the same rules as the rest of the Ministry, so “vs rules” shows whether learning has helped. Watch mode keeps it learning around the clock.
+    <p class="lab-note">How it works: after every scan each model gives a probability for its event, using what the archive shows about that town or nation. When the event happens, or its window closes, a later scan checks the event log and the model adjusts its weights toward the real outcome. Models start from the same rules as the rest of the Ministry, so “vs rules” shows whether learning has helped. Automatic scans keep it learning around the clock.
       <span class="lab-reset"><button class="deep" id="labReset">Reset the models</button><span id="labResetConfirm" hidden>Forget everything learned? <button class="deep" id="labResetYes">Reset</button> <button class="deep" id="labResetNo">Keep</button></span></span></p>
   </section>
 
@@ -3261,9 +3261,9 @@ async function importArchive(file) {
   ARCHIVE.events.sort((a, b) => a.at - b.at);
 }
 
-// ---- watch mode: rescan on a timer while the page is open ----
-const WATCH = { on:false, every:30, next:null, timer:0 };
-try { Object.assign(WATCH, JSON.parse(localStorage.getItem("rh_watch") || "{}"), { next:null, timer:0 }); } catch {}
+// ---- automatic scans: always on. Opened as a file, this page rescans every hour while it is open;
+// on the Ministry server the server scans every hour around the clock, so the page doesn't. ----
+const WATCH = { on:!window.BH_SERVER, every:60, next:null, timer:0 };
 function scheduleWatch() {
   clearTimeout(WATCH.timer); WATCH.next = null;
   if (!WATCH.on) return renderWatch();
@@ -3274,7 +3274,7 @@ function scheduleWatch() {
 }
 function renderWatch() {
   const el = $("watchState"); if (!el) return;
-  el.textContent = !WATCH.on ? "off" : scanning ? "scanning now" : WATCH.next ? `next scan in ${fmtDur(Math.max(0, WATCH.next - Date.now()))}` : "on";
+  el.textContent = !WATCH.on ? (window.BH_SERVER ? "by the server, every hour" : "off") : scanning ? "scanning now" : WATCH.next ? `next scan in ${fmtDur(Math.max(0, WATCH.next - Date.now()))}` : "on";
 }
 setInterval(renderWatch, 1000);
 
@@ -4026,8 +4026,13 @@ const MOVES = { on:false, every:15, src:"", timer:null, lastOk:0, err:"", polls:
 const MOVE_SPEED_TP = 60; // blocks per second; anything faster between two samples was a teleport (warp, /t spawn, /n spawn)
 const PASSING = "Passing through", RECON = "Reconnaissance";
 const movesSrc = () => MOVES.src || `${TILES.base.replace(/\/+$/, "")}/tiles/players.json`;
-try { const s = JSON.parse(localStorage.getItem("bh_moves") || "{}"); Object.assign(MOVES, { on:!!s.on, every:s.every || 15, src:s.src || "" }); } catch {}
-const saveMoveCfg = () => { try { localStorage.setItem("bh_moves", JSON.stringify({ on:MOVES.on, every:MOVES.every, src:MOVES.src })); } catch {} };
+// Tracking is always on. On the Ministry server the server's own browser records every visit around the clock
+// (reading the feed through the server, which has no CORS problem); visitors' pages only show who is on the map now.
+MOVES.on = true;
+MOVES.liveOnly = !!window.BH_SERVER && !window.BH_COLLECTOR;
+try { const s = JSON.parse(localStorage.getItem("bh_moves") || "{}"); Object.assign(MOVES, { every:s.every || 15, src:s.src || "" }); } catch {}
+if (window.BH_SERVER) MOVES.src = "/api/players";
+const saveMoveCfg = () => { if (window.BH_SERVER) return; try { localStorage.setItem("bh_moves", JSON.stringify({ every:MOVES.every, src:MOVES.src })); } catch {} };
 
 // claimed chunk -> town, and player -> their town; rebuilt whenever a new scan replaces the towns
 function moveIndex() {
@@ -4072,7 +4077,7 @@ async function pollMoves() {
 function ingestMoves(j, now) {
   const idx = moveIndex(), list = (Array.isArray(j) ? j : j?.players) || [], seen = new Set();
   MOVES.online = list.length;
-  const hour = Math.floor(now / 36e5); if (!MOVES.hours.has(hour)) { MOVES.hours.add(hour); saveMoveHours(); }
+  const hour = Math.floor(now / 36e5); if (!MOVES.hours.has(hour)) { MOVES.hours.add(hour); if (!MOVES.liveOnly) saveMoveHours(); }
   for (const p of list) {
     if (!p?.name || p.x == null || p.z == null || (p.world && !/overworld|^world$/i.test(p.world) && p.world !== TILES.world)) continue;
     const x = +p.x, z = +p.z, cx = Math.floor(x / 16), cz = Math.floor(z / 16), t = idx.get(cx + "," + cz) || null;
@@ -4122,6 +4127,7 @@ function purposeOf(v, p) {
 }
 function closeVisit(s) {
   const v = s.visit; s.visit = null; if (!v) return;
+  if (MOVES.liveOnly) return; // the server records this visit; it arrives with the next hourly archive
   v.dwell = v.end - v.start + MOVES.every * 1000; // each sample stands for one polling interval
   const x = visitFeatures(v), p = mlPredict("scout", x);
   const rec = { at:v.start, end:v.end, dwell:v.dwell, player:v.player, pt:v.pt, pn:v.pn, town:v.town, nation:v.nation, ruined:v.ruined, n:v.n,
@@ -4225,15 +4231,15 @@ const timeShort = t => new Date(t).toLocaleTimeString([], { hour:"2-digit", minu
 function renderMoves() {
   if (!$("mvStats")) return;
   const now = Date.now(), day = now - DAY, week = now - 7 * DAY;
-  $("mvOn").checked = MOVES.on; $("mvEvery").value = String(MOVES.every); $("mvSrc").value = MOVES.src;
+  $("mvEvery").value = String(MOVES.every); $("mvSrc").value = MOVES.src;
   const live = [...MOVES.players.values()].filter(s => now - s.at < Math.max(40e3, MOVES.every * 2500));
   const intruders = live.filter(s => s.visit && isOurLand(s.visit.nation));
   const today = MOVES.visits.filter(v => v.at >= day && v.purpose !== PASSING);
   const hostileIn = intruders.filter(s => ["hostile", "wary"].includes(stanceOf(s.visit.pn)));
   $("mvState").innerHTML = !MOVES.on ? `Off. Switch on to start reading live positions${MOVES.visits.length ? ` · ${MOVES.visits.length.toLocaleString()} visits on record` : ""}.`
     : MOVES.err ? `<span style="color:var(--orange)">${esc(MOVES.err)}</span>`
-    : MOVES.lastOk ? `Live · ${MOVES.online} players on the map · updated ${Math.round((now - MOVES.lastOk) / 1000)}s ago · ${moveHoursIn(7)} hours collected this week` : "Connecting…";
-  $("mvRelay").hidden = !(MOVES.err && /relay/i.test(MOVES.err)) && !MOVES.src;
+    : MOVES.lastOk ? `Live · ${MOVES.online} players on the map · updated ${Math.round((now - MOVES.lastOk) / 1000)}s ago · ${MOVES.liveOnly ? "visits recorded by the server around the clock" : `${moveHoursIn(7)} hours collected this week`}` : "Connecting…";
+  $("mvRelay").hidden = !!window.BH_SERVER || (!(MOVES.err && /relay/i.test(MOVES.err)) && !MOVES.src);
   const stat = (n, l, c) => `<div class="stat" style="--c:${c || "var(--intel)"}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
   $("mvStats").innerHTML = stat(MOVES.on && MOVES.lastOk ? live.length : "—", "Players visible now") + stat(live.filter(s => s.foreign).length || (MOVES.lastOk ? 0 : "—"), "In foreign land now")
     + stat(intruders.length, "Inside our or allied land", "var(--hq)") + stat(today.length, "Visits in the last 24 hours") + stat(today.filter(v => v.purpose === RECON).length, "Judged reconnaissance", "var(--orange)")
@@ -4242,7 +4248,7 @@ function renderMoves() {
   $("mvLive").innerHTML = intruders.length ? `<table class="nt"><tr><th>Player</th><th>From</th><th>Where</th><th class="num">Inside</th><th>Looks like</th></tr>${intruders.sort((a, b) => relScore(findNation(b.visit.pn), homeNation()) - relScore(findNation(a.visit.pn), homeNation())).map(s => {
       const v = s.visit, dw = now - v.start + MOVES.every * 1000, x = visitFeatures({ ...v, dwell:dw }), p = mlPredict("scout", x), pu = purposeOf({ ...v, dwell:dw }, p);
       return `<tr><td><button class="pl-name" data-player="${esc(s.name)}" data-town="${esc(v.pt || "")}">${esc(s.name)}</button></td><td>${natChip(v.pn)}</td><td>${esc(v.town)} <span class="lab-ev">${esc(v.nation || "")}</span></td><td class="num">${durShort(dw)}</td><td>${mvPurpose(pu, p)}</td></tr>`; }).join("")}</table>`
-    : `<p class="br-empty">${MOVES.on && MOVES.lastOk ? "No foreign players are inside Kingdom or allied land right now." : "Switch on live tracking to see who is inside our borders."}</p>`;
+    : `<p class="br-empty">${MOVES.on && MOVES.lastOk ? "No foreign players are inside Kingdom or allied land right now." : "Waiting for the live map…"}</p>`;
   // nation to nation, last 7 days
   const pairs = movePairs(week).slice(0, 18);
   $("mvPairs").innerHTML = pairs.length ? `<table class="nt"><tr><th>Visitors</th><th>Into</th><th class="num">Visits</th><th class="num">People</th><th class="num">Recon</th><th class="num">Hostile move, 7 days</th></tr>${pairs.map(e => {
@@ -4279,7 +4285,6 @@ document.addEventListener("click", e => {
   if (e.target.id === "mvNotify") { try { Notification.requestPermission().then(p => showToast(p === "granted" ? "Desktop alerts on for hostile visitors." : "Desktop alerts were not allowed.")); } catch {} }
 });
 document.addEventListener("change", e => {
-  if (e.target.id === "mvOn") { MOVES.on = e.target.checked; saveMoveCfg(); if (MOVES.on) { MOVES.err = ""; pollMoves(); } else { clearTimeout(MOVES.timer); for (const s of MOVES.players.values()) if (s.visit) closeVisit(s); } renderMoves(); }
   if (e.target.id === "mvEvery") { MOVES.every = +e.target.value || 15; saveMoveCfg(); if (MOVES.on) pollMoves(); }
   if (e.target.id === "mvSrc") { MOVES.src = e.target.value.trim(); saveMoveCfg(); if (MOVES.on) pollMoves(); }
 });
@@ -4411,7 +4416,7 @@ async function renderBriefingRoom() {
 async function renderArchiveStatus() {
   const el = $("brArchive"); if (!el) return;
   const size = await archiveSize();
-  el.innerHTML = ARCHIVE.scans ? `<b>Archive</b> ${ARCHIVE.scans.toLocaleString()} scan${ARCHIVE.scans === 1 ? "" : "s"} since ${new Date(ARCHIVE.first).toLocaleDateString()} · ${ARCHIVE.events.length.toLocaleString()} events in the last 60 days${size ? ` · ${(size / 1048576).toFixed(1)} MB stored` : ""}<br>Watch mode is <b>${WATCH.on ? `on, every ${WATCH.every} min` : "off"}</b>. ${WATCH.on ? "Leave this page open on a computer that stays on to collect around the clock." : "Turn it on under the scan button to collect around the clock."}
+  el.innerHTML = ARCHIVE.scans ? `<b>Archive</b> ${ARCHIVE.scans.toLocaleString()} scan${ARCHIVE.scans === 1 ? "" : "s"} since ${new Date(ARCHIVE.first).toLocaleDateString()} · ${ARCHIVE.events.length.toLocaleString()} events in the last 60 days${size ? ` · ${(size / 1048576).toFixed(1)} MB stored` : ""}<br>${window.BH_SERVER ? "The Ministry server scans every hour and records live positions around the clock." : `Scans run automatically every ${WATCH.every} minutes while this page is open.`}
     <div class="br-arch-acts"><button class="deep" id="archExport">Export archive</button><label class="deep">Import archive<input type="file" id="archImport" accept=".json,application/json" hidden></label></div>`
     : `<b>Archive</b> empty. Each scan you run is stored here; trends, forecasts and anticipated moves need at least two.`;
 }
@@ -4427,14 +4432,8 @@ document.addEventListener("click", async e => {
 document.addEventListener("change", async e => {
   if (e.target.id === "brPersp") { BR.persp = e.target.value; saveBR(); renderBriefingRoom(); }
   if (e.target.id === "archImport" && e.target.files[0]) { try { await importArchive(e.target.files[0]); showToast("Archive merged."); renderBriefingRoom(); } catch (err) { showToast(err.message || "Couldn't import that file."); } }
-  if (e.target.id === "watchOn" || e.target.id === "watchEvery") {
-    WATCH.on = $("watchOn").checked; WATCH.every = +$("watchEvery").value || 30;
-    try { localStorage.setItem("rh_watch", JSON.stringify({ on:WATCH.on, every:WATCH.every })); } catch {}
-    scheduleWatch(); if (tab === "briefings") renderArchiveStatus();
-  }
 });
 document.addEventListener("input", e => { if (e.target.id === "brSearch") { BR.q = e.target.value; renderBriefingRoom(); } });
-$("watchOn").checked = WATCH.on; $("watchEvery").value = String(WATCH.every);
 
 // open the site straight away with the last saved scan, then keep collecting if watch mode is on
 const appReady = (async () => {
@@ -4447,7 +4446,7 @@ const appReady = (async () => {
   if (saved?.details?.length && !towns.length && !scanning) {
     hydrate(saved); savedScanAt = saved.at;
     if (RESUME_DIRECT) enterApp(); else setLandingFor(MINISTRY[pageFromHash()]);
-    status(`Showing the scan from ${fmtDur(Date.now() - saved.at)} ago · ${ARCHIVE.scans.toLocaleString()} scans archived${WATCH.on ? "" : " · press Scan for fresh data"}`);
+    status(`Showing the scan from ${fmtDur(Date.now() - saved.at)} ago · ${ARCHIVE.scans.toLocaleString()} scans archived`);
   }
 })();
 
@@ -4577,6 +4576,8 @@ const saveUnlocked = () => { try { sessionStorage.setItem("bh_unlocked", JSON.st
 const RESUME_DIRECT = unlocked.size > 0; // reopened in an unlocked tab: straight back in, as before
 const GATE = { ministry:null, ok:null, cancel:null, fails:0, until:0 };
 function askPassword(m, ok, cancel) {
+  // on the Ministry server any password is checked by the server, so picking a ministry goes straight in
+  if (window.BH_SERVER && !unlocked.has(m)) { unlocked.add(m); saveUnlocked(); }
   if (unlocked.has(m)) return ok();
   Object.assign(GATE, { ministry:m, ok, cancel });
   $("gateTitle").textContent = MINISTRY_NAME[m]; $("gatePw").value = ""; $("gateForm").classList.remove("bad", "shake");

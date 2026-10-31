@@ -76,9 +76,9 @@ const fs = require('fs');
   await p.click('#brKinds [data-kind="intsum"]'); await p.click('.br-class [data-rel="0"]'); await p.waitForTimeout(200);
   const [dl3] = await Promise.all([p.waitForEvent('download'), p.click('#brPdf')]);
   await dl3.saveAs(__dirname + '/br-intsum.pdf');
-  // watch mode
-  await p.check('#watchOn'); await p.waitForTimeout(1200);
-  console.log('watch:', await p.textContent('#watchState'));
+  // automatic scans: always on, no checkbox
+  await p.waitForTimeout(1200);
+  console.log('auto-scan:', await p.textContent('#watchState'), '| checkbox gone:', !(await p.locator('#watchOn').count()));
   // dossier anticipated moves
   await p.evaluate(() => { location.hash = '#dossier'; }); await p.waitForTimeout(600);
   await p.locator('#natTable tr[data-nation="Carthage"]').click(); await p.waitForTimeout(500);

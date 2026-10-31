@@ -1,4 +1,4 @@
-// The hourly collector.
+// The collector: records live positions continuously and scans every hour.
 // Rather than rewrite the intelligence system for Node, it opens the ministries' own page in headless
 // Chromium, presses Scan, and lets the page do everything it already does: archive the scan, diff
 // events, run the Forecast Lab, and write the Briefing Room documents. The browser profile lives on
@@ -37,36 +37,65 @@ function schedule() {
   S.nextRun = due; save();
   timer = setTimeout(async () => { await runOnce(); schedule(); }, due - now);
 }
-function start(o) { opts = { ...opts, ...o }; schedule(); }
+function start(o) {
+  opts = { ...opts, ...o }; schedule();
+  // open the browser straight away so live positions are recorded from the start, not only after the first scan
+  setTimeout(() => { if (!S.running) browser().catch(e => console.error("collector: browser failed to open:", e.message)); }, 2000);
+  // check every few minutes that tracking is still running (the browser reopens itself after a crash or its daily restart)
+  setInterval(() => { if (!S.running && !B.opening) browser().then(p => p.evaluate(() => ({ polls:MOVES.polls, lastOk:MOVES.lastOk, err:MOVES.err, visits:MOVES.visits.length })))
+    .then(m => { S.moves = m; }).catch(() => {}); }, 5 * 6e4).unref();
+}
 function runSoon() { if (S.running) return; clearTimeout(timer); S.nextRun = Date.now() + 1000; timer = setTimeout(async () => { await runOnce(); schedule(); }, 1000); }
 
 const stamp = d => d.toISOString().slice(0, 16).replace(/[-:]/g, "") + "Z"; // 20261031T1403Z
 const slug = s => String(s).replace(/[^\w-]+/g, "_").slice(0, 60);
 
-async function runOnce() {
-  if (S.running) return;
-  S.running = true; S.lastRun = Date.now(); save();
-  const t0 = Date.now();
-  let ctx;
-  try {
+// The collector's browser stays open all the time: between scans its page records live positions
+// (Movement Watch, through the server's /api/players relay). It is restarted once a day, and after a crash.
+const B = { ctx:null, page:null, started:0, opening:null, logs:[] };
+const RESTART_MS = 24 * 36e5;
+async function closeBrowser() { const c = B.ctx; Object.assign(B, { ctx:null, page:null }); try { await c?.close(); } catch {} }
+function browser() {
+  if (B.page && !B.page.isClosed() && Date.now() - B.started < RESTART_MS) return Promise.resolve(B.page);
+  return B.opening ||= (async () => {
+    await closeBrowser();
     const { chromium } = require("playwright");
-    ctx = await chromium.launchPersistentContext(PROFILE, { headless:true, viewport:{ width:1280, height:900 }, args:["--disable-dev-shm-usage"],
+    const ctx = await chromium.launchPersistentContext(PROFILE, { headless:true, viewport:{ width:1280, height:900 }, args:["--disable-dev-shm-usage"],
       ...(process.env.BROWSER_CHANNEL ? { channel:process.env.BROWSER_CHANNEL } : {}) }); // e.g. "msedge" to use an installed browser locally
     // map tiles, skins and web fonts aren't needed to scan or to write PDFs
     await ctx.route(/map\.earthmc\.net\/tiles\/.*\.png|mc-heads\.net|fonts\.(googleapis|gstatic)\.com/, r => r.abort());
     if (global.__collectorRoutes) await global.__collectorRoutes(ctx); // tests install a fake EarthMC API here
     const page = ctx.pages()[0] || await ctx.newPage();
-    const logs = [];
-    page.on("pageerror", e => logs.push("page error: " + e.message));
+    page.on("pageerror", e => { B.logs.push("page error: " + e.message); B.logs = B.logs.slice(-20); });
+    // a crashed or closed browser is reopened in half a minute, so position tracking resumes by itself
+    const lost = () => { if (B.page !== page) return; console.warn("collector: browser lost; reopening"); Object.assign(B, { ctx:null, page:null }); setTimeout(() => browser().catch(e => console.error("collector: reopen failed:", e.message)), 30e3); };
+    page.on("crash", lost); ctx.on("close", lost);
     await page.addInitScript(() => {
       window.BH_COLLECTOR = true;
       try { sessionStorage.setItem("bh_unlocked", '["attack","intel"]'); sessionStorage.setItem("rh_booted", "1"); } catch {}
     });
     const token = crypto.randomBytes(24).toString("hex");
     tokens.set(token, Date.now() + 5 * 6e4);
-    await page.goto(`http://127.0.0.1:${opts.port}/gov?ct=${token}#dossier`, { waitUntil:"domcontentloaded", timeout:120e3 });
+    await page.goto(`http://127.0.0.1:${opts.port}/gov?ct=${token}#moves`, { waitUntil:"domcontentloaded", timeout:120e3 });
     await page.waitForFunction(() => typeof appReady !== "undefined" && typeof scan === "function", null, { timeout:60e3 });
-    await page.evaluate(() => appReady);
+    await page.evaluate(home => appReady.then(() => {
+      if (home) $("myNation").value = home;
+      // note when the Forecast Lab has finished with each scan
+      const ml = mlScan; mlScan = async (...a) => { try { return await ml(...a); } finally { window.__mlDone = Date.now(); } };
+    }), process.env.HOME_NATION || "");
+    Object.assign(B, { ctx, page, started:Date.now() });
+    console.log("collector: browser open; recording live positions");
+    return page;
+  })().finally(() => { B.opening = null; });
+}
+
+async function runOnce() {
+  if (S.running) return;
+  S.running = true; S.lastRun = Date.now(); save();
+  const t0 = Date.now();
+  try {
+    const page = await browser();
+    const logs = B.logs.splice(0);
 
     // merge archives uploaded from browsers (earlier Watch mode collection)
     fs.mkdirSync(IMPORTS, { recursive:true });
@@ -80,13 +109,7 @@ async function runOnce() {
     }
 
     // scan, resuming up to three times if the API pushes back
-    const before = await page.evaluate(home => {
-      if (home) $("myNation").value = home;
-      // note when the Forecast Lab has finished with this scan
-      const ml = mlScan; mlScan = async (...a) => { try { return await ml(...a); } finally { window.__mlDone = Date.now(); } };
-      window.__mlDone = 0;
-      return ARCHIVE.last || 0;
-    }, process.env.HOME_NATION || "");
+    const before = await page.evaluate(() => { window.__mlDone = 0; return ARCHIVE.last || 0; });
     let ok = false;
     for (let attempt = 0; attempt < 4 && !ok; attempt++) {
       if (attempt) await page.waitForTimeout(60e3);
@@ -150,8 +173,9 @@ async function runOnce() {
     S.lastError = String(e?.message || e).slice(0, 500);
     S.history.push({ at:t0, ok:false, error:S.lastError }); S.history = S.history.slice(-200);
     console.error("collector: run failed:", e);
+    // start the next attempt from a fresh browser, and have one tracking positions again meanwhile
+    await closeBrowser(); setTimeout(() => browser().catch(() => {}), 30e3);
   } finally {
-    try { await ctx?.close(); } catch {}
     S.running = false; save();
   }
 }
@@ -168,7 +192,7 @@ function prune() {
   }
 }
 
-module.exports = { start, status, tokenOk, runSoon, runOnce };
+module.exports = { start, status, tokenOk, runSoon, runOnce, closeBrowser };
 
 // `node collector.js` runs one scan against a server already listening on PORT
-if (require.main === module) { opts.port = +process.env.PORT || 8080; runOnce().then(() => process.exit(S.lastError ? 1 : 0)); }
+if (require.main === module) { opts.port = +process.env.PORT || 8080; runOnce().then(async () => { await closeBrowser(); process.exit(S.lastError ? 1 : 0); }); }

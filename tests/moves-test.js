@@ -32,14 +32,16 @@ const { chromium } = require('playwright');
   };
 
   await scanOnce(true);
-  // live path: switch tracking on, the feed is read through fetch
+  // live path: tracking is always on, the feed is read through fetch
   await p.evaluate(() => { location.hash = '#moves'; }); await p.waitForTimeout(600);
-  await p.check('#mvOn'); await p.waitForFunction(() => MOVES.polls > 0, null, { timeout:15000 });
+  console.log('tracking on by itself:', await p.evaluate(() => MOVES.on), '| checkbox gone:', !(await p.locator('#mvOn').count()));
+  await p.evaluate(() => pollMoves()); await p.waitForFunction(() => MOVES.polls > 0, null, { timeout:15000 });
   console.log('live state:', await p.textContent('#mvState'));
   // blocked feed: the relay help appears
   feedMode = 'block'; await p.evaluate(() => pollMoves()); await p.waitForTimeout(800);
   console.log('blocked:', (await p.textContent('#mvState')).slice(0, 90), '| relay box shown:', await p.isVisible('#mvRelay'));
-  feedMode = 'ok'; await p.uncheck('#mvOn');
+  // pause live polling so the scripted scenario below is the only input
+  feedMode = 'ok'; await p.evaluate(() => { MOVES.on = false; clearTimeout(MOVES.timer); });
   // scripted scenario, fed straight into the tracker with simulated times 15 s apart
   const out = await p.evaluate(() => {
     moveIndex(); const T = n => towns.find(t => t.name === n);

@@ -12,6 +12,11 @@ const NAT = ['Bleeding_Heart', 'Rome', 'Carthage', 'Gaul', 'Persia', 'Sparta', '
 const A = { Bleeding_Heart:['Rome', 'Gaul'], Rome:['Bleeding_Heart', 'Sparta'], Gaul:['Bleeding_Heart'], Carthage:['Persia', 'Troy'], Persia:['Carthage', 'Ithaca'], Sparta:['Rome'], Troy:['Carthage'], Ithaca:['Persia'] };
 const E = { Bleeding_Heart:['Carthage'], Carthage:['Bleeding_Heart', 'Rome'], Rome:['Carthage', 'Persia'], Persia:['Rome'], Sparta:['Troy'], Troy:['Sparta'], Gaul:[], Ithaca:[] };
 let apiCalls = 0;
+// a fake live map: one Rome player stands at the spawn of the Kingdom's capital for a while, then logs off
+let feedOn = true, feedHits = 0;
+require('http').createServer((req, res) => { feedHits++; res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({ players:feedOn ? [{ name:'R1_1', x:-12000, z:-4500, world:'minecraft_overworld' }] : [] })); }).listen(8797);
+process.env.PLAYERS_FEED = 'http://127.0.0.1:8797/players.json';
 global.__collectorRoutes = async ctx => {
   await ctx.route('https://map.earthmc.net/**', r => r.abort());
   await ctx.route('https://api.earthmc.net/**', async r => {
@@ -35,6 +40,10 @@ global.__collectorRoutes = async ctx => {
   while (!collector.status().lastOk && !collector.status().lastError && Date.now() - t0 < 10 * 6e4) await new Promise(r => setTimeout(r, 2000));
   const st = collector.status();
   console.log('collector:', st.lastOk ? 'ok' : 'FAILED ' + st.lastError, '| api calls', apiCalls);
+  // positions are recorded between scans: let the player stand there, leave, then export with a second scan
+  await new Promise(r => setTimeout(r, 35000)); feedOn = false; await new Promise(r => setTimeout(r, 60000));
+  await collector.runOnce();
+  console.log('feed polls:', feedHits, '| second scan:', collector.status().lastError || 'ok');
   const runs = fs.readdirSync(path.join(process.env.DATA_DIR, 'runs'));
   const files = fs.readdirSync(path.join(process.env.DATA_DIR, 'runs', runs[0]));
   console.log('run files:', files.join(', '));
@@ -56,6 +65,13 @@ global.__collectorRoutes = async ctx => {
   // first load pulls the server's archive and reloads into it
   await p.waitForFunction(() => typeof towns !== 'undefined' && towns.length > 0, null, { timeout:60000 });
   console.log('visitor sees:', await p.evaluate(() => `${towns.length} towns, ${nations.length} nations, ${ARCHIVE.scans} scans, ML made ${mlState().made}`));
+  console.log('recorded visits:', await p.evaluate(() => MOVES.visits.map(v => `${v.player} of ${v.pn} in ${v.town} (${v.purpose})`).join('; ') || 'none'));
+  console.log('ministry picker shown:', await p.evaluate(() => document.body.classList.contains('portal')));
+  await p.click('[data-ministry="intel"]'); await p.waitForTimeout(800);
+  console.log('picked intel, password asked:', await p.evaluate(() => !document.getElementById('gate').hidden), '| in ministry:', await p.evaluate(() => !document.body.classList.contains('portal')));
+  console.log('checkboxes left:', await p.locator('#watchOn, #mvOn').count(), '| auto-scan says:', await p.textContent('#watchState'));
+  await p.evaluate(() => { location.hash = '#moves'; }); await p.waitForTimeout(16000);
+  console.log('visitor live feed:', await p.evaluate(() => MOVES.lastOk > 0 ? `ok, ${MOVES.online} online` : 'none: ' + MOVES.err));
   console.log('hourly link in nav:', await p.locator('nav.pages [data-hourly]').count());
   await p.goto(base + '/gov/reports');
   console.log('reports listed:', (await p.locator('ol li').allInnerTexts()).map(t => t.split('\n')[0]).join(' | '));
@@ -63,5 +79,5 @@ global.__collectorRoutes = async ctx => {
   console.log('intsum pdf:', pdf.status(), (await pdf.body()).slice(0, 8).toString());
   console.log('home page is the ministries:', await (await p.request.get(base + '/')).text().then(t => t.includes('MINISTRY_HOME') || /\/login/.test(t)));
   console.log(errs.join('\n') || 'no errors');
-  await b.close(); process.exit(0);
+  await b.close(); await collector.closeBrowser(); process.exit(0);
 })();

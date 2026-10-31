@@ -51,5 +51,6 @@ In a browser that ran Watch mode, open the Briefing Room and export the archive,
 ## Things to know
 
 - **Your browser follows the server.** When a new hourly scan is loaded, the browser's own scans, series and forecasts are replaced by the server's. Movement Watch visits recorded in your browser are kept.
-- **Movement Watch still only records while a page is open.** The hourly collector doesn't poll the live map; that would be the next addition.
+- **Movement Watch records around the clock.** The collector's browser stays open between scans and reads the live map every 15 seconds through the server's `/api/players` relay. Recorded visits reach visitors with each hourly archive; visitors' pages show who is on the map right now but don't record. The browser restarts once a day and reopens itself after a crash.
+- **There are no Watch mode or Track positions switches.** Scanning and tracking always run.
 - **Rate limit.** A scan uses about the same number of requests as a manual one (paced at 150 a minute), once an hour.
