@@ -1,8 +1,9 @@
-# Kingdom of The Bleeding Heart — run with `docker compose up -d --build` from this folder.
-# Put the password in a file named .env beside this one:  MINISTRY_PASSWORD=your-password
+# Kingdom of The Bleeding Heart — run with `docker compose up -d --build`.
+# Set MINISTRY_PASSWORD in the environment (Docker Manager's variables, or a .env file beside this one).
 services:
   bh-ministry:
-    build: .
+    # builds straight from GitHub, so this file works on its own (e.g. Hostinger Docker Manager "import from URL")
+    build: https://github.com/TiceHannemann/bleeding-heart-ministry.git#main
     container_name: bh-ministry
     restart: unless-stopped
     ports:
