@@ -25,7 +25,7 @@
   const vis = sel => p.isVisible(sel);
   console.log('opens on portal:', await vis('#portal'), '| landing visible:', await vis('#landScan, #scanBig'), '| boot hidden:', await p.evaluate(() => document.getElementById('boot').classList.contains('done')));
   await p.screenshot({ path:'portal-top.png' });
-  console.log('public link:', await p.getAttribute('#portal .s-top a', 'href'), '| clock', await p.textContent('#sClock'));
+  console.log('ministry buttons:', (await p.locator('#portal .p-dept').allInnerTexts()).join(', '), '| clock', await p.textContent('#sClock'));
   // wrong, then right
   await p.click('[data-ministry="intel"]'); await p.waitForTimeout(200);
   console.log('gate:', await p.textContent('#gateTitle'), '| visible', await vis('#gate'));
@@ -35,7 +35,7 @@
   await p.fill('#gatePw', process.env.BH_GATE_PASSWORD); await p.press('#gatePw', 'Enter'); await p.waitForTimeout(500);
   console.log('right: portal gone', !(await vis('#portal')), '| boot playing', await p.evaluate(() => !document.getElementById('boot').classList.contains('done')), '| hash', await p.evaluate(() => location.hash));
   await p.waitForFunction(() => document.getElementById('boot').classList.contains('done'), null, { timeout:6000 }); await p.waitForTimeout(700);
-  console.log('landing:', (await p.textContent('#landTitle')).trim(), '|', (await p.textContent('#landMods')).trim());
+  console.log('landing:', (await p.textContent('#landTitle')).trim(), '| descriptions shown:', await p.isVisible('#landLede') || await p.isVisible('#landMods'));
   await p.screenshot({ path:'portal-intel-landing.png' });
   // crossing into the other ministry asks again
   await p.evaluate(() => { location.hash = '#overclaim'; }); await p.waitForTimeout(300);

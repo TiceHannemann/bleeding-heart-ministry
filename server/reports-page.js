@@ -8,7 +8,7 @@ module.exports = (runs, st, { open = false } = {}) => {
   const [latest, ...older] = runs;
   const doc = r => `<a href="/reports/${r.run}/${esc(r.pdf)}">${esc(r.title || r.kind)}${r.subject ? ` — ${esc(r.subject)}` : ""}</a> <span class="cl ${/KINGDOM EYES/.test(r.classification) ? "s" : "c"}">${/KINGDOM EYES/.test(r.classification) ? "Kingdom eyes only" : "Releasable"}</span> <a class="t" href="/reports/${r.run}/${esc(r.txt)}">text</a>`;
   const state = st.running ? "A scan is running now." : st.nextRun ? `The next scan is due at ${new Date(st.nextRun).toISOString().slice(11, 16)} UTC.` : "";
-  const err = st.lastError ? `<p class="err">The most recent attempt failed: ${esc(st.lastError)}. The reports below are from the last successful scan.</p>` : "";
+  const err = st.lastError ? `<p class="err">Last scan failed: ${esc(st.lastError)}</p>` : "";
   const intsum = latest?.reports.find(r => r.kind === "Daily Intelligence Summary");
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hourly Intelligence Reports</title><link rel="icon" href="/assets/logo/logo-64.png">
@@ -39,10 +39,9 @@ details ol{margin-top:10px}.err{color:var(--hq)}
 <p class="meta">${latest ? `Last scan ${when(latest.at)} (${ago(latest.at)}) · ${latest.towns.toLocaleString()} towns · ${latest.nations.toLocaleString()} nations · ${latest.scans.toLocaleString()} scans archived · ${latest.events24h.toLocaleString()} events in 24 h` : "No scan has finished yet."} · ${esc(state)} <button class="scan" onclick="fetch('/api/scan-now',{method:'POST'}).then(r=>r.json()).then(j=>{if(j.error)alert(j.error);location.reload()})">Scan now</button></p>
 ${err}
 ${latest ? `${intsum?.lead ? `<p class="lead">${esc(intsum.lead)}</p>` : ""}
-<h2>Latest reports</h2><ol>${latest.reports.map(r => `<li>${doc({ ...r, run:latest.run })}</li>`).join("")}</ol>` : `<p>The server scans EarthMC every hour. The first scan takes a few minutes; this page fills in when it finishes.</p>`}
+<h2>Latest reports</h2><ol>${latest.reports.map(r => `<li>${doc({ ...r, run:latest.run })}</li>`).join("")}</ol>` : `<p>Waiting for the first scan.</p>`}
 ${older.length ? `<h2>Earlier runs</h2>${older.map(o => `<details><summary><b>${when(o.at)}</b> · ${o.towns.toLocaleString()} towns · ${o.events24h} events in 24 h</summary><ol>${o.reports.map(r => `<li>${doc({ ...r, run:o.run })}</li>`).join("")}</ol></details>`).join("")}` : ""}
-${open ? "" : `<div class="imp"><p>To add collection from a browser's Watch mode, export its archive in the Briefing Room and send it here. It is merged at the next scan.</p>
-<input type="file" id="f" accept="application/json,.json" hidden><button onclick="document.getElementById('f').click()">Send an archive to the server</button> <span id="m"></span></div>`}
+${open ? "" : `<div class="imp"><input type="file" id="f" accept="application/json,.json" hidden><button title="An archive exported from the Briefing Room; merged at the next scan" onclick="document.getElementById('f').click()">Upload archive</button> <span id="m"></span></div>`}
 </div><script>
 if (document.getElementById("f")) document.getElementById("f").onchange = async e => { const f = e.target.files[0]; if (!f) return; const m = document.getElementById("m"); m.textContent = "Uploading…";
   try { const r = await fetch("/api/import", { method:"POST", body:await f.text(), headers:{ "Content-Type":"application/json" } }); const j = await r.json(); m.textContent = j.message || j.error; } catch (err) { m.textContent = "Upload failed: " + err.message; } };
