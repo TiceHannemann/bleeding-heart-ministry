@@ -61,7 +61,7 @@ global.__collectorRoutes = async ctx => {
   console.log('reports listed:', (await p.locator('ol li').allInnerTexts()).map(t => t.split('\n')[0]).join(' | '));
   const pdf = await p.request.get(base + '/reports/latest/intsum.pdf');
   console.log('intsum pdf:', pdf.status(), (await pdf.body()).slice(0, 8).toString());
-  console.log('public site link:', await (await p.request.get(base + '/')).text().then(t => t.includes('href="/gov"')));
+  console.log('home page is the ministries:', await (await p.request.get(base + '/')).text().then(t => t.includes('MINISTRY_HOME') || /\/login/.test(t)));
   console.log(errs.join('\n') || 'no errors');
   await b.close(); process.exit(0);
 })();

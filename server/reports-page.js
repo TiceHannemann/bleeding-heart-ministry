@@ -34,7 +34,7 @@ details ol{margin-top:10px}.err{color:var(--hq)}
 .imp button:hover,.scan:hover{border-color:var(--mut)}
 </style></head><body><div class="w">
 <header><img src="/assets/logo/logo-128.png" alt=""><div><b>Kingdom of The Bleeding Heart</b><small>Ministry of Intelligence — Hourly Reports</small></div>
-<nav><a href="/gov#dossier">Ministries</a><a href="/gov#briefings">Briefing Room</a>${open ? `<a href="/">Public website</a>` : `<form method="post" action="/logout" style="margin:0"><a href="#" onclick="this.parentNode.submit();return false">Sign out</a></form>`}</nav></header>
+<nav><a href="/gov#dossier">Ministries</a><a href="/gov#briefings">Briefing Room</a>${open ? "" : `<form method="post" action="/logout" style="margin:0"><a href="#" onclick="this.parentNode.submit();return false">Sign out</a></form>`}</nav></header>
 <h1>Hourly intelligence</h1>
 <p class="meta">${latest ? `Last scan ${when(latest.at)} (${ago(latest.at)}) · ${latest.towns.toLocaleString()} towns · ${latest.nations.toLocaleString()} nations · ${latest.scans.toLocaleString()} scans archived · ${latest.events24h.toLocaleString()} events in 24 h` : "No scan has finished yet."} · ${esc(state)} <button class="scan" onclick="fetch('/api/scan-now',{method:'POST'}).then(r=>r.json()).then(j=>{if(j.error)alert(j.error);location.reload()})">Scan now</button></p>
 ${err}

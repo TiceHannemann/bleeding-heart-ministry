@@ -1,5 +1,5 @@
 // Kingdom of The Bleeding Heart — hosted server
-// Serves the public website at /, the ministries at /gov (password checked here, on the server),
+// Serves the ministries at / (and /gov), behind an optional password checked here, on the server,
 // and runs the hourly collector, which scans EarthMC and writes fresh intelligence reports.
 const express = require("express");
 const crypto = require("crypto");
@@ -53,10 +53,6 @@ app.set("trust proxy", 1);
 app.disable("x-powered-by");
 app.use((req, res, next) => { res.setHeader("X-Content-Type-Options", "nosniff"); res.setHeader("Referrer-Policy", "same-origin"); next(); });
 
-/* ---------- Public website ---------- */
-const publicHtml = () => fs.readFileSync(path.join(APP, "kingdom-of-the-bleeding-heart.html"), "utf8")
-  .replaceAll('href="earthmc-ruin-scanner.html"', 'href="/gov"');
-app.get(["/", "/index.html", "/kingdom-of-the-bleeding-heart.html"], (req, res) => res.type("html").send(publicHtml()));
 app.use("/assets", express.static(ASSETS, { maxAge:"7d" }));
 app.get("/healthz", (req, res) => res.json({ ok:true, ...collector.status() }));
 
@@ -73,7 +69,7 @@ button{margin-top:14px;width:100%;padding:11px;font:inherit;font-weight:600;back
 <form method="post" action="/login"><div class="c"><img src="/assets/logo/logo-128.png" alt=""><div><b>Kingdom of The Bleeding Heart</b><small>Government staff sign-in</small></div></div>
 <input type="hidden" name="next" value="${String(next || "/gov").replace(/[^\w\/#?=&.-]/g, "")}">
 <label for="pw">Ministry password</label><input id="pw" name="password" type="password" autocomplete="current-password" autofocus required>
-<button>Sign in</button><div class="e">${err || ""}</div><a href="/">← Public website</a></form></body></html>`;
+<button>Sign in</button><div class="e">${err || ""}</div></form></body></html>`;
 app.get("/login", (req, res) => signedIn(req) ? res.redirect("/gov") : res.type("html").send(loginPage("", req.query.next)));
 app.post("/login", express.urlencoded({ extended:false, limit:"4kb" }), (req, res) => {
   if (OPEN) return res.redirect("/gov");
@@ -84,7 +80,7 @@ app.post("/login", express.urlencoded({ extended:false, limit:"4kb" }), (req, re
   const next = String(req.body.next || "/gov");
   res.redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/gov");
 });
-app.post("/logout", (req, res) => { res.setHeader("Set-Cookie", "bh_s=; Path=/; Max-Age=0"); res.redirect("/"); });
+app.post("/logout", (req, res) => { res.setHeader("Set-Cookie", "bh_s=; Path=/; Max-Age=0"); res.redirect("/login"); });
 
 /* ---------- Government website ---------- */
 // The page is the same standalone file; the server adds a small script that pulls the hourly archive into the browser.
@@ -92,9 +88,10 @@ const SYNC = fs.readFileSync(path.join(__dirname, "client-sync.js"), "utf8");
 const govHtml = () => fs.readFileSync(path.join(APP, "earthmc-ruin-scanner.html"), "utf8")
   .replace("<head>", `<head>\n<script>window.BH_SERVER = true; try { sessionStorage.setItem("bh_unlocked", '["attack","intel"]'); } catch {}</script>`)
   .replace(/<\/body>(?![\s\S]*<\/body>)/, `<script>\n${SYNC}\n</script>\n</body>`)
-  .replaceAll('href="kingdom-of-the-bleeding-heart.html"', 'href="/"');
+  .replace(/<a href="kingdom-of-the-bleeding-heart.html">[^<]*<\/a>/g, "");
 // the collector signs itself in with a one-time token, so it never needs the password
-app.get(["/gov", "/earthmc-ruin-scanner.html"], (req, res, next) => {
+// the ministries are the home page; there is no separate public website
+app.get(["/", "/index.html", "/gov", "/earthmc-ruin-scanner.html"], (req, res, next) => {
   if (req.query.ct && collector.tokenOk(req.query.ct)) { setSession(res); return res.type("html").send(govHtml()); }
   next();
 }, needLogin, (req, res) => res.type("html").setHeader("Cache-Control", "no-store").send(govHtml()));
