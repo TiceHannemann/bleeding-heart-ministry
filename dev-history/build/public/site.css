@@ -1,0 +1,61 @@
+  :root { --gov:"Helvetica Neue", Helvetica, Arial, sans-serif; --ink:#16171b; --crim:#c4244e; --line:#e1e2e6; }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; scroll-padding-top:84px; }
+  body { margin:0; background:#fff; color:var(--ink); font:16px/1.6 var(--gov); -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration:none; }
+  code { font:14px ui-monospace, Menlo, Consolas, monospace; background:#f1f2f4; padding:1px 5px; }
+  .p-wrap { max-width:1160px; margin:0 auto; padding-left:24px; padding-right:24px; }
+  .p-strip { background:#f1f2f4; font-size:12.5px; color:#4a4c55; }
+  .p-strip .p-wrap { display:flex; align-items:center; gap:10px; padding-top:7px; padding-bottom:7px; }
+  .p-strip img { height:16px; } .p-staff { margin-left:auto; color:#6a6c75; border-bottom:1px solid #c9cad0; } .p-staff:hover { color:var(--crim); border-color:var(--crim); }
+  .p-head { border-bottom:1px solid #e3e4e8; position:sticky; top:0; background:rgba(255,255,255,.96); backdrop-filter:blur(8px); z-index:2; }
+  .p-head .p-wrap { display:flex; align-items:center; gap:24px; padding-top:16px; padding-bottom:16px; }
+  .p-brand { display:flex; align-items:center; gap:14px; } .p-brand img { height:48px; }
+  .p-brand b { display:block; font-weight:700; font-size:18px; letter-spacing:.01em; text-transform:uppercase; line-height:1.15; }
+  .p-brand small { display:block; font-size:12px; color:#6a6c75; letter-spacing:.14em; text-transform:uppercase; margin-top:3px; }
+  .p-nav { margin-left:auto; display:flex; gap:28px; font-size:15px; }
+  .p-nav a { padding:6px 0; border-bottom:2px solid transparent; transition:border-color .2s, color .2s; } .p-nav a:hover { border-color:var(--crim); color:var(--crim); }
+  .p-hero { border-bottom:1px solid #e3e4e8; background:linear-gradient(180deg,#fff,#fafafb); }
+  .p-hero .p-wrap { display:grid; grid-template-columns:1.4fr 1fr; gap:48px; align-items:center; padding-top:72px; padding-bottom:72px; }
+  .p-eyebrow { font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--crim); font-weight:700; margin-bottom:14px; }
+  .p-hero h1 { font-size:clamp(34px,4.6vw,54px); line-height:1.08; letter-spacing:-.02em; margin:0 0 20px; }
+  .p-hero p { font-size:18px; color:#43454e; max-width:56ch; margin:0 0 28px; }
+  .p-cta { display:flex; flex-wrap:wrap; gap:12px; }
+  .p-btn { display:inline-block; background:var(--ink); color:#fff; padding:13px 22px; font-weight:700; font-size:15px; border:2px solid var(--ink); transition:background .2s, border-color .2s, color .2s; }
+  .p-btn:hover { background:var(--crim); border-color:var(--crim); }
+  .p-btn.ghost { background:none; color:var(--ink); } .p-btn.ghost:hover { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .p-hero-crest { display:flex; justify-content:center; } .p-hero-crest img { width:min(260px,60%); filter:drop-shadow(0 18px 30px rgba(196,36,78,.18)); }
+  .p-facts { background:var(--ink); color:#fff; }
+  .p-facts .p-wrap { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; padding-top:28px; padding-bottom:28px; }
+  .p-facts b { display:block; font-size:34px; font-weight:700; letter-spacing:-.02em; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .p-facts span { font-size:13px; color:#b7b8bf; letter-spacing:.06em; }
+  .p-sec { padding:64px 0; } .p-sec.alt { background:#f6f7f9; }
+  .p-sec h2 { font-size:28px; letter-spacing:-.01em; margin:0 0 8px; }
+  .p-sub { color:#5a5c65; margin:0 0 24px; } .p-muted { color:#7a7c85; }
+  .p-grid, .p-gov { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .p-grid article, .p-gov article { background:#fff; border:1px solid var(--line); padding:22px; }
+  .p-gov article { border-top:3px solid var(--ink); }
+  .p-grid h3, .p-gov h3 { margin:0 0 6px; font-size:17px; } .p-grid p, .p-gov p { margin:0; font-size:14.5px; color:#555760; }
+  .p-search { width:min(420px,100%); font:15px var(--gov); padding:11px 14px; border:1px solid #c9cad0; margin:0 0 16px; outline:none; } .p-search:focus { border-color:var(--ink); }
+  .p-towns table { width:100%; border-collapse:collapse; background:#fff; border:1px solid var(--line); font-size:14.5px; }
+  .p-towns th { text-align:left; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#6a6c75; padding:10px 14px; border-bottom:1px solid var(--line); background:#fafafb; }
+  .p-towns td { padding:10px 14px; border-bottom:1px solid #eeeff2; } .p-towns td.num { text-align:right; font-variant-numeric:tabular-nums; } .p-towns th.num { text-align:right; }
+  .p-towns .cap { font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--crim); margin-left:8px; }
+  .p-towns .yes { color:#1d7a46; font-weight:600; } .p-towns .no { color:#9a9ca4; }
+  .p-towns-wrap { overflow-x:auto; }
+  .p-news { border-top:1px solid var(--line); }
+  .p-news article { display:grid; grid-template-columns:140px 1fr; gap:20px; padding:18px 0; border-bottom:1px solid var(--line); }
+  .p-news time { font-size:13px; color:#7a7c85; padding-top:2px; } .p-news h3 { margin:0 0 4px; font-size:17px; } .p-news p { margin:0; font-size:14.5px; color:#555760; }
+  .p-foot { background:#f1f2f4; border-top:1px solid var(--line); padding:40px 0 48px; font-size:14px; color:#555760; }
+  .p-foot .p-wrap { display:grid; grid-template-columns:auto 1fr; gap:18px 40px; align-items:center; }
+  .p-foot .p-brand img { height:40px; } .p-foot .p-brand b { font-size:15px; }
+  .p-foot-links { display:flex; flex-wrap:wrap; gap:24px; justify-content:flex-end; } .p-foot-links a:hover { color:var(--crim); }
+  .p-foot p { grid-column:1 / -1; margin:0; max-width:80ch; }
+  @media (max-width:860px) {
+    .p-hero .p-wrap { grid-template-columns:1fr; padding-top:44px; padding-bottom:44px; } .p-hero-crest { display:none; }
+    .p-grid, .p-gov { grid-template-columns:1fr; } .p-facts .p-wrap { grid-template-columns:repeat(2,1fr); }
+    .p-nav { display:none; } .p-news article { grid-template-columns:1fr; gap:4px; }
+    .p-foot .p-wrap { grid-template-columns:1fr; } .p-foot-links { justify-content:flex-start; }
+    .p-wrap { padding-left:16px; padding-right:16px; }
+    .p-towns .hide-sm { display:none; }
+  }

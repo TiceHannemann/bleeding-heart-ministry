@@ -1,0 +1,59 @@
+<!-- Public portal: the Kingdom's public face. Each ministry is behind a password. -->
+<div id="portal" aria-label="Kingdom of The Bleeding Heart — official portal">
+  <div class="p-strip"><div class="p-wrap"><img data-crest alt=""> An official website of the Kingdom of The Bleeding Heart <span>Terra Nostra · EarthMC</span></div></div>
+  <header class="p-head"><div class="p-wrap">
+    <a class="p-brand" href="#" data-ptop><img data-crest alt=""><span><b>Kingdom of The Bleeding Heart</b><small>Official Government Portal</small></span></a>
+    <nav class="p-nav"><a href="#" data-pgo="p-services">Services</a><a href="#" data-pgo="p-news">News</a><a href="#" data-pgo="p-depts">Government</a><a href="#" data-pgo="p-foot">Contact</a></nav>
+  </div></header>
+  <section class="p-hero"><div class="p-wrap">
+    <div class="p-hero-text">
+      <div class="p-eyebrow">The Crown · Terra Nostra</div>
+      <h1>Serving the citizens of the Kingdom, wherever they build.</h1>
+      <p>Citizenship, towns and land, trade, travel and diplomacy, in one place. The Kingdom of The Bleeding Heart welcomes settlers who are ready to build, trade and stand with their neighbours.</p>
+      <div class="p-cta"><a href="#" class="p-btn" data-pgo="p-services">Explore services</a><a href="#" class="p-btn ghost" data-pgo="p-depts">Government departments</a></div>
+    </div>
+    <div class="p-hero-crest"><img data-crest alt="Crest of the Kingdom of The Bleeding Heart"></div>
+  </div></section>
+  <section class="p-facts" id="pFacts" hidden><div class="p-wrap" id="pFactsIn"></div></section>
+  <section class="p-sec" id="p-depts"><div class="p-wrap">
+    <h2>Government departments</h2>
+    <p class="p-sub">The Kingdom's ministries. Restricted offices are open to authorised personnel only.</p>
+    <div class="p-depts">
+      <button class="p-dept" data-ministry="attack"><span class="p-lock">Restricted</span><b>Ministry of Attack</b><span>Territorial operations: towns about to fall to ruin, overclaimable land, raid routes and warps.</span><i>Enter the ministry →</i></button>
+      <button class="p-dept" data-ministry="intel"><span class="p-lock">Restricted</span><b>Ministry of Intelligence</b><span>Nation assessments, movement watch, intelligence briefings and forecasts for the Crown and its allies.</span><i>Enter the ministry →</i></button>
+    </div>
+    <div class="p-offices"><span>Public offices</span><a href="#" data-pgo="p-services">Office of Citizenship</a><a href="#" data-pgo="p-services">Land Registry</a><a href="#" data-pgo="p-services">Treasury and Trade</a><a href="#" data-pgo="p-services">Foreign Office</a></div>
+  </div></section>
+  <section class="p-sec alt" id="p-services"><div class="p-wrap">
+    <h2>Services</h2>
+    <div class="p-grid">
+      <article><h3>Become a citizen</h3><p>Join a Kingdom town, or ask the Office of Citizenship to place you with a mayor near where you want to build.</p></article>
+      <article><h3>Found a town</h3><p>Settle new land under the Crown. The Land Registry advises on claims, borders and joining the nation.</p></article>
+      <article><h3>Trade and markets</h3><p>Find the Kingdom's shops and markets. Visitors are welcome at every town spawn.</p></article>
+      <article><h3>Travel and warps</h3><p>Public town warps connect the Kingdom. Ask any mayor for the nearest open spawn.</p></article>
+      <article><h3>Alliances and diplomacy</h3><p>Nations seeking friendship or alliance may write to the Foreign Office of the Crown.</p></article>
+      <article><h3>Report a concern</h3><p>Seen trouble near a Kingdom town? Report it to your mayor or to the Crown's officers.</p></article>
+    </div>
+  </div></section>
+  <section class="p-sec" id="p-news"><div class="p-wrap">
+    <h2>News from the Crown</h2>
+    <div class="p-news" id="pNews"></div>
+  </div></section>
+  <footer class="p-foot" id="p-foot"><div class="p-wrap">
+    <div class="p-brand"><img data-crest alt=""><span><b>Kingdom of The Bleeding Heart</b><small>Terra Nostra</small></span></div>
+    <div class="p-foot-links"><a href="#" data-pgo="p-services">Services</a><a href="#" data-pgo="p-news">News</a><a href="#" data-pgo="p-depts">Government</a></div>
+    <p>Official portal of the Kingdom of The Bleeding Heart, a nation of the EarthMC Terra Nostra world. Enquiries to the Crown are made in game, through any mayor of the Kingdom.</p>
+  </div></footer>
+</div>
+<!-- Password gate for the ministries -->
+<div id="gate" hidden role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <form class="g-card" id="gateForm" autocomplete="off">
+    <img data-crest alt="">
+    <div class="g-eyebrow">Restricted access</div>
+    <h2 id="gateTitle">Ministry of Attack</h2>
+    <p>This office is open to authorised personnel of the Kingdom only. Enter the ministry password to continue.</p>
+    <input type="password" id="gatePw" placeholder="Password" aria-label="Password" autocomplete="current-password">
+    <div class="g-err" id="gateErr" aria-live="polite"></div>
+    <div class="g-acts"><button type="submit" class="g-go">Enter</button><button type="button" class="g-cancel" id="gateCancel">Cancel</button></div>
+  </form>
+</div>

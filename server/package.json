@@ -1,0 +1,16 @@
+{
+  "name": "bleeding-heart-ministry-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hosts the Kingdom of The Bleeding Heart sites and scans EarthMC every hour",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "collect": "node collector.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "express": "4.21.2",
+    "playwright": "1.48.2"
+  }
+}

@@ -1,0 +1,752 @@
+<title>Bleeding Heart War Room</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: Swiss 12-column grid on near-black, matching the scanner; one crimson for Bleeding Heart.
+     Deliberately single-theme (dark), like the scanner it pairs with. */
+  :root {
+    --bg:#0a0a0b; --surface:#111113; --raise:#17171a; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.18);
+    --fg:#f2f2f2; --mut:#8c8c92; --dim:#4a4a50;
+    --hq:#e8406f; --red:#ff6b61; --orange:#f4a340; --gold:#e9c46a; --green:#7ee2a8; --blue:#86b8ff; --purple:#b9a2ff;
+    --gov:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    --display:"Inter Tight","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+    --gut:24px; --ease:cubic-bezier(.2,.8,.2,1);
+    color-scheme:dark;
+  }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font:14px/1.5 var(--display); -webkit-font-smoothing:antialiased;
+    padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); padding-block:0 80px; }
+  .wrap { max-width:1280px; margin:0 auto; }
+  button, input, select, textarea { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  :focus-visible { outline:1px solid var(--fg); outline-offset:2px; }
+  .mono { font-family:var(--mono); }
+  ::selection { background:#fff; color:#000; }
+
+  /* top strip */
+  .sys { display:flex; flex-wrap:wrap; gap:8px 24px; align-items:center; padding:14px 0; border-bottom:1px solid var(--line); font:11px var(--mono); color:var(--mut); letter-spacing:.05em; }
+  /* government masthead: crest + "Kingdom of The Bleeding Heart" in Helvetica, office beneath, double rule */
+  .sys { position:relative; }
+  .sys::after { content:""; position:absolute; left:0; right:0; bottom:-4px; height:1px; background:var(--line); }
+  .crest { display:flex; align-items:center; gap:12px; color:var(--fg); text-decoration:none; }
+  .crest img { height:44px; width:auto; display:block; filter:drop-shadow(0 0 10px rgba(232,64,111,.25)); }
+  .crest span { display:flex; flex-direction:column; gap:3px; }
+  .crest b { font:700 17px/1.05 var(--gov); letter-spacing:-.01em; text-transform:none; color:var(--fg); }
+  .crest small { font:500 10px var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--mut); }
+  .sys .grow { flex:1; }
+  .here { display:flex; align-items:center; gap:8px; }
+  .faces { display:flex; }
+  .faces img { width:22px; height:22px; border-radius:50%; border:2px solid var(--bg); margin-left:-6px; background:var(--raise); }
+  .faces img:first-child { margin-left:0; }
+  .live::before { content:""; display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--green); margin-right:7px; vertical-align:1px; animation:pulse 2.4s ease-in-out infinite; }
+
+  /* header */
+  header { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--gut); align-items:end; padding:56px 0 32px; }
+  header .t { grid-column:1 / span 8; }
+  .kicker { font:11px var(--mono); letter-spacing:.18em; color:var(--mut); text-transform:uppercase; margin-bottom:14px; }
+  h1 { font:800 clamp(40px,7vw,96px)/.88 var(--display); letter-spacing:-.055em; margin:0; text-transform:uppercase; text-wrap:balance; }
+  h1 i { font-style:normal; color:var(--hq); }
+  .lede { color:var(--mut); font-size:15px; margin:18px 0 0; max-width:56ch; }
+  header .stats { grid-column:9 / span 4; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+  .stat { border-top:1px solid var(--line2); padding-top:10px; }
+  .stat .n { font:700 32px/1 var(--display); letter-spacing:-.04em; font-variant-numeric:tabular-nums; }
+  .stat .l { font-size:12px; color:var(--mut); margin-top:6px; }
+  @media (max-width:900px) { header .t, header .stats { grid-column:1 / -1; } }
+
+  /* tabs */
+  nav.tabs { display:flex; gap:28px; border-bottom:1px solid var(--line); margin-bottom:32px; overflow-x:auto; }
+  nav.tabs a { position:relative; padding:0 0 12px; color:var(--mut); text-decoration:none; font-weight:500; white-space:nowrap; transition:color .2s; }
+  nav.tabs a::after { content:""; position:absolute; left:0; right:0; bottom:-1px; height:1px; background:var(--fg); transform:scaleX(0); transform-origin:left; transition:transform .45s var(--ease); }
+  nav.tabs a:hover, nav.tabs a.on { color:var(--fg); }
+  nav.tabs a.on::after { transform:scaleX(1); }
+  nav.tabs a span { font:11px var(--mono); color:var(--dim); margin-left:6px; }
+
+  .note { font:12px var(--mono); color:var(--mut); padding:10px 0 18px; }
+  .note.warn { color:var(--orange); }
+  .view { animation:fadeUp .45s var(--ease) both; }
+
+  /* board */
+  .board { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--gut); align-items:start; }
+  @media (max-width:980px) { .board { grid-template-columns:1fr; } }
+  .col h2, .panel h2 { font:500 11px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--mut); margin:0 0 12px; display:flex; gap:8px; align-items:baseline; }
+  .col h2 b { color:var(--fg); font-weight:500; }
+  .card { border-top:1px solid var(--line); padding:14px 0 12px; position:relative; animation:fadeUp .4s var(--ease) both; }
+  .card::before { content:""; position:absolute; left:0; top:-1px; height:1px; width:100%; background:var(--c, var(--fg)); transform:scaleX(0); transform-origin:left; transition:transform .5s var(--ease); }
+  .card:hover::before { transform:scaleX(1); }
+  .card .top { display:flex; justify-content:space-between; gap:12px; align-items:baseline; }
+  .card h3 { margin:0; font:600 17px/1.2 var(--display); letter-spacing:-.02em; min-width:0; overflow-wrap:anywhere; }
+  .kind { font:500 11px var(--display); color:var(--c); white-space:nowrap; }
+  .kind::before { content:"●"; font-size:7px; margin-right:5px; vertical-align:2px; }
+  .meta { font-size:12px; color:var(--mut); margin-top:4px; display:flex; flex-wrap:wrap; gap:4px 12px; }
+  .meta .when { color:var(--c); font-variant-numeric:tabular-nums; }
+  .who { display:flex; align-items:center; gap:7px; font-size:12px; color:var(--mut); margin-top:8px; }
+  .who img { width:18px; height:18px; border-radius:50%; }
+  .who b { color:var(--fg); font-weight:500; }
+  .noteline { font-size:12px; color:var(--mut); margin-top:6px; font-style:italic; overflow-wrap:anywhere; }
+  .acts { display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px; }
+  .link { background:none; border:0; padding:0 0 1px; color:var(--mut); font-size:12px; border-bottom:1px solid var(--line2); transition:color .2s, border-color .2s; }
+  .link:hover { color:var(--fg); border-color:var(--fg); }
+  .link.hq { color:var(--hq); border-color:rgba(255,45,85,.4); }
+  .link.hq:hover { border-color:var(--hq); }
+  .link[disabled] { opacity:.4; cursor:default; }
+  code { font:12px var(--mono); border-bottom:1px solid var(--line2); cursor:pointer; padding:0 1px; }
+  code:hover { border-color:var(--fg); }
+  .inline { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:10px; }
+  .inline input { flex:1 1 140px; min-width:0; }
+  .empty { color:var(--dim); font-size:13px; border-top:1px solid var(--line); padding:18px 0; }
+
+  /* forms */
+  input[type=text], input[type=number], select, textarea { background:transparent; border:0; border-bottom:1px solid var(--line2); padding:6px 2px; border-radius:0; transition:border-color .2s; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--fg); }
+  select option { background:#111; }
+  .btn { background:var(--fg); color:#000; border:1px solid var(--fg); padding:9px 16px; font:600 12px var(--mono); letter-spacing:.1em; text-transform:uppercase; transition:background .2s, color .2s; }
+  .btn:hover { background:transparent; color:var(--fg); }
+  .btn.ghost { background:transparent; color:var(--fg); border-color:var(--line2); }
+  .btn.ghost:hover { border-color:var(--fg); }
+  .btn[disabled] { opacity:.4; cursor:default; }
+
+  /* lower grid on board */
+  .lower { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--gut); margin-top:48px; }
+  .lower > .panel:first-child { grid-column:span 7; } .lower > .panel:last-child { grid-column:span 5; }
+  @media (max-width:980px) { .lower > .panel:first-child, .lower > .panel:last-child { grid-column:1 / -1; } }
+  .sugg { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:0 16px; }
+  .sugg > div { border-top:1px solid var(--line); padding:10px 0; font-size:13px; min-width:0; }
+  .sugg .s-name b { font-weight:600; }
+  .sugg .s-name span { color:var(--mut); font-size:12px; margin-left:8px; }
+  .sugg .s-act { text-align:right; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; font:400 10px var(--mono); letter-spacing:.1em; text-transform:uppercase; color:var(--dim); padding:6px 4px; }
+  td { border-top:1px solid var(--line); padding:9px 4px; color:var(--mut); }
+  td:first-child, td.strong { color:var(--fg); }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  td .face { display:inline-flex; align-items:center; gap:8px; }
+  td .face img { width:20px; height:20px; border-radius:50%; }
+  .tablewrap { overflow-x:auto; }
+  details.add { border-top:1px solid var(--line); padding-top:12px; margin-top:16px; }
+  details.add summary { cursor:pointer; color:var(--mut); font-size:13px; list-style:none; }
+  details.add summary::-webkit-details-marker { display:none; }
+  details.add summary::before { content:"+ "; }
+  details.add[open] summary::before { content:"− "; }
+  .formgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px 18px; margin-top:14px; }
+  .formgrid label { display:grid; gap:4px; font-size:12px; color:var(--mut); }
+
+  /* intel */
+  .intel-top { display:flex; flex-wrap:wrap; gap:14px 24px; align-items:center; margin-bottom:20px; }
+  .seg { display:flex; gap:18px; flex-wrap:wrap; }
+  .seg button { background:none; border:0; padding:4px 0; color:var(--mut); font-weight:500; position:relative; }
+  .seg button.on { color:var(--fg); }
+  .seg button.on::after { content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--fg); }
+  .chart { width:100%; height:auto; display:block; }
+  .legend { display:flex; gap:18px; font-size:12px; color:var(--mut); margin-top:8px; flex-wrap:wrap; }
+  .legend span::before { content:""; display:inline-block; width:14px; height:2px; background:var(--c); margin-right:7px; vertical-align:3px; }
+  .movers { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:var(--gut); margin-top:40px; }
+  @media (max-width:760px) { .movers { grid-template-columns:1fr; } }
+  .up { color:var(--green); } .down { color:var(--red); }
+
+  /* import */
+  .imp { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:var(--gut); }
+  .imp > div:first-child { grid-column:span 7; } .imp > div:last-child { grid-column:span 5; }
+  @media (max-width:900px) { .imp > div:first-child, .imp > div:last-child { grid-column:1 / -1; } }
+  textarea { width:100%; min-height:220px; resize:vertical; font:12px/1.5 var(--mono); border:1px solid var(--line2); padding:12px; }
+  .steps { counter-reset:s; display:grid; gap:0; }
+  .steps div { counter-increment:s; border-top:1px solid var(--line); padding:12px 0 12px 32px; position:relative; color:var(--mut); font-size:13px; }
+  .steps div::before { content:counter(s); position:absolute; left:0; top:12px; font:11px var(--mono); color:var(--dim); }
+  .steps b { color:var(--fg); font-weight:500; }
+  .preview { margin-top:16px; font-size:13px; color:var(--mut); }
+  .preview b { color:var(--fg); font-weight:500; }
+
+  /* notes & plans */
+  .notes { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:calc(var(--gut) * 1.5); align-items:start; }
+  .notes > .n-side { grid-column:span 4; } .notes > .n-edit { grid-column:span 8; min-width:0; }
+  @media (max-width:900px) { .notes > .n-side, .notes > .n-edit { grid-column:1 / -1; } }
+  .n-new { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .n-filter { display:flex; gap:16px; margin:14px 0 10px; flex-wrap:wrap; }
+  .n-filter button { background:none; border:0; padding:3px 0; color:var(--mut); font-weight:500; position:relative; }
+  .n-filter button.on { color:var(--fg); }
+  .n-filter button.on::after { content:""; position:absolute; left:0; right:0; bottom:0; height:1px; background:var(--fg); }
+  #noteSearch { width:100%; }
+  .n-item { display:block; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--line); padding:12px 0 12px 12px; position:relative; color:var(--fg); }
+  .n-item::before { content:""; position:absolute; left:0; top:18px; width:6px; height:6px; border-radius:50%; background:var(--c); }
+  .n-item:hover .n-t { transform:translateX(3px); }
+  .n-item.sel { background:linear-gradient(90deg, rgba(255,255,255,.05), transparent 70%); }
+  .n-item.sel::after { content:""; position:absolute; left:-1px; top:0; bottom:0; width:2px; background:var(--fg); }
+  .n-t { font-weight:600; font-size:15px; transition:transform .25s var(--ease); overflow-wrap:anywhere; }
+  .n-s { font-size:12px; color:var(--mut); margin-top:3px; }
+  .n-edit .n-kind { font:11px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--c); margin-bottom:8px; }
+  #noteTitle { width:100%; font:800 clamp(28px,3.4vw,44px)/1.05 var(--display); letter-spacing:-.04em; border:0; border-bottom:1px solid var(--line); padding:4px 0 10px; }
+  #noteBody { width:100%; min-height:260px; border:0; border-left:1px solid var(--line); padding:4px 0 4px 16px; font:15px/1.65 var(--display); resize:vertical; }
+  .n-fields { display:flex; flex-wrap:wrap; gap:14px 22px; margin:18px 0; }
+  .n-fields label { display:flex; gap:8px; align-items:center; font-size:12px; color:var(--mut); }
+  .n-fields input[type=text] { min-width:220px; flex:1; }
+  .n-fields label:has(#noteNations) { flex:1 1 320px; }
+  .n-meta { display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; font-size:12px; color:var(--mut); margin-top:16px; padding-top:12px; border-top:1px solid var(--line); }
+  .n-meta .grow { flex:1; }
+  .n-tot { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:18px 0 8px; }
+  @media (max-width:600px) { .n-tot { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+  .n-tot div { border-top:1px solid var(--line2); padding-top:8px; }
+  .n-tot b { display:block; font:700 26px/1 var(--display); letter-spacing:-.03em; font-variant-numeric:tabular-nums; }
+  .n-tot span { font-size:12px; color:var(--mut); }
+  .chipset { display:flex; flex-wrap:wrap; gap:6px 14px; margin:8px 0 22px; font-size:13px; }
+  .chipset span { color:var(--fg); }
+  .chipset span.missing { color:var(--dim); text-decoration:line-through; }
+  .brief-panel { border-top:1px solid var(--line2); padding:16px 0 18px; margin-bottom:22px; }
+  .bp-tags { display:flex; flex-wrap:wrap; gap:8px; }
+  .bp-tag { font:600 11px var(--display); padding:4px 9px; border:1px solid var(--c); color:var(--c); }
+  .bp-text { font-size:16px; line-height:1.6; max-width:72ch; margin:12px 0 8px; }
+  .bp-meta { font:11px var(--mono); color:var(--mut); }
+  .toast { position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom, 0px)); transform:translate(-50%, 90px); background:var(--fg); color:#000; padding:10px 16px; font:500 12px var(--display); transition:transform .35s var(--ease); z-index:20; }
+  .toast.on { transform:translate(-50%, 0); }
+  footer { margin-top:72px; padding-top:16px; border-top:1px solid var(--line); color:var(--dim); font-size:12px; max-width:90ch; }
+
+  @keyframes pulse { 50% { opacity:.3; } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition:none !important; } }
+</style>
+
+<div class="wrap">
+  <div class="sys">
+    <a class="crest" href="#board" aria-label="Kingdom of The Bleeding Heart"><img src="data:image/png;base64,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" alt="Crest of the Kingdom of The Bleeding Heart"><span><b>Kingdom of The Bleeding Heart</b><small>Ministry of Attack · War Room</small></span></a>
+    <span id="clock" class="mono">--:--:-- UTC</span>
+    <span id="purge"></span>
+    <span class="grow"></span>
+    <span class="here" id="here"></span>
+  </div>
+
+  <header>
+    <div class="t">
+      <div class="kicker">Ministry of Attack — Shared operations</div>
+      <h1>War <i>Room</i></h1>
+      <p class="lede">The department's shared board. Claim targets, log raids, name alliances, write plans, and track how rival nations change between scans.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="sOpen">0</div><div class="l">Open targets</div></div>
+      <div class="stat"><div class="n" id="sClaimed">0</div><div class="l">Claimed</div></div>
+      <div class="stat"><div class="n" id="sDone">0</div><div class="l">Raids this week</div></div>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <a href="#board" data-v="board">Target board</a>
+    <a href="#intel" data-v="intel">Intel over time <span id="snapCount"></span></a>
+    <a href="#notes" data-v="notes">Notes &amp; plans <span id="noteCount"></span></a>
+    <a href="#import" data-v="import">Import a scan</a>
+  </nav>
+
+  <div id="status" class="note">Connecting to the war room…</div>
+  <main id="view"></main>
+
+  <footer>Kingdom of The Bleeding Heart · Ministry of Attack. Scans come from the Ruin Hunter scanner (“Send to war room”). Targets, notes, alliances and plans are shared with everyone who has this page.</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+  const DAY = 864e5;
+  const KIND = { ruin:{ label:"Ruin raid", c:"var(--red)" }, overclaim:{ label:"Overclaim", c:"var(--purple)" }, scout:{ label:"Scout", c:"var(--blue)" }, other:{ label:"Operation", c:"var(--gold)" } };
+  const METRICS = [["a", "Active 30d"], ["r", "Residents"], ["t", "Towns"], ["c", "Chunks"], ["g", "Gold"]];
+  const HQ_NATION = "Bleeding_Heart";
+  const norm = s => String(s || "").toLowerCase().replace(/[\s_\-']+/g, "");
+
+  const S = { db:null, user:null, room:null, me:null, canWrite:null, readOnly:false, targets:[], intel:[], peers:[],
+    names:{}, view:"board", nation:null, metric:"a", pkg:null, confirm:null, doneFor:null, loaded:{ t:false, i:false, n:false },
+    notes:[], noteSel:null, noteFilter:"all", noteQuery:"", saving:false, savePending:false, dirty:false, noteConfirm:false };
+  const NOTE_KIND = { alliance:{ label:"Alliance", c:"var(--blue)" }, plan:{ label:"Plan", c:"var(--hq)" }, note:{ label:"Note", c:"var(--gold)" } };
+  const PLAN_STATUS = [["idea", "Idea"], ["planned", "Planned"], ["active", "Active"], ["done", "Done"]];
+
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 1800); }
+  function fmtDur(ms) {
+    const neg = ms < 0; ms = Math.abs(ms);
+    const d = Math.floor(ms / DAY), h = Math.floor(ms % DAY / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+    const s = d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+    return neg ? `${s} ago` : s;
+  }
+  const ago = ts => !ts ? "" : Date.now() - ts < 6e4 ? "just now" : fmtDur(ts - Date.now());
+  const gold = n => n == null ? "—" : (Math.round(n * 10) / 10).toLocaleString() + "g";
+  const num = (v, lo, hi) => { const n = Number(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : null; };
+  const str = (v, max) => typeof v === "string" ? v.replace(/[\u0000-\u001f\u007f]/g, "").slice(0, max) : "";
+
+  // ---------- people ----------
+  async function resolveNames(ids) {
+    const want = [...new Set(ids.filter(Boolean))];
+    if (!S.user || !want.length) return;
+    const ps = await S.user.profiles(want);
+    let changed = false;
+    for (const id of want) { const p = ps[id]; const v = { name:p?.name || "Someone", avatar:p?.avatarUrl || "", isMe:!!p?.isMe }; if (JSON.stringify(S.names[id]) !== JSON.stringify(v)) { S.names[id] = v; changed = true; } }
+    if (changed) render();
+  }
+  const nameOf = id => id ? (S.names[id]?.isMe ? "You" : S.names[id]?.name || "Someone") : "";
+  const faceOf = id => S.names[id]?.avatar ? `<img src="${esc(S.names[id].avatar)}" alt="">` : "";
+
+  // ---------- derived ----------
+  const latest = () => S.intel[0] || null;
+  const active = t => t.status === "open" || t.status === "claimed";
+  function onBoard(town) { const k = norm(town); return S.targets.some(t => active(t) && norm(t.town) === k); }
+  function suggestions() {
+    const snap = latest(); if (!snap?.candidates) return [];
+    return snap.candidates.filter(c => !onBoard(c.town) && (c.kind !== "ruin" || c.eta == null || c.eta > Date.now() - DAY * 3)).slice(0, 40);
+  }
+  function weekRaids() { const since = Date.now() - 7 * DAY; return S.targets.filter(t => t.status === "done" && (t.doneAt || 0) > since).length; }
+
+  // ---------- render ----------
+  function render() {
+    S.view = ["board", "intel", "notes", "import"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "board";
+    document.querySelectorAll("nav.tabs a").forEach(a => a.classList.toggle("on", a.dataset.v === S.view));
+    $("sOpen").textContent = S.targets.filter(t => t.status === "open").length;
+    $("sClaimed").textContent = S.targets.filter(t => t.status === "claimed").length;
+    $("sDone").textContent = weekRaids();
+    $("snapCount").textContent = S.intel.length ? S.intel.length : "";
+    $("noteCount").textContent = S.notes.length ? S.notes.length : "";
+    const v = $("view");
+    // while a note is open, live updates refresh the list and details but never the text being typed
+    if (S.view === "notes" && v.dataset.v === "notes" && v.dataset.note === (S.noteSel || "") && $("noteList")) { refreshNotes(); renderHere(); return; }
+    const html = S.view === "intel" ? viewIntel() : S.view === "import" ? viewImport() : S.view === "notes" ? viewNotes() : viewBoard();
+    if (v.dataset.v !== S.view) { v.className = "view"; void v.offsetWidth; }
+    v.dataset.v = S.view; v.dataset.note = S.view === "notes" ? (S.noteSel || "") : ""; v.innerHTML = html;
+    if (S.view === "intel") drawChart();
+    renderHere();
+  }
+
+  function targetCard(t) {
+    const k = KIND[t.kind] || KIND.other, mine = t.claimedBy && t.claimedBy === S.me?.id, ro = S.readOnly;
+    const when = t.status === "done" ? `Done ${ago(t.doneAt)}`
+      : t.kind === "ruin" && t.eta ? (t.eta > Date.now() ? `Falls in ${fmtDur(t.eta - Date.now())}` : `Due now`)
+      : t.kind === "overclaim" && t.chunks ? `${t.chunks} chunks takeable` : `Added ${ago(t.createdAt)}`;
+    const confirmDel = S.confirm === t.id;
+    let acts = "";
+    if (!ro) {
+      if (t.status === "open") acts = `<button class="link hq" data-act="claim" data-id="${esc(t.id)}">Claim</button><button class="link" data-act="drop" data-id="${esc(t.id)}">Drop</button>`;
+      else if (t.status === "claimed") acts = (mine ? `<button class="link hq" data-act="donefor" data-id="${esc(t.id)}">Mark done</button><button class="link" data-act="unclaim" data-id="${esc(t.id)}">Release</button>` : `<button class="link" data-act="unclaim" data-id="${esc(t.id)}" title="Release someone else's claim">Release</button>`);
+      else acts = `<button class="link" data-act="reopen" data-id="${esc(t.id)}">Reopen</button>`;
+      acts += confirmDel ? `<button class="link hq" data-act="delete" data-id="${esc(t.id)}">Confirm delete</button><button class="link" data-act="cancel">Keep</button>`
+        : `<button class="link" data-act="askdelete" data-id="${esc(t.id)}">Delete</button>`;
+    }
+    const doneForm = S.doneFor === t.id ? `<form class="inline" data-form="done" data-id="${esc(t.id)}">
+        <input type="text" id="loot-${esc(t.id)}" name="loot" maxlength="200" placeholder="What did you take? (optional)">
+        ${t.kind === "overclaim" ? `<input type="number" id="taken-${esc(t.id)}" name="taken" min="0" max="999" placeholder="Chunks" style="flex:0 0 80px">` : ""}
+        <button class="btn" type="submit">Log raid</button><button class="link" type="button" data-act="cancel">Cancel</button></form>` : "";
+    return `<div class="card" style="--c:${k.c}">
+      <div class="top"><h3>${esc(t.town)}</h3><span class="kind">${k.label}</span></div>
+      <div class="meta"><span class="when" ${t.kind === "ruin" && t.eta && t.status !== "done" ? `data-eta="${t.eta}"` : ""}>${esc(when)}</span>${t.nation ? `<span>${esc(t.nation)}</span>` : ""}${t.x != null ? `<span><code data-copy="${t.x} ${t.z}">${t.x}, ${t.z}</code></span>` : ""}${t.warp ? `<span><code data-copy="/t spawn ${esc(t.warp)}">/t spawn ${esc(t.warp)}</code></span>` : ""}${t.gold ? `<span>${gold(t.gold)}</span>` : ""}</div>
+      ${t.note ? `<div class="noteline">${esc(t.note)}</div>` : ""}
+      ${t.status === "done" && t.loot ? `<div class="noteline">Took: ${esc(t.loot)}${t.taken ? ` · ${t.taken} chunks` : ""}</div>` : t.status === "done" && t.taken ? `<div class="noteline">${t.taken} chunks taken</div>` : ""}
+      ${t.claimedBy ? `<div class="who">${faceOf(t.claimedBy)}<span>${t.status === "done" ? "Raided by" : "Claimed by"} <b>${esc(nameOf(t.claimedBy))}</b></span></div>` : ""}
+      ${acts ? `<div class="acts">${acts}</div>` : ""}${doneForm}
+    </div>`;
+  }
+
+  function viewBoard() {
+    if (!S.loaded.t) return `<div class="empty">Loading the board…</div>`;
+    const by = s => S.targets.filter(t => t.status === s);
+    const open = by("open").sort((a, b) => (a.eta || 9e15) - (b.eta || 9e15));
+    const claimed = by("claimed").sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    const done = by("done").sort((a, b) => (b.doneAt || 0) - (a.doneAt || 0)).slice(0, 30);
+    const col = (title, list, empty) => `<section class="col"><h2>${title} <b>${list.length}</b></h2>${list.map(targetCard).join("") || `<div class="empty">${empty}</div>`}</section>`;
+    const sug = suggestions(), snap = latest();
+    const sugHtml = !snap ? `<div class="empty">No scans yet. Import one from the scanner to get suggested targets.</div>`
+      : sug.length ? `<div class="sugg">${sug.map((c, i) => `<div class="s-name"><b>${esc(c.town)}</b><span>${(KIND[c.kind] || KIND.other).label}${c.kind === "ruin" && c.eta ? ` · ${c.eta > Date.now() ? "falls in " + fmtDur(c.eta - Date.now()) : "due now"}` : ""}${c.kind === "overclaim" && c.chunks ? ` · ${c.chunks} chunks` : ""}${c.nation ? ` · ${esc(c.nation)}` : ""}</span></div>
+          <div class="s-act">${S.readOnly ? "" : `<button class="link hq" data-act="addsug" data-i="${i}">Add to board</button>`}</div>`).join("")}</div>`
+      : `<div class="empty">Every suggestion from the latest scan is already on the board.</div>`;
+    // leaderboard
+    const tally = {};
+    for (const t of S.targets) if (t.status === "done" && t.claimedBy) { const r = tally[t.claimedBy] ||= { raids:0, chunks:0, last:0 }; r.raids++; r.chunks += t.taken || 0; r.last = Math.max(r.last, t.doneAt || 0); }
+    const leaders = Object.entries(tally).sort((a, b) => b[1].raids - a[1].raids || b[1].chunks - a[1].chunks).slice(0, 10);
+    const lb = leaders.length ? `<div class="tablewrap"><table><tr><th>Member</th><th class="num">Raids</th><th class="num">Chunks</th><th class="num">Last</th></tr>
+      ${leaders.map(([id, r]) => `<tr><td><span class="face">${faceOf(id)}${esc(nameOf(id))}</span></td><td class="num">${r.raids}</td><td class="num">${r.chunks}</td><td class="num">${esc(ago(r.last))}</td></tr>`).join("")}</table></div>`
+      : `<div class="empty">Finished raids show up here.</div>`;
+    const addForm = S.readOnly ? "" : `<details class="add" id="addDetails"><summary>Add a target by hand</summary>
+      <form data-form="add" class="formgrid">
+        <label>Town<input type="text" id="f-town" name="town" maxlength="60" required></label>
+        <label>Type<select id="f-kind" name="kind"><option value="ruin">Ruin raid</option><option value="overclaim">Overclaim</option><option value="scout">Scout</option><option value="other">Operation</option></select></label>
+        <label>Nation<input type="text" id="f-nation" name="nation" maxlength="60"></label>
+        <label>X<input type="number" id="f-x" name="x"></label>
+        <label>Z<input type="number" id="f-z" name="z"></label>
+        <label>Note<input type="text" id="f-note" name="note" maxlength="160"></label>
+        <div style="align-self:end"><button class="btn" type="submit">Add target</button></div>
+      </form></details>`;
+    return `<div class="board">${col("Open", open, "Nothing open. Add a target below.")}${col("Claimed", claimed, "No one is on a raid right now.")}${col("Done", done, "No raids logged yet.")}</div>
+      <div class="lower">
+        <section class="panel"><h2>Suggested from the latest scan ${snap ? `<span style="color:var(--dim);letter-spacing:.04em;text-transform:none">· ${esc(ago(snap.at))}</span>` : ""}</h2>${sugHtml}${addForm}</section>
+        <section class="panel"><h2>Department leaderboard</h2>${lb}</section>
+      </div>`;
+  }
+
+  // ---------- intel ----------
+  function nationSeries(name) {
+    const k = norm(name);
+    return S.intel.slice().reverse().map(s => ({ at:s.at, n:(s.nations || []).find(n => norm(n.n) === k) })).filter(p => p.n);
+  }
+  function viewIntel() {
+    if (!S.loaded.i) return `<div class="empty">Loading intel…</div>`;
+    if (!S.intel.length) return `<div class="empty">No scans saved yet. Each scan someone imports adds a point to every nation's history. <a href="#import" style="color:var(--fg)">Import a scan</a></div>`;
+    const snap = latest(), list = (snap.nations || []).slice().sort((a, b) => (b.a || 0) - (a.a || 0));
+    if (!S.nation || !list.some(n => n.n === S.nation)) S.nation = (list.find(n => norm(n.n) !== norm(HQ_NATION)) || list[0])?.n || null;
+    // movers: latest vs the snapshot closest to 7 days earlier (or the oldest)
+    const target = snap.at - 7 * DAY;
+    const older = S.intel.slice(1).reduce((best, s) => !best || Math.abs(s.at - target) < Math.abs(best.at - target) ? s : best, null);
+    let movers = "";
+    if (older) {
+      const prev = Object.fromEntries((older.nations || []).map(n => [n.n, n]));
+      const d = list.filter(n => prev[n.n]).map(n => ({ n:n.n, da:(n.a || 0) - (prev[n.n].a || 0), dc:(n.c || 0) - (prev[n.n].c || 0), a:n.a || 0 }));
+      const row = x => `<tr><td><button class="link" data-act="pick" data-n="${esc(x.n)}" style="color:var(--fg)">${esc(x.n)}</button></td><td class="num ${x.da > 0 ? "up" : x.da < 0 ? "down" : ""}">${x.da > 0 ? "+" : ""}${x.da}</td><td class="num ${x.dc > 0 ? "up" : x.dc < 0 ? "down" : ""}">${x.dc > 0 ? "+" : ""}${x.dc}</td><td class="num">${x.a}</td></tr>`;
+      const head = `<tr><th>Nation</th><th class="num">Active</th><th class="num">Chunks</th><th class="num">Now</th></tr>`;
+      // rising/weakening by active members first, land as the tie-breaker
+      const rise = d.filter(x => x.da > 0 || (x.da === 0 && x.dc > 0)).sort((a, b) => b.da - a.da || b.dc - a.dc).slice(0, 8);
+      const fall = d.filter(x => x.da < 0 || (x.da === 0 && x.dc < 0)).sort((a, b) => a.da - b.da || a.dc - b.dc).slice(0, 8);
+      movers = `<div class="movers">
+        <section class="panel"><h2>Rising since ${esc(new Date(older.at).toLocaleDateString())}</h2>${rise.length ? `<div class="tablewrap"><table>${head}${rise.map(row).join("")}</table></div>` : `<div class="empty">No nation grew.</div>`}</section>
+        <section class="panel"><h2>Weakening since ${esc(new Date(older.at).toLocaleDateString())}</h2>${fall.length ? `<div class="tablewrap"><table>${head}${fall.map(row).join("")}</table></div>` : `<div class="empty">No nation shrank.</div>`}</section>
+      </div>`;
+    } else movers = `<p class="note">Rising and weakening nations appear once there are two scans to compare.</p>`;
+    return `<div class="intel-top">
+        <label class="note" style="padding:0;display:flex;gap:10px;align-items:center">Nation <select id="nationPick">${list.map(n => `<option ${n.n === S.nation ? "selected" : ""}>${esc(n.n)}</option>`).join("")}</select></label>
+        <div class="seg">${METRICS.map(([k, l]) => `<button data-act="metric" data-m="${k}" class="${S.metric === k ? "on" : ""}">${l}</button>`).join("")}</div>
+      </div>
+      ${briefPanel(list.find(n => n.n === S.nation), snap)}
+      <svg class="chart" id="chart" viewBox="0 0 1000 360" role="img" aria-label="Trend chart"></svg>
+      <div class="legend"><span style="--c:var(--fg)">${esc(S.nation || "")}</span>${norm(S.nation) !== norm(HQ_NATION) ? `<span style="--c:var(--hq)">Bleeding Heart</span>` : ""}<span style="--c:transparent;color:var(--dim)">${S.intel.length} scans saved by the department</span></div>
+      ${namedAlliances()}
+      ${assessTable(list)}
+      ${movers}`;
+  }
+  const STANCE_UI = { home:["Home", "var(--hq)"], ally:["Ally", "var(--blue)"], friendly:["Friendly", "var(--green)"], neutral:["Neutral", "var(--mut)"], wary:["Wary", "var(--orange)"], hostile:["Hostile", "var(--red)"] };
+  const riskUI = r => r >= 65 ? ["Critical", "var(--red)"] : r >= 45 ? ["High", "var(--orange)"] : r >= 25 ? ["Moderate", "var(--gold)"] : ["Low", "var(--green)"];
+  // the Ministry of Intelligence's latest brief for one nation
+  function briefPanel(n, snap) {
+    if (!n || n.rk == null) return `<p class="note">Nation briefs appear here once someone imports a scan from the latest scanner.</p>`;
+    const [sl, sc] = STANCE_UI[n.st] || STANCE_UI.neutral, [rl, rc] = riskUI(n.rk);
+    return `<section class="brief-panel">
+      <div class="bp-tags"><span class="bp-tag" style="--c:${sc}">${sl}</span><span class="bp-tag" style="--c:${rc}">Risk ${rl.toLowerCase()} · ${n.rk}</span>${(n.fl || []).map(f => `<span class="bp-tag" style="--c:#7fe9ff">${esc(f)}</span>`).join("")}</div>
+      <p class="bp-text">${esc(n.sm)}</p>
+      <div class="bp-meta">Hostility ${n.hs ?? "—"} · Friendliness ${n.fr ?? "—"} · Strength ${n.sg ?? "—"} · Ministry of Intelligence brief from ${esc(new Date(snap.at).toLocaleString())}</div>
+    </section>`;
+  }
+  // every nation at a glance, highest risk first
+  function assessTable(list) {
+    const rows = list.filter(n => n.rk != null).sort((a, b) => b.rk - a.rk);
+    if (!rows.length) return "";
+    return `<section class="panel" style="margin-top:40px"><h2>All nations · stance and risk</h2><div class="tablewrap" style="max-height:420px"><table>
+      <tr><th>Nation</th><th>Stance</th><th class="num">Risk</th><th class="num">Hostility</th><th class="num">Friendliness</th><th class="num">Active</th><th>Assessment</th></tr>
+      ${rows.map(n => { const [sl, sc] = STANCE_UI[n.st] || STANCE_UI.neutral, [, rc] = riskUI(n.rk);
+        return `<tr><td><button class="link" data-act="pick" data-n="${esc(n.n)}" style="color:var(--fg)">${esc(n.n)}</button></td><td style="color:${sc}">${sl}</td><td class="num" style="color:${rc}">${n.rk}</td><td class="num">${n.hs ?? "—"}</td><td class="num">${n.fr ?? "—"}</td><td class="num">${n.a}</td><td>${esc((n.fl || []).join(", "))}</td></tr>`; }).join("")}
+    </table></div></section>`;
+  }
+  function namedAlliances() {
+    const al = S.notes.filter(n => n.kind === "alliance" && (n.nations || []).length);
+    if (!al.length) return "";
+    const rows = al.map(n => ({ n, t:allianceTotals(n.nations) })).sort((a, b) => b.t.a - a.t.a);
+    return `<section class="panel" style="margin-top:40px"><h2>Named alliances · latest scan</h2><div class="tablewrap"><table>
+      <tr><th>Alliance</th><th class="num">Nations</th><th class="num">Active</th><th class="num">Chunks</th><th class="num">Gold</th></tr>
+      ${rows.map(({ n, t }) => `<tr><td><a href="#notes" data-act="opennote" data-id="${esc(n.id)}" style="color:var(--fg)">${esc(n.title || "Untitled alliance")}</a></td><td class="num">${(n.nations || []).length}</td><td class="num">${t.a.toLocaleString()}</td><td class="num">${t.c.toLocaleString()}</td><td class="num">${short(t.g)}</td></tr>`).join("")}
+    </table></div></section>`;
+  }
+  function drawChart() {
+    const svg = $("chart"); if (!svg || !S.nation) return;
+    const m = S.metric, W = 1000, H = 360, L = 56, R = 16, T = 18, B = 34;
+    const a = nationSeries(S.nation), b = norm(S.nation) !== norm(HQ_NATION) ? nationSeries(HQ_NATION) : [];
+    const pts = [...a, ...b];
+    if (!pts.length) { svg.innerHTML = ""; return; }
+    const xs = pts.map(p => p.at), ys = pts.map(p => p.n[m] || 0);
+    let x0 = Math.min(...xs), x1 = Math.max(...xs); if (x0 === x1) { x0 -= DAY; x1 += DAY; }
+    let y1 = Math.max(...ys, 1), y0 = 0; y1 = niceMax(y1);
+    const X = t => L + (t - x0) / (x1 - x0) * (W - L - R), Y = v => T + (1 - (v - y0) / (y1 - y0)) * (H - T - B);
+    let g = "";
+    for (let i = 0; i <= 4; i++) { const v = y0 + (y1 - y0) * i / 4, y = Y(v);
+      g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,.07)"/><text x="${L - 10}" y="${y + 4}" fill="#8c8c92" font-size="11" text-anchor="end" font-family="JetBrains Mono, monospace">${short(v)}</text>`; }
+    const ticks = Math.min(6, Math.max(2, a.length));
+    for (let i = 0; i < ticks; i++) { const t = x0 + (x1 - x0) * i / (ticks - 1), x = X(t);
+      g += `<text x="${x}" y="${H - 10}" fill="#8c8c92" font-size="11" text-anchor="${i === 0 ? "start" : i === ticks - 1 ? "end" : "middle"}" font-family="JetBrains Mono, monospace">${new Date(t).toLocaleDateString(undefined, { month:"short", day:"numeric" })}</text>`; }
+    const line = (ser, col, fill) => {
+      if (!ser.length) return "";
+      const d = ser.map((p, i) => `${i ? "L" : "M"}${X(p.at).toFixed(1)},${Y(p.n[m] || 0).toFixed(1)}`).join("");
+      const area = fill ? `<path d="${d}L${X(ser[ser.length - 1].at).toFixed(1)},${Y(0)}L${X(ser[0].at).toFixed(1)},${Y(0)}Z" fill="${fill}"/>` : "";
+      const last = ser[ser.length - 1];
+      return `${area}<path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>${ser.map(p => `<circle cx="${X(p.at).toFixed(1)}" cy="${Y(p.n[m] || 0).toFixed(1)}" r="2.5" fill="${col}"><title>${new Date(p.at).toLocaleString()} · ${p.n[m] || 0}</title></circle>`).join("")}
+        <circle cx="${X(last.at)}" cy="${Y(last.n[m] || 0)}" r="5" fill="${col}"/><text x="${Math.min(X(last.at) + 9, W - R - 4)}" y="${Y(last.n[m] || 0) - 9}" fill="${col}" font-size="12" text-anchor="${X(last.at) > W - 80 ? "end" : "start"}" font-family="Inter Tight, sans-serif" font-weight="600">${m === "g" ? gold(last.n[m]) : (last.n[m] || 0).toLocaleString()}</text>`;
+    };
+    svg.innerHTML = g + line(b, "#ff2d55", null) + line(a, "#f2f2f2", "rgba(255,255,255,.05)");
+  }
+  function niceMax(v) { const p = Math.pow(10, Math.floor(Math.log10(v))); for (const k of [1, 2, 2.5, 5, 10]) if (k * p >= v) return k * p; return 10 * p; }
+  function short(v) { return v >= 1e6 ? (v / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : v >= 1e4 ? (v / 1e3).toFixed(0) + "k" : v >= 1e3 ? (v / 1e3).toFixed(1).replace(/\.0$/, "") + "k" : Math.round(v).toString(); }
+
+  // ---------- notes, alliances & plans ----------
+  const noteOf = id => S.notes.find(n => n.id === id);
+  const latestNations = () => (latest()?.nations || []);
+  function noteListHtml() {
+    const q = S.noteQuery.toLowerCase();
+    const list = S.notes.filter(n => (S.noteFilter === "all" || n.kind === S.noteFilter) && (!q || [n.title, n.body, ...(n.nations || [])].some(x => String(x || "").toLowerCase().includes(q))))
+      .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b.updatedAt || 0) - (a.updatedAt || 0));
+    if (!S.loaded.n) return `<div class="empty">Loading notes…</div>`;
+    if (!list.length) return `<div class="empty">${S.notes.length ? "Nothing matches." : "No notes yet. Start an alliance, a plan or a note above."}</div>`;
+    return list.map(n => { const k = NOTE_KIND[n.kind] || NOTE_KIND.note;
+      const sub = n.kind === "alliance" ? `${(n.nations || []).length} nations` : n.kind === "plan" ? (PLAN_STATUS.find(s => s[0] === n.status)?.[1] || "Idea") + (n.due ? ` · ${new Date(n.due + "T00:00").toLocaleDateString()}` : "") : String(n.body || "").slice(0, 60) || "Empty note";
+      return `<button class="n-item ${n.id === S.noteSel ? "sel" : ""}" style="--c:${k.c}" data-act="opennote" data-id="${esc(n.id)}">
+        <div class="n-t">${n.pinned ? "📌 " : ""}${esc(n.title || "Untitled")}</div><div class="n-s">${k.label} · ${esc(sub)} · ${esc(ago(n.updatedAt))}${n.updatedBy ? " by " + esc(nameOf(n.updatedBy)) : ""}</div></button>`; }).join("");
+  }
+  function allianceTotals(names) {
+    const nat = latestNations(), rows = (names || []).map(name => ({ name, n:nat.find(x => norm(x.n) === norm(name)) }));
+    const sum = k => rows.reduce((s, r) => s + (r.n?.[k] || 0), 0);
+    return { rows, a:sum("a"), r:sum("r"), c:sum("c"), g:sum("g"), t:sum("t") };
+  }
+  function allianceHtml(n) {
+    const t = allianceTotals(n.nations);
+    if (!latest()) return `<p class="note">Import a scan to see this alliance's combined strength.</p>`;
+    return `<div class="n-tot"><div><b>${t.a.toLocaleString()}</b><span>Active members (30d)</span></div><div><b>${t.r.toLocaleString()}</b><span>Residents</span></div><div><b>${t.c.toLocaleString()}</b><span>Chunks</span></div><div><b>${short(t.g)}</b><span>Gold</span></div></div>
+      <div class="chipset">${t.rows.map(r => `<span class="${r.n ? "" : "missing"}" title="${r.n ? `${r.n.a} active · ${r.n.c} chunks` : "Not in the latest scan"}">${esc(r.name)}</span>`).join("") || `<span style="color:var(--dim)">Add member nations above.</span>`}</div>`;
+  }
+  function noteMetaHtml(n) {
+    return `${n.updatedBy ? `<span>Last edited by <b style="color:var(--fg);font-weight:500">${esc(nameOf(n.updatedBy))}</b> · ${esc(ago(n.updatedAt))}</span>` : ""}<span id="saveState">${S.saving ? "Saving…" : S.dirty ? "Unsaved changes" : "Saved"}</span><span class="grow"></span>
+      ${S.readOnly ? "" : `<button class="link" data-act="pinnote">${n.pinned ? "Unpin" : "Pin to top"}</button>${S.noteConfirm ? `<button class="link hq" data-act="delnote">Confirm delete</button><button class="link" data-act="keepnote">Keep</button>` : `<button class="link" data-act="asknote">Delete</button>`}`}`;
+  }
+  function refreshNotes() {
+    $("noteList").innerHTML = noteListHtml();
+    const n = noteOf(S.noteSel);
+    if (!n) { if (S.noteSel) { S.noteSel = null; render(); } return; }
+    const meta = $("noteMeta"); if (meta) meta.innerHTML = noteMetaHtml(n);
+    if (n.kind === "alliance" && $("allyTot")) $("allyTot").innerHTML = allianceHtml({ ...n, nations:S.dirty ? parseNations($("noteNations")?.value) : n.nations });
+    // someone else changed this note and you have nothing unsaved: show their version
+    const ed = $("noteEditor");
+    if (ed && !S.dirty && !S.saving && ed.dataset.ver !== String(n.updatedAt || 0)) {
+      const focused = document.activeElement?.closest?.("#noteEditor");
+      if (!focused) { const v = $("view"); v.dataset.note = "__"; render(); }
+    }
+  }
+  const parseNations = txt => [...new Set(String(txt || "").split(",").map(x => str(x, 60).trim()).filter(Boolean))].slice(0, 40);
+  function viewNotes() {
+    if (!S.noteSel && S.notes.length) S.noteSel = S.notes.slice().sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b.updatedAt || 0) - (a.updatedAt || 0))[0].id;
+    const n = noteOf(S.noteSel);
+    S.dirty = false; S.noteConfirm = false;
+    const ro = S.readOnly ? "readonly" : "";
+    const side = `<aside class="n-side">
+      ${S.readOnly ? "" : `<div class="n-new"><button class="btn" data-act="newnote" data-kind="alliance">New alliance</button><button class="btn ghost" data-act="newnote" data-kind="plan">New plan</button><button class="btn ghost" data-act="newnote" data-kind="note">New note</button></div>`}
+      <input type="text" id="noteSearch" placeholder="Search notes" value="${esc(S.noteQuery)}">
+      <div class="n-filter">${[["all", "All"], ["alliance", "Alliances"], ["plan", "Plans"], ["note", "Notes"]].map(([k, l]) => `<button data-act="notefilter" data-f="${k}" class="${S.noteFilter === k ? "on" : ""}">${l}</button>`).join("")}</div>
+      <div id="noteList">${noteListHtml()}</div></aside>`;
+    if (!n) return `<div class="notes">${side}<section class="n-edit"><div class="empty">${S.loaded.n ? "Pick a note, or start a new alliance, plan or note. Everything here is saved for the whole department." : "Loading notes…"}</div></section></div>`;
+    const k = NOTE_KIND[n.kind] || NOTE_KIND.note;
+    const nationList = latestNations().map(x => `<option value="${esc(x.n)}">`).join("");
+    const extra = n.kind === "alliance" ? `<div class="n-fields"><label style="flex:1">Member nations <input type="text" id="noteNations" list="nationOptions" ${ro} value="${esc((n.nations || []).join(", "))}" placeholder="Rome, Gaul, Sparta"></label></div><datalist id="nationOptions">${nationList}</datalist><div id="allyTot">${allianceHtml(n)}</div>`
+      : n.kind === "plan" ? `<div class="n-fields"><label>Status <select id="noteStatus" ${S.readOnly ? "disabled" : ""}>${PLAN_STATUS.map(([v, l]) => `<option value="${v}" ${n.status === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+          <label>Target date <input type="date" id="noteDue" ${ro} value="${esc(n.due || "")}"></label>
+          <label style="flex:1">Nations involved <input type="text" id="noteNations" list="nationOptions" ${ro} value="${esc((n.nations || []).join(", "))}" placeholder="Carthage"></label></div><datalist id="nationOptions">${nationList}</datalist>` : "";
+    return `<div class="notes">${side}
+      <section class="n-edit" id="noteEditor" data-id="${esc(n.id)}" data-ver="${n.updatedAt || 0}" style="--c:${k.c}">
+        <div class="n-kind">${k.label}</div>
+        <input type="text" id="noteTitle" maxlength="120" ${ro} value="${esc(n.title || "")}" placeholder="${n.kind === "alliance" ? "Name this alliance" : n.kind === "plan" ? "Name this plan" : "Title"}">
+        ${extra}
+        <textarea id="noteBody" maxlength="20000" ${ro} placeholder="${n.kind === "alliance" ? "Terms, who to contact, what each side brings…" : n.kind === "plan" ? "Goal, steps, who does what, timing…" : "Write anything the department should know…"}">${esc(n.body || "")}</textarea>
+        <div class="n-meta" id="noteMeta">${noteMetaHtml(n)}</div>
+      </section></div>`;
+  }
+  // autosave: one write at a time per note, after a short pause in typing
+  let saveTimer = 0;
+  function queueSave() {
+    if (S.readOnly) return;
+    S.dirty = true; const st = $("saveState"); if (st) st.textContent = "Unsaved changes";
+    clearTimeout(saveTimer); saveTimer = setTimeout(saveNote, 700);
+  }
+  async function saveNote() {
+    const ed = $("noteEditor"); if (!ed || !S.db || !S.me?.id) return;
+    if (S.saving) { S.savePending = true; return; }
+    const id = ed.dataset.id, n = noteOf(id); if (!n) return;
+    const data = { title:str($("noteTitle").value, 120), body:$("noteBody").value.replace(/\r/g, "").replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "").slice(0, 20000), updatedAt:now(), updatedBy:S.me.id };
+    if ($("noteNations")) data.nations = parseNations($("noteNations").value);
+    if ($("noteStatus")) data.status = $("noteStatus").value;
+    if ($("noteDue")) data.due = /^\d{4}-\d{2}-\d{2}$/.test($("noteDue").value) ? $("noteDue").value : "";
+    S.saving = true; S.dirty = false; ed.dataset.ver = String(data.updatedAt);
+    const st = $("saveState"); if (st) st.textContent = "Saving…";
+    await write(() => S.db.doc("notes/" + id).update(data));
+    S.saving = false;
+    const st2 = $("saveState"); if (st2) st2.textContent = S.dirty ? "Unsaved changes" : "Saved";
+    if (S.savePending) { S.savePending = false; saveNote(); }
+  }
+  // the textarea uses the body's own newlines; the note body keeps plain text only
+
+  // ---------- import ----------
+  function viewImport() {
+    const p = S.pkg;
+    const prev = !p ? "" : p.error ? `<div class="preview" style="color:var(--orange)">${esc(p.error)}</div>`
+      : `<div class="preview">Scan from <b>${esc(new Date(p.at).toLocaleString())}</b> · <b>${p.towns.toLocaleString()}</b> towns · <b>${p.nations.length}</b> nations · <b>${p.candidates.length}</b> suggested targets
+          <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap">${S.readOnly ? `<span>You can view this war room but not add to it.</span>` : `<button class="btn" data-act="save">Save to war room</button>`}<button class="btn ghost" data-act="clear">Clear</button></div></div>`;
+    return `<div class="imp">
+      <div><textarea id="paste" spellcheck="false" placeholder="Paste the scan here (Ctrl+V / ⌘V)"></textarea>${prev}</div>
+      <div class="steps">
+        <div>Run a scan in the <b>Ruin Hunter</b> scanner.</div>
+        <div>Press <b>Send to war room</b>. It copies the scan's targets and nation intel.</div>
+        <div>Paste it into the box here and press <b>Save to war room</b>.</div>
+        <div>Its suggested targets appear on the <b>Target board</b>, and every nation gets a new point on <b>Intel over time</b>.</div>
+      </div>
+    </div>`;
+  }
+  // Pasted scans are untrusted input: keep only known fields, with types and lengths checked.
+  function parsePkg(text) {
+    let j; try { j = JSON.parse(text); } catch { return { error:"That isn't a scan from the scanner. Use “Send to war room” there and paste again." }; }
+    if (!j || j.kind !== "bleeding-heart-intel") return { error:"That isn't a scan from the scanner. Use “Send to war room” there and paste again." };
+    const at = num(j.at, 0, Date.now() + DAY); if (!at) return { error:"The scan has no date." };
+    const STANCES = ["home", "ally", "friendly", "neutral", "wary", "hostile"];
+    const nations = (Array.isArray(j.nations) ? j.nations : []).slice(0, 600).map(n => ({ n:str(n?.n, 60), a:num(n?.a, 0, 1e5) || 0, r:num(n?.r, 0, 1e6) || 0, t:num(n?.t, 0, 1e5) || 0, c:num(n?.c, 0, 1e7) || 0, g:num(n?.g, 0, 1e10) || 0, al:num(n?.al, 0, 1e3) || 0, en:num(n?.en, 0, 1e3) || 0,
+      // assessments from the Ministry of Intelligence (optional in older scans)
+      rk:num(n?.rk, 0, 100), hs:num(n?.hs, 0, 100), fr:num(n?.fr, 0, 100), sg:num(n?.sg, 0, 100), st:STANCES.includes(n?.st) ? n.st : null,
+      fl:(Array.isArray(n?.fl) ? n.fl : []).slice(0, 4).map(f => str(f, 30)).filter(Boolean), sm:str(n?.sm, 600) })).filter(n => n.n);
+    const candidates = (Array.isArray(j.candidates) ? j.candidates : []).slice(0, 120).map(c => ({ town:str(c?.town, 60), kind:["ruin", "overclaim"].includes(c?.kind) ? c.kind : "other", nation:str(c?.nation, 60), x:num(c?.x, -1e6, 1e6), z:num(c?.z, -1e6, 1e6), eta:num(c?.eta, 0, 1e15), chunks:num(c?.chunks, 0, 1e5), gold:num(c?.gold, 0, 1e10), warp:str(c?.warp, 60) })).filter(c => c.town);
+    return { at, towns:num(j.towns, 0, 1e6) || 0, ruined:num(j.ruined, 0, 1e6) || 0, purgeMin:num(j.purgeMin, 0, 1439), hq:str(j.hq, 60), nations, candidates };
+  }
+
+  // ---------- presence ----------
+  function renderHere() {
+    const el = $("here"); if (!el) return;
+    const ids = [...new Set(S.peers.filter(p => p.kind === "viewer" && p.by).map(p => p.by))];
+    el.innerHTML = ids.length ? `<span class="live">${ids.length} here now</span><span class="faces">${ids.slice(0, 6).map(id => faceOf(id) || "").join("")}</span>` : "";
+  }
+
+  // ---------- writes ----------
+  const now = () => Date.now();
+  async function write(fn, okMsg) {
+    try { await fn(); if (okMsg) toast(okMsg); }
+    catch (e) {
+      if (e?.code === "invalid_argument" && S.canWrite == null) { S.readOnly = true; render(); toast("You can view this war room but not change it."); }
+      else if (e?.code === "quota_exceeded") toast("The war room is full. Delete some old targets or scans.");
+      else toast("That didn't save. Try again in a moment.");
+    }
+  }
+  async function claim(id) {
+    const ref = S.db.doc("targets/" + id);
+    const lease = await ref.acquire({ holder:S.me.id, ttlMs:4000 }).catch(() => ({ acquired:false }));
+    if (!lease.acquired) return toast("Someone else is claiming that right now.");
+    const snap = await ref.get();
+    if (!snap.exists || snap.data().status !== "open") return toast("Already claimed.");
+    await write(() => ref.update({ status:"claimed", claimedBy:S.me.id, updatedAt:now(), updatedBy:S.me.id }), "Claimed. It's yours.");
+  }
+
+  document.addEventListener("click", async e => {
+    const c = e.target.closest("code[data-copy]");
+    if (c) { try { await navigator.clipboard.writeText(c.dataset.copy); toast("Copied"); } catch { const r = document.createRange(); r.selectNodeContents(c); getSelection().removeAllRanges(); getSelection().addRange(r); } return; }
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const act = b.dataset.act, id = b.dataset.id, ref = id && S.db ? S.db.doc("targets/" + id) : null;
+    if (act === "metric") { S.metric = b.dataset.m; render(); return; }
+    if (act === "opennote") { if (S.dirty) await saveNote(); S.noteSel = b.dataset.id; $("view").dataset.note = "__"; render(); return; }
+    if (act === "notefilter") { S.noteFilter = b.dataset.f; $("noteList").innerHTML = noteListHtml(); document.querySelectorAll(".n-filter button").forEach(x => x.classList.toggle("on", x === b)); return; }
+    if (act === "asknote") { S.noteConfirm = true; $("noteMeta").innerHTML = noteMetaHtml(noteOf(S.noteSel)); return; }
+    if (act === "keepnote") { S.noteConfirm = false; $("noteMeta").innerHTML = noteMetaHtml(noteOf(S.noteSel)); return; }
+    if (act === "pick") { S.nation = b.dataset.n; render(); scrollTo({ top:0, behavior:"smooth" }); return; }
+    if (act === "cancel") { S.confirm = null; S.doneFor = null; render(); return; }
+    if (act === "clear") { S.pkg = null; render(); return; }
+    if (act === "askdelete") { S.confirm = id; render(); return; }
+    if (act === "donefor") { S.doneFor = id; render(); setTimeout(() => $("loot-" + id)?.focus(), 0); return; }
+    if (!S.db || !S.me?.id || S.readOnly) return;
+    if (act === "claim") return claim(id);
+    if (act === "newnote") {
+      const kind = b.dataset.kind, base = { title:"", body:"", kind, nations:[], pinned:false, createdBy:S.me.id, createdAt:now(), updatedAt:now(), updatedBy:S.me.id };
+      if (kind === "plan") Object.assign(base, { status:"idea", due:"" });
+      b.disabled = true;
+      await write(async () => { const ref = await S.db.collection("notes").add(base); S.noteSel = ref.id; });
+      S.noteFilter = "all"; $("view").dataset.note = "__"; render();
+      setTimeout(() => $("noteTitle")?.focus(), 30);
+      return;
+    }
+    if (act === "pinnote") { const n = noteOf(S.noteSel); return n && write(() => S.db.doc("notes/" + n.id).update({ pinned:!n.pinned, updatedAt:now(), updatedBy:S.me.id })); }
+    if (act === "delnote") { const n = noteOf(S.noteSel); S.noteConfirm = false; if (!n) return; S.noteSel = null; await write(() => S.db.doc("notes/" + n.id).delete(), "Note deleted"); $("view").dataset.note = "__"; render(); return; }
+    if (act === "unclaim") return write(() => ref.update({ status:"open", claimedBy:null, updatedAt:now(), updatedBy:S.me.id }), "Released");
+    if (act === "drop") return write(() => ref.update({ status:"dropped", updatedAt:now(), updatedBy:S.me.id }), "Dropped");
+    if (act === "reopen") return write(() => ref.update({ status:"open", claimedBy:null, doneAt:null, updatedAt:now(), updatedBy:S.me.id }), "Reopened");
+    if (act === "delete") { S.confirm = null; return write(() => ref.delete(), "Deleted"); }
+    if (act === "addsug") {
+      const c = suggestions()[+b.dataset.i]; if (!c) return;
+      b.disabled = true;
+      return write(() => S.db.collection("targets").add({ ...c, note:"", status:"open", claimedBy:null, createdBy:S.me.id, createdAt:now(), updatedAt:now(), updatedBy:S.me.id }), `${c.town} added to the board`);
+    }
+    if (act === "save") {
+      const p = S.pkg; if (!p || p.error) return;
+      b.disabled = true;
+      await write(async () => {
+        await S.db.collection("intel").add({ ...p, by:S.me.id });
+        // keep the newest 150 scans
+        if (S.intel.length >= 150) for (const old of S.intel.slice(149)) await S.db.doc("intel/" + old.id).delete();
+      }, "Scan saved to the war room");
+      S.pkg = null; location.hash = "#board"; render();
+    }
+  });
+  document.addEventListener("submit", async e => {
+    e.preventDefault();
+    const f = e.target, fd = new FormData(f);
+    if (!S.db || !S.me?.id || S.readOnly) return;
+    if (f.dataset.form === "add") {
+      const town = str(fd.get("town"), 60).trim(); if (!town) return;
+      const x = fd.get("x") === "" ? null : num(fd.get("x"), -1e6, 1e6), z = fd.get("z") === "" ? null : num(fd.get("z"), -1e6, 1e6);
+      await write(() => S.db.collection("targets").add({ town, kind:fd.get("kind"), nation:str(fd.get("nation"), 60), x, z, eta:null, chunks:null, gold:null, warp:"", note:str(fd.get("note"), 160),
+        status:"open", claimedBy:null, createdBy:S.me.id, createdAt:now(), updatedAt:now(), updatedBy:S.me.id }), `${town} added to the board`);
+      f.reset();
+    }
+    if (f.dataset.form === "done") {
+      const id = f.dataset.id, taken = fd.get("taken");
+      S.doneFor = null;
+      await write(() => S.db.doc("targets/" + id).update({ status:"done", loot:str(fd.get("loot"), 200), taken:taken ? num(taken, 0, 999) : null, doneAt:now(), updatedAt:now(), updatedBy:S.me.id }), "Raid logged");
+    }
+  });
+  document.addEventListener("change", e => { if (e.target.id === "nationPick") { S.nation = e.target.value; render(); } });
+  document.addEventListener("paste", e => {
+    if (S.view !== "import") return;
+    const text = e.clipboardData?.getData("text") || "";
+    if (!text) return;
+    e.preventDefault();
+    S.pkg = parsePkg(text); render();
+  });
+  document.addEventListener("input", e => {
+    if (e.target.closest?.("#noteEditor")) { queueSave(); if (e.target.id === "noteNations" && $("allyTot")) $("allyTot").innerHTML = allianceHtml({ nations:parseNations(e.target.value) }); return; }
+    if (e.target.id === "noteSearch") { S.noteQuery = e.target.value; $("noteList").innerHTML = noteListHtml(); return; }
+  });
+  document.addEventListener("change", e => { if (e.target.closest?.("#noteEditor") && (e.target.id === "noteStatus" || e.target.id === "noteDue")) queueSave(); });
+  addEventListener("beforeunload", () => { if (S.dirty) saveNote(); });
+  document.addEventListener("input", e => { if (e.target.id === "paste" && e.target.value.trim().length > 20) { S.pkg = parsePkg(e.target.value.trim()); render(); } });
+  addEventListener("hashchange", () => { S.confirm = null; S.doneFor = null; if (S.dirty) saveNote(); render(); });
+
+  // live clock, countdowns, next purge
+  setInterval(() => {
+    $("clock").textContent = new Date().toISOString().slice(11, 19) + " UTC";
+    document.querySelectorAll("[data-eta]").forEach(el => { const t = +el.dataset.eta; el.textContent = t > Date.now() ? `Falls in ${fmtDur(t - Date.now())}` : "Due now"; });
+    const pm = latest()?.purgeMin;
+    if (pm != null) { const d = new Date(); d.setUTCHours(0, pm, 0, 0); if (d < Date.now()) d.setUTCDate(d.getUTCDate() + 1); $("purge").innerHTML = `Next purge in <b style="color:var(--fg);font-weight:500">${fmtDur(d - Date.now())}</b>`; }
+  }, 1000);
+
+  // ---------- connect ----------
+  render();
+  (async () => {
+    if (!window.claude?.use) { $("status").textContent = "Open this page on claude.ai to use the shared war room."; $("status").className = "note warn"; return; }
+    const [db, user, room] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("room")]);
+    S.db = db; S.user = user; S.room = room;
+    if (!db) { $("status").textContent = "Sign in to see the department's board."; $("status").className = "note warn"; return; }
+    S.me = user ? await user.me() : null;
+    S.canWrite = user ? await user.can("data.write") : null;
+    S.readOnly = S.canWrite === false || !S.me?.id;
+    const slow = setTimeout(() => { $("status").textContent = "The war room can't be reached yet. Showing what's loaded so far."; $("status").className = "note warn"; }, 10000);
+    const ready = () => { if (S.loaded.t && S.loaded.i && S.loaded.n) { clearTimeout(slow); $("status").textContent = S.readOnly ? "You can view this war room. Ask the owner for Contributor access to claim targets." : ""; $("status").className = S.readOnly ? "note warn" : "note"; } };
+    const fail = e => { clearTimeout(slow); $("status").textContent = e?.code === "revoked" ? "This war room isn't available to you any more." : "Lost the connection to the war room. Reload to try again."; $("status").className = "note warn"; };
+    db.collection("targets").orderBy("createdAt", "desc").limit(600).onSnapshot(snap => {
+      S.targets = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(t => t.status !== "dropped");
+      if (!snap.metadata.fromCache) S.loaded.t = true; else S.loaded.t ||= snap.size > 0;
+      resolveNames(S.targets.flatMap(t => [t.claimedBy, t.createdBy]));
+      ready(); render();
+    }, fail);
+    db.collection("intel").orderBy("at", "desc").limit(150).onSnapshot(snap => {
+      S.intel = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      if (!snap.metadata.fromCache) S.loaded.i = true; else S.loaded.i ||= snap.size > 0;
+      ready(); render();
+    }, fail);
+    db.collection("notes").orderBy("updatedAt", "desc").limit(500).onSnapshot(snap => {
+      S.notes = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      if (!snap.metadata.fromCache) S.loaded.n = true; else S.loaded.n ||= snap.size > 0;
+      resolveNames(S.notes.map(n => n.updatedBy));
+      ready(); render();
+    }, fail);
+    if (room) {
+      room.presence({ view:S.view }).catch(() => {});
+      room.onPeers(ch => { S.peers = ch.peers; resolveNames(ch.peers.map(p => p.by)); renderHere(); });
+      addEventListener("hashchange", () => room.presence({ view:location.hash.slice(1) || "board" }).catch(() => {}));
+    }
+    if (S.me?.id) resolveNames([S.me.id]);
+  })();
+})();
+</script>
