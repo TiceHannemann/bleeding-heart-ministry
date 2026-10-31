@@ -40,24 +40,29 @@ async function synthetic() {
   console.log('synthetic towns for sale:', f.property.townsForSale.map(t => `${t.n} ${t.price}g, bank ${t.bank}g`).join(', '));
   console.log('synthetic nations:', f.nations.map(n => `${n.n} ${n.wealth}g (players ${n.players}, banks ${n.bank + n.towns})`).join('; '));
   srv.close();
-  delete require.cache[require.resolve('../server/finance.js')];
+  // the live part needs its own data folder: forget the modules that captured this one
+  for (const m of ['../server/finance.js', '../server/paths.js']) delete require.cache[require.resolve(m)];
 }
 
 async function live() {
-  process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'bh-finlive-'));
+  // --reuse=<dir> re-reads a folder from an earlier live run instead of scanning the API again
+  const reuse = (process.argv.find(a => a.startsWith('--reuse=')) || '').slice(8);
+  process.env.DATA_DIR = reuse || fs.mkdtempSync(path.join(os.tmpdir(), 'bh-finlive-'));
   delete process.env.EMC_API;
   const finance = require('../server/finance.js');
-  finance.hourly(bankInput(A.lastScan));
-  const t0 = Date.now(); const r = await finance.deepScan();
-  console.log(`\nlive deep scan: ${r.players.toLocaleString()} players, ${r.quarters.toLocaleString()} quarters in ${r.seconds}s`);
+  if (!reuse) {
+    finance.hourly(bankInput(A.lastScan));
+    const r = await finance.deepScan();
+    console.log(`\nlive deep scan: ${r.players.toLocaleString()} players, ${r.quarters.toLocaleString()} quarters in ${r.seconds}s`);
+  }
   const f = finance.hourly(bankInput(A.lastScan));
   const json = JSON.stringify(f);
   console.log(`page data: ${(json.length / 1024).toFixed(0)} KB`);
   console.log(`totals: all ${Math.round(f.totals.all).toLocaleString()}g · players ${Math.round(f.totals.players).toLocaleString()}g · towns ${Math.round(f.totals.towns).toLocaleString()}g · nations ${Math.round(f.totals.nations).toLocaleString()}g`);
   console.log('top nations:', f.nations.slice(0, 6).map(n => `${n.n} ${Math.round(n.wealth).toLocaleString()}g`).join(', '));
   console.log('richest:', f.richest.slice(0, 5).map(p => `${p.n} (${p.nation || '-'}) ${Math.round(p.bal).toLocaleString()}g`).join(', '));
-  console.log(`property: ${f.property.count} for sale · median ${f.property.idx}g/block · ${f.property.steals.length} steals · ${f.property.townsForSale.length} towns for sale`);
-  console.log('steals:', f.property.steals.slice(0, 4).map(q => `${q.name}, ${q.town} ${q.price}g for ${q.vol} blocks (${Math.round((1 - q.ratio) * 100)}% under)`).join(' | '));
+  console.log(`property: ${f.property.count} for sale · median asking ${f.property.idx}g · ${f.property.steals.length} steals · ${f.property.townsForSale.length} towns for sale`);
+  console.log('steals:', f.property.steals.slice(0, 5).map(q => `${q.name}, ${q.town} (${q.nation}) ${q.price}g for ${q.vol} blocks; similar ask ${q.ref}g`).join(' | '));
   console.log('towns for sale:', f.property.townsForSale.slice(0, 4).map(t => `${t.n} ${t.price}g (bank ${t.bank}g)`).join(' | '));
 
   // the pages and the reports, in the browser
@@ -70,10 +75,14 @@ async function live() {
   await p.goto('file://' + path.resolve(__dirname, '../app/earthmc-ruin-scanner.html') + '#markets');
   await p.waitForFunction(() => typeof appReady !== 'undefined'); await p.evaluate(() => appReady);
   await p.evaluate(([scan, fin]) => { hydrate(scan); FIN = fin; enterApp(); setPage('markets'); }, [A.lastScan, f]);
-  const shots = path.join(process.env.DATA_DIR, 'shots'); fs.mkdirSync(shots);
+  const shots = path.join(process.env.DATA_DIR, 'shots'); fs.mkdirSync(shots, { recursive:true });
   for (const pg of ['markets', 'property', 'flows']) {
     await p.evaluate(pg => { location.hash = '#' + pg; }, pg); await p.waitForTimeout(1500);
     await p.screenshot({ path:path.join(shots, pg + '.png') });
+    // the panels below the map
+    await p.evaluate(() => document.querySelector('section.only-' + document.body.dataset.page).scrollIntoView());
+    await p.waitForTimeout(400); await p.screenshot({ path:path.join(shots, pg + '-panels.png') });
+    await p.evaluate(() => scrollTo(0, 0));
   }
   console.log('screenshots:', shots);
   console.log('ticker items:', await p.evaluate(() => document.querySelectorAll('#tkTrack .tk-i').length / 2));

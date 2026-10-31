@@ -135,25 +135,36 @@ function hourly({ towns, nations }) {
   const all = r2(playersTotal + townsTotal + nationsTotal);
   for (const x of N.values()) x.wealth = r2(x.bank + x.towns + x.players);
 
-  // the property market
-  const listings = (qs?.quarters || []).filter(q => q.sale && q.price > 0).map(q => ({ ...q, ppb:q.vol ? q.price / q.vol : null }));
-  const ppbAll = listings.map(q => q.ppb).filter(v => v != null), idx = median(ppbAll);
+  // the property market. Quarters are 3D spaces whose sizes run from a few blocks to a hundred thousand, so a listing is
+  // judged against the median price of similar-sized listings (the same size class, a doubling wide) in its nation, or on the
+  // whole server when its nation has too few; a steal costs half that or less and saves at least 20 gold.
+  const listings = (qs?.quarters || []).filter(q => q.sale && q.price > 0).map(q => ({ ...q, ppb:q.vol ? q.price / q.vol : null, cls:q.vol ? Math.round(Math.log2(q.vol)) : null }));
+  const idx = median(listings.map(q => q.price));
+  const group = new Map(), add = (k, v) => group.set(k, [...(group.get(k) || []), v]);
+  for (const q of listings) if (q.cls != null) { add("s" + q.cls, q.price); if (q.nation) add(q.nation + "|" + q.cls, q.price); }
   const byNat = new Map();
-  for (const q of listings) if (q.nation && q.ppb != null) byNat.set(q.nation, [...(byNat.get(q.nation) || []), q.ppb]);
+  for (const q of listings) if (q.nation) byNat.set(q.nation, [...(byNat.get(q.nation) || []), q.price]);
   for (const q of listings) {
-    const local = byNat.get(q.nation), ref = local && local.length >= 4 ? median(local) : idx;
-    q.ratio = q.ppb != null && ref ? q.ppb / ref : null;
+    const local = group.get(q.nation + "|" + q.cls), wide = group.get("s" + q.cls);
+    q.ref = local && local.length >= 4 ? median(local) : wide && wide.length >= 4 ? median(wide) : null;
+    q.ratio = q.ref ? q.price / q.ref : null;
+    q.save = q.ref ? q.ref - q.price : null;
     q.prev = qs.prev?.[q.id] ?? null;
   }
   const fresh = qs?.prev ? listings.filter(q => q.prev == null) : [], cuts = listings.filter(q => q.prev != null && q.price < q.prev);
-  const steals = listings.filter(q => q.ratio != null && q.ratio <= 0.5 && (q.vol || 0) >= 8).sort((a, b) => a.ratio - b.ratio);
+  const steals = listings.filter(q => q.ratio != null && q.ratio <= 0.5 && q.save >= 20).sort((a, b) => b.save - a.save);
+  // towns whose own bank covers the asking price first, then the cheapest
   const townsForSale = towns.filter(t => t[3] > 0).map(t => ({ n:t[0], nation:t[1], price:r2(t[3]), bank:r2(t[2]), res:t[6] || 0, x:t[4], z:t[5] }))
-    .sort((a, b) => b.bank / b.price - a.bank / a.price);
+    .sort((a, b) => (b.bank >= b.price) - (a.bank >= a.price) || a.price - b.price);
 
   // series, thinned with age like the intelligence archive
-  state.series.global.push([at, all, r2(playersTotal), r2(townsTotal), r2(nationsTotal), listings.length, idx == null ? null : r2(idx)]);
-  state.series.global = compact(state.series.global, at);
-  for (const x of N.values()) { const s = state.series.nations[x.n] || []; s.push([at, x.wealth, x.bank, x.towns, x.players]); state.series.nations[x.n] = compact(s, at); }
+  // history starts with the first player scan: before it, wealth would count banks only, and the first scan would look like a windfall.
+  // The last field is the property index: the median asking price of a quarter.
+  if (state.snaps.length) {
+    state.series.global.push([at, all, r2(playersTotal), r2(townsTotal), r2(nationsTotal), listings.length, idx == null ? null : r2(idx)]);
+    state.series.global = compact(state.series.global, at);
+    for (const x of N.values()) { const s = state.series.nations[x.n] || []; s.push([at, x.wealth, x.bank, x.towns, x.players]); state.series.nations[x.n] = compact(s, at); }
+  }
   for (const k of Object.keys(state.series.nations)) if (!N.has(k) && state.series.nations[k].at(-1)[0] < at - 30 * DAY) delete state.series.nations[k];
   const ago = (s, ms) => { const t = at - ms; let best = null; for (const p of s) if (p[0] <= t + 18e5) best = p; return best; };
   const nationRows = [...N.values()].map(x => {
@@ -175,7 +186,8 @@ function hourly({ towns, nations }) {
   const corr = new Map();
   for (const f of state.flows) if (f.a.nation && f.b.nation && f.a.nation !== f.b.nation) { const k = f.a.nation + "→" + f.b.nation, e = corr.get(k) || { from:f.a.nation, to:f.b.nation, amt:0, n:0 }; e.amt = r2(e.amt + f.amt); e.n++; corr.set(k, e); }
 
-  const lite = q => ({ id:q.id, name:q.name, type:q.type, town:q.town, nation:q.nation, owner:q.owner, price:q.price, vol:q.vol, ppb:q.ppb == null ? null : r2(q.ppb), ratio:q.ratio == null ? null : Math.round(q.ratio * 100) / 100, prev:q.prev, x:q.x, z:q.z });
+  const lite = q => ({ id:q.id, name:q.name, type:q.type, town:q.town, nation:q.nation, owner:q.owner, price:q.price, vol:q.vol, ppb:q.ppb == null ? null : Math.round(q.ppb * 1000) / 1000,
+    ref:q.ref == null ? null : r2(q.ref), ratio:q.ratio == null ? null : Math.round(q.ratio * 100) / 100, prev:q.prev, x:q.x, z:q.z });
   save();
   return {
     at, deepAt:state.deepAt, deepErr:state.deepErr, coverage:{ players:Object.keys(snap).length, quarters:qs?.quarters.length || 0, listings:listings.length, towns:towns.length },
@@ -191,9 +203,9 @@ function hourly({ towns, nations }) {
     flows:top(state.flows.filter(f => f.at > at - 2 * DAY), (a, b) => b.amt - a.amt, 300),
     corridors:top([...corr.values()], (a, b) => b.amt - a.amt, 40),
     property:{ idx:idx == null ? null : r2(idx), count:listings.length,
-      byNation:[...byNat].map(([n, a]) => ({ n, count:a.length, median:r2(median(a)) })).sort((a, b) => b.count - a.count).slice(0, 60),
-      steals:steals.slice(0, 60).map(lite), listings:top(listings, (a, b) => (a.ratio ?? 9) - (b.ratio ?? 9), 500).map(lite),
-      cuts:top(cuts, (a, b) => (a.price / a.prev) - (b.price / b.prev), 40).map(lite), fresh:top(fresh, (a, b) => (a.ratio ?? 9) - (b.ratio ?? 9), 40).map(lite),
+      byNation:[...byNat].map(([n, a]) => ({ n, count:a.length, median:r2(median(a)), low:r2(Math.min(...a)) })).sort((a, b) => b.count - a.count).slice(0, 60),
+      steals:steals.slice(0, 60).map(lite), listings:top(listings, (a, b) => (b.save ?? -1e9) - (a.save ?? -1e9), 500).map(lite),
+      cuts:top(cuts, (a, b) => (a.price / a.prev) - (b.price / b.prev), 40).map(lite), fresh:top(fresh, (a, b) => (b.save ?? -1e9) - (a.save ?? -1e9), 40).map(lite),
       townsForSale:townsForSale.slice(0, 80) },
   };
 }

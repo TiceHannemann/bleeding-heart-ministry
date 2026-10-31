@@ -809,12 +809,12 @@
 
   <section class="only-property">
     <div class="fin-cols">
-      <div class="panel"><h2>Steals <small>priced at half the local rate or less</small></h2><div class="fin-wrap" id="propSteals"></div></div>
+      <div class="panel"><h2>Steals <small>half the price of similar quarters or less</small></h2><div class="fin-wrap" id="propSteals"></div></div>
       <div class="panel"><h2>Towns for sale</h2><div class="fin-wrap" id="propTowns"></div></div>
     </div>
     <div class="fin-cols">
       <div class="panel"><h2>Price cuts and new listings</h2><div class="fin-wrap" id="propNews"></div></div>
-      <div class="panel"><h2>Price per block by nation</h2><div class="fin-wrap" id="propNations"></div></div>
+      <div class="panel"><h2>Asking prices by nation</h2><div class="fin-wrap" id="propNations"></div></div>
     </div>
     <div class="panel"><h2>All listings <small id="propCount"></small></h2><div class="fin-wrap" id="propAll"></div></div>
   </section>
@@ -3679,13 +3679,13 @@ function signalsIntsum(doc) {
 function financeParas(doc, n) {
   const r = FIN?.nations.find(x => x.n === n.name); if (!r) return;
   const rank = FIN.nations.indexOf(r) + 1, R = x => gold(Math.round(x));
-  Para(doc, `Counting its members' own gold as well as its banks, ${n.name} commands ${R(r.wealth)}, the ${ordinal(rank)} largest fortune of ${FIN.nations.length} nations: ${R(r.players)} held by its ${plural(r.members, "member")} and ${R(r.bank + r.towns)} in its treasuries.${r.d24 != null ? ` Over the last day this has ${moved(Math.round(r.d24), " gold")}` : ""}${r.d7 != null ? `${r.d24 != null ? ", and" : " Over"} the past week it has ${moved(Math.round(r.d7), " gold")}` : ""}${r.d24 != null || r.d7 != null ? "." : ""}`);
+  Para(doc, `Counting its members' own gold as well as its banks, ${n.name} commands ${R(r.wealth)}, the ${rank === 1 ? "" : ordinal(rank) + " "}largest fortune of ${FIN.nations.length} nations: ${R(r.players)} held by its ${plural(r.members, "member")} and ${R(r.bank + r.towns)} in its treasuries.${r.d24 != null ? ` Over the last day this has ${moved(Math.round(r.d24), " gold")}` : ""}${r.d7 != null ? `${r.d24 != null ? ", and" : " Over"} the past week it has ${moved(Math.round(r.d7), " gold")}` : ""}${r.d24 != null || r.d7 != null ? "." : ""}`);
   const out = FIN.corridors.filter(c => c.from === n.name), inn = FIN.corridors.filter(c => c.to === n.name), dry = FIN.watch.filter(t => t.nation === n.name);
   const sales = FIN.property.listings.filter(q => q.nation === n.name), steals = FIN.property.steals.filter(q => q.nation === n.name), forSale = FIN.property.townsForSale.filter(t => t.nation === n.name);
   const bits = [];
   if (out.length || inn.length) bits.push(`Matched transfers this week show ${inn.length ? `${R(inn.reduce((s, c) => s + c.amt, 0))} reaching ${n.name}, chiefly from ${andList(inn.slice(0, 3).map(c => c.from))}` : "no gold reaching it from abroad"}${out.length ? `, and ${R(out.reduce((s, c) => s + c.amt, 0))} leaving it, chiefly for ${andList(out.slice(0, 3).map(c => c.to))}` : ""}.`);
   if (dry.length) bits.push(`${plural(dry.length, "town")} ${dry.length === 1 ? "is" : "are"} spending ${dry.length === 1 ? "its" : "their"} bank fast enough to run dry within a week: ${andList(dry.slice(0, 4).map(t => `${t.n} (${R(t.bal)} left, about ${t.runway < 1 ? "a day" : plural(Math.round(t.runway), "day")})`))}.`);
-  if (sales.length || forSale.length) bits.push(`${sales.length ? `${plural(sales.length, "quarter")} ${sales.length === 1 ? "is" : "are"} for sale in its towns${steals.length ? `, ${count(steals.length)} of them at half the local rate or less` : ""}` : "No quarters are for sale in its towns"}${forSale.length ? `, and ${andList(forSale.slice(0, 3).map(t => `${t.n} is offered for ${R(t.price)}${t.bank >= t.price ? `, less than its bank of ${R(t.bank)}` : ""}`))}` : ""}.`);
+  if (sales.length || forSale.length) bits.push(`${sales.length ? `${plural(sales.length, "quarter")} ${sales.length === 1 ? "is" : "are"} for sale in its towns${steals.length ? `, ${count(steals.length)} of them at half the price of similar quarters or less` : ""}` : "No quarters are for sale in its towns"}${forSale.length ? `, and ${andList(forSale.slice(0, 3).map(t => `${t.n} is offered for ${R(t.price)}${t.bank >= t.price ? `, less than its bank of ${R(t.bank)}` : ""}`))}` : ""}.`);
   if (bits.length) Para(doc, bits.join(" "));
 }
 function financeIntsum(doc) {
@@ -3698,7 +3698,7 @@ function financeIntsum(doc) {
   const bits = [];
   if (big.length) bits.push(`The largest transfers matched in the last two days were ${andList(big.map(f => `${R(f.amt)} from ${f.a.n}${f.a.nation ? ` of ${f.a.nation}` : ""} to ${f.b.n}${f.b.nation ? ` of ${f.b.nation}` : ""}`))}.`);
   if (dry.length) bits.push(`${andList(dry.map(t => `${t.n}${t.nation ? ` of ${t.nation}` : ""}`))} ${dry.length === 1 ? "is" : "are"} spending ${dry.length === 1 ? "its" : "their"} bank fast enough to run dry within days, which would leave ${dry.length === 1 ? "it" : "them"} unable to pay upkeep.`);
-  if (FIN.property.steals.length) bits.push(`On the property market, ${plural(FIN.property.steals.length, "quarter")} ${FIN.property.steals.length === 1 ? "is" : "are"} priced at half the local rate or less, the best being ${andList(FIN.property.steals.slice(0, 2).map(q => `${q.name} in ${q.town || "an unknown town"} for ${R(q.price)}`))}.`);
+  if (FIN.property.steals.length) bits.push(`On the property market, ${plural(FIN.property.steals.length, "quarter")} ${FIN.property.steals.length === 1 ? "is" : "are"} offered at half the price of similar quarters or less, the best being ${andList(FIN.property.steals.slice(0, 2).map(q => `${q.name} in ${q.town || "an unknown town"} for ${R(q.price)} (similar quarters ask ${R(q.ref)})`))}.`);
   if (bits.length) Para(doc, bits.join(" "));
 }
 
@@ -4697,12 +4697,12 @@ function renderTicker() {
   items.push(item("ALL GOLD", gk(FIN.totals.all), FIN.totals.all, d1?.[1]));
   items.push(item("PLAYERS", gk(FIN.totals.players), FIN.totals.players, d1?.[2]));
   items.push(item("TREASURIES", gk(FIN.totals.towns + FIN.totals.nations), FIN.totals.towns + FIN.totals.nations, d1 ? d1[3] + d1[4] : null));
-  if (FIN.property.idx != null) items.push(item("PROPERTY", FIN.property.idx.toFixed(2) + "g/block", FIN.property.idx, d1?.[6]));
+  if (FIN.property.idx != null) items.push(item("PROPERTY", gk(FIN.property.idx) + " median", FIN.property.idx, d1?.[6]));
   for (const n of FIN.nations.slice(0, 24)) items.push(item(n.n.toUpperCase(), gk(n.wealth), n.wealth, n.d24 != null ? n.wealth - n.d24 : null));
   const up = FIN.movers.up24[0] || FIN.movers.up3[0], dn = FIN.movers.down24[0] || FIN.movers.down3[0];
   if (up) items.push(`<span class="tk-i"><em>TOP GAINER</em>${esc(up.n)} <span class="tk-up">▲${gk(up.d)}</span></span>`);
   if (dn) items.push(`<span class="tk-i"><em>TOP LOSER</em>${esc(dn.n)} <span class="tk-dn">▼${gk(-dn.d)}</span></span>`);
-  for (const s of FIN.property.steals.slice(0, 4)) items.push(`<span class="tk-i"><em>STEAL</em>${esc(s.name)}, ${esc(s.town || "?")} · ${gk(s.price)} <span class="tk-up">${Math.round((1 - s.ratio) * 100)}% under</span></span>`);
+  for (const s of FIN.property.steals.slice(0, 4)) items.push(`<span class="tk-i"><em>STEAL</em>${esc(s.name)}, ${esc(s.town || "?")} · ${gk(s.price)} <span class="tk-up">saves ${gk(s.ref - s.price)}</span></span>`);
   for (const t of FIN.property.townsForSale.filter(t => t.bank >= t.price).slice(0, 2)) items.push(`<span class="tk-i"><em>TOWN FOR SALE</em>${esc(t.n)} · ${gk(t.price)} <span class="tk-up">bank holds ${gk(t.bank)}</span></span>`);
   const html = items.join("");
   tr.innerHTML = html + html; // drawn twice so the loop is seamless
@@ -4713,7 +4713,7 @@ function renderFinStats(pg) {
   const stat = (n, l, c) => `<div class="stat" style="--c:${c || "var(--gold)"}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
   if (!FIN) { el.innerHTML = stat("—", "Waiting for market data") + stat("—", "") + stat("—", ""); return; }
   const fl = FIN.flows, moved = fl.reduce((s, f) => s + f.amt, 0);
-  el.innerHTML = pg === "property" ? stat(FIN.property.count.toLocaleString(), "Quarters for sale") + stat(FIN.property.idx == null ? "—" : FIN.property.idx.toFixed(2) + "g", "Median price per block") + stat(FIN.property.steals.length, "Steals right now", "var(--green)")
+  el.innerHTML = pg === "property" ? stat(FIN.property.count.toLocaleString(), "Quarters for sale") + stat(gk(FIN.property.idx), "Median asking price") + stat(FIN.property.steals.length, "Steals right now", "var(--green)")
     : pg === "flows" ? stat(fl.length.toLocaleString(), "Transfers found, last 48 hours") + stat(gk(moved), "Gold moved") + stat(FIN.corridors.length, "Nation-to-nation channels this week")
     : stat(gk(FIN.totals.all), "All gold on the server") + stat(gk(FIN.totals.players), "Held by players") + stat(gk(FIN.totals.towns + FIN.totals.nations), "In town and nation banks");
 }
@@ -4739,8 +4739,9 @@ function renderMarkets() {
   $("finTownMoves").innerHTML = finTable([["Town"], ["Nation"], ["Change", 1], ["Bank", 1]], [...FIN.townMovers.up.slice(0, 6), ...FIN.townMovers.down.slice(0, 6)].map(t => `<tr data-fintown="${esc(t.n)}" style="cursor:pointer"><td>${esc(t.n)}</td><td>${natChip(t.nation)}</td><td class="num">${dS(t.d)}</td><td class="num">${gk(t.bal)}</td></tr>`), "Town bank changes appear after a few hourly scans.");
   $("finAbout").innerHTML = `Wealth counts a nation's own bank, its towns' banks and the gold its members hold. Banks are read every hour; player balances and property every few hours (last read ${FIN.deepAt ? fmtDur(Date.now() - FIN.deepAt) + " ago" : "not yet"}, covering ${FIN.coverage.players.toLocaleString()} players and ${FIN.coverage.quarters.toLocaleString()} quarters). Item prices from shops are private to each shop owner on EarthMC, so they are not included.${FIN.deepErr ? ` <span class="fin-dn">The last player scan failed: ${esc(FIN.deepErr)}.</span>` : ""}`;
 }
-const qRow = q => `<tr data-finx="${q.x ?? ""}" data-finz="${q.z ?? ""}" style="cursor:pointer"><td>${esc(q.name)}<div class="fin-dim">${esc((q.type || "").toLowerCase())}${q.owner ? ` · ${esc(q.owner)}` : ""}</div></td><td>${esc(q.town || "—")}<div>${natChip(q.nation)}</div></td><td class="num">${gk(q.price)}</td><td class="num">${q.vol ? q.vol.toLocaleString() : "—"}</td><td class="num">${q.ppb == null ? "—" : q.ppb.toFixed(2) + "g"}</td><td class="num">${q.ratio == null ? "—" : q.ratio <= 0.5 ? `<span class="fin-steal">${Math.round((1 - q.ratio) * 100)}% under</span>` : q.ratio < 1 ? `<span class="fin-up">${Math.round((1 - q.ratio) * 100)}% under</span>` : `<span class="fin-dim">${Math.round((q.ratio - 1) * 100)}% over</span>`}</td></tr>`;
-const qCols = [["Quarter"], ["Where"], ["Price", 1], ["Blocks", 1], ["Per block", 1], ["Against local", 1]];
+const qRow = q => `<tr data-finx="${q.x ?? ""}" data-finz="${q.z ?? ""}" style="cursor:pointer"><td>${esc(q.name)}<div class="fin-dim">${esc((q.type || "").toLowerCase())}${q.owner ? ` · ${esc(q.owner)}` : ""}</div></td><td>${esc(q.town || "—")}<div>${natChip(q.nation)}</div></td><td class="num">${gk(q.price)}</td><td class="num">${q.vol ? q.vol.toLocaleString() : "—"}</td><td class="num">${q.ref == null ? "—" : gk(q.ref)}</td><td class="num">${q.ratio == null ? "—" : q.ratio <= 0.5 ? `<span class="fin-steal">saves ${gk(q.ref - q.price)}</span>` : q.ratio < 1 ? `<span class="fin-up">${Math.round((1 - q.ratio) * 100)}% under</span>` : `<span class="fin-dim">${Math.round((q.ratio - 1) * 100)}% over</span>`}</td></tr>`;
+// "Similar sell for": the median asking price of listings of about the same size in the same nation (or server-wide)
+const qCols = [["Quarter"], ["Where"], ["Price", 1], ["Blocks", 1], ["Similar sell for", 1], ["Against similar", 1]];
 function renderProperty() {
   if (!FIN) { $("propSteals").innerHTML = `<p class="fin-empty">${finNoData()}</p>`; for (const id of ["propTowns", "propNews", "propNations", "propAll"]) $(id).innerHTML = ""; return; }
   const P = FIN.property;
@@ -4752,7 +4753,7 @@ function renderProperty() {
     [...P.cuts.slice(0, 15).map(q => `<tr data-finx="${q.x ?? ""}" data-finz="${q.z ?? ""}" style="cursor:pointer"><td>${esc(q.name)} <span class="fin-steal">cut</span></td><td>${esc(q.town || "—")}</td><td class="num">${gk(q.price)}</td><td class="num fin-dim">${gk(q.prev)}</td></tr>`),
      ...P.fresh.slice(0, 15).map(q => `<tr data-finx="${q.x ?? ""}" data-finz="${q.z ?? ""}" style="cursor:pointer"><td>${esc(q.name)} <span class="fin-dim">new</span></td><td>${esc(q.town || "—")}</td><td class="num">${gk(q.price)}</td><td class="num fin-dim">—</td></tr>`)],
     "Price cuts and new listings appear from the second property scan.");
-  $("propNations").innerHTML = finTable([["Nation"], ["Listings", 1], ["Median per block", 1]], P.byNation.slice(0, 40).map(n => `<tr data-finnat="${esc(n.n)}" style="cursor:pointer"><td>${natChip(n.n)}</td><td class="num">${n.count}</td><td class="num">${n.median.toFixed(2)}g</td></tr>`), "No listings yet.");
+  $("propNations").innerHTML = finTable([["Nation"], ["Listings", 1], ["Median price", 1], ["Cheapest", 1]], P.byNation.slice(0, 40).map(n => `<tr data-finnat="${esc(n.n)}" style="cursor:pointer"><td>${natChip(n.n)}</td><td class="num">${n.count}</td><td class="num">${gk(n.median)}</td><td class="num">${gk(n.low)}</td></tr>`), "No listings yet.");
   $("propCount").textContent = `${P.count.toLocaleString()} for sale${P.listings.length < P.count ? `, best ${P.listings.length} shown` : ""}`;
   $("propAll").innerHTML = finTable(qCols, P.listings.slice(0, 300).map(qRow), "No quarters are for sale.");
 }
@@ -4776,10 +4777,12 @@ function drawFinanceLayer(placed, zoomR) {
   const dpr = M.dpr, pg = document.body.dataset.page, sel = finSel ? findNation(finSel) : null;
   const at = (x, z) => { const s = townScreen({ c:{ x, z } }); return s[2] > 0 ? s : null; };
   if (pg === "markets") {
+    // circles for the 400 wealthiest towns (and any running dry); the rest stay as the ordinary dots
+    if (FIN.__top !== FIN.at) { FIN.__topSet = new Set(Object.entries(FIN.townWealth).sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1])).slice(0, 400).map(([n]) => n)); FIN.__top = FIN.at; }
     const max = Math.max(1, ...Object.values(FIN.townWealth).map(w => w[0] + w[1]));
     const dry = new Set(FIN.watch.map(w => w.n));
     for (const t of placed) {
-      const w = FIN.townWealth[t.name]; if (!w) continue;
+      const w = FIN.townWealth[t.name]; if (!w || !(FIN.__topSet.has(t.name) || dry.has(t.name))) continue;
       const s = at(t.c.x, t.c.z); if (!s) continue;
       const r = (1.5 + Math.sqrt((w[0] + w[1]) / max) * 26) * zoomR * dpr, dim = sel && t.nation !== sel.name;
       ctx.globalAlpha = (M.mode === "globe" ? 0.35 + s[2] * 0.65 : 1) * (dim ? 0.15 : 1);
