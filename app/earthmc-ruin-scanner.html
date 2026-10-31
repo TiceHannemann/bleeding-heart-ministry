@@ -48,7 +48,8 @@
   .s-body p { font-size:17px; color:#4d4f58; margin:0 0 32px; max-width:52ch; }
   .s-foot { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; font-size:12.5px; color:#7a7c85; border-top:1px solid #e3e4e8; padding-top:16px; }
   #sClock { font-family:var(--mono); }
-  .p-depts { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .p-depts { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:1100px) { .p-depts { grid-template-columns:1fr 1fr; } }
   .p-dept { text-align:left; background:#fff; border:1px solid #d9dadf; border-top:4px solid #16171b; padding:26px 26px 22px; cursor:pointer; font:inherit; color:inherit; display:flex; flex-direction:column; gap:8px; transition:border-color .2s, box-shadow .25s, transform .25s; }
   .p-dept:hover, .p-dept:focus-visible { border-top-color:#c4244e; box-shadow:0 14px 34px rgba(22,23,27,.1); transform:translateY(-2px); outline:none; }
   .p-dept b { font-size:22px; letter-spacing:-.01em; }
@@ -359,6 +360,28 @@
   body[data-page="forecasts"] :is(.only-ruins,.only-over,.only-dossier,.not-dossier,.mapstage,.only-brief) { display:none !important; }
   body[data-page="moves"] :is(.only-ruins,.only-over,.only-dossier,.not-dossier,.only-brief,.only-fore) { display:none !important; }
   body:not([data-page="moves"]) .only-moves { display:none !important; }
+  /* Ministry of Finance: three pages, gold accent */
+  body:is([data-page="markets"],[data-page="property"],[data-page="flows"]) :is(.only-ruins,.only-over,.only-dossier,.not-dossier,.only-brief,.only-fore) { display:none !important; }
+  body:not(:is([data-page="markets"],[data-page="property"],[data-page="flows"])) .only-finance,
+  body:not([data-page="markets"]) .only-markets, body:not([data-page="property"]) .only-property, body:not([data-page="flows"]) .only-flows { display:none !important; }
+  body[data-page="markets"] .pages a[href="#markets"], body[data-page="property"] .pages a[href="#property"], body[data-page="flows"] .pages a[href="#flows"] { color:var(--fg); }
+  body[data-page="markets"] .pages a[href="#markets"]::after, body[data-page="property"] .pages a[href="#property"]::after, body[data-page="flows"] .pages a[href="#flows"]::after { background:var(--gold); transform:scaleX(1); }
+  .ticker { position:relative; overflow:hidden; border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin:0 0 40px; white-space:nowrap;
+    -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); }
+  .tk-track { display:inline-flex; gap:40px; padding:12px 0; animation:tk var(--tk-dur,80s) linear infinite; font:500 12px var(--mono); letter-spacing:.04em; }
+  .ticker:hover .tk-track { animation-play-state:paused; }
+  @keyframes tk { from { transform:translateX(0); } to { transform:translateX(-50%); } }
+  @media (prefers-reduced-motion:reduce) { .tk-track { animation:none; } .ticker { overflow-x:auto; } }
+  .tk-i { color:var(--mut); } .tk-i b { color:var(--fg); font-weight:500; margin-right:9px; } .tk-up { color:var(--green); } .tk-dn { color:var(--red); } .tk-i em { font-style:normal; color:var(--gold); margin-right:9px; }
+  .fin-cols { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:calc(var(--gut) * 1.5); margin-bottom:40px; }
+  .fin-cols.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  @media (max-width:980px) { .fin-cols, .fin-cols.three { grid-template-columns:1fr; } }
+  .spark { width:84px; height:20px; vertical-align:middle; }
+  .fin-note { color:var(--mut); font-size:13px; line-height:1.65; max-width:880px; }
+  .fin-up { color:var(--green); } .fin-dn { color:var(--red); } .fin-dim { color:var(--mut); font-size:12px; }
+  .fin-steal { font:11px var(--mono); color:var(--green); border:1px solid rgba(126,226,168,.4); padding:1px 6px; margin-left:6px; white-space:nowrap; }
+  .fin-wrap { max-height:520px; overflow:auto; }
+  .fin-empty { padding:28px 0; color:var(--mut); font-size:14px; line-height:1.6; max-width:640px; }
   /* Movement Watch */
   .mv-bar { display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; margin:0 0 22px; font-size:13px; color:var(--mut); }
   .mv-bar label { display:flex; align-items:center; gap:8px; } .mv-bar input[type=checkbox] { accent-color:var(--intel); }
@@ -602,6 +625,7 @@
       <div class="p-depts">
         <button class="p-dept" data-ministry="attack"><span class="p-lock">Restricted</span><b>Ministry of Attack</b><span>Ruins about to fall, overclaimable land, raid routes and warps.</span><i>Sign in →</i></button>
         <button class="p-dept" data-ministry="intel"><span class="p-lock">Restricted</span><b>Ministry of Intelligence</b><span>Nation assessments, movement watch, briefings and forecasts.</span><i>Sign in →</i></button>
+        <button class="p-dept" data-ministry="finance"><span class="p-lock">Restricted</span><b>Ministry of Finance</b><span>Treasuries, the money market, property for sale and the flow of gold.</span><i>Sign in →</i></button>
       </div>
     </div>
     <div class="s-foot"><span>Unauthorised access to this system is prohibited.</span><span id="sClock">--:--:-- UTC</span></div>
@@ -661,6 +685,7 @@
   <nav class="pages">
     <div class="ministry" data-m="attack"><span class="m-name">Ministry of Attack</span><a href="#ruins">Ruin Hunter</a><a href="#overclaim">Overclaim Finder</a></div>
     <div class="ministry" data-m="intel"><span class="m-name">Ministry of Intelligence</span><a href="#dossier">Nation Intelligence</a><a href="#moves">Movement Watch</a><a href="#briefings">Briefing Room</a><a href="#forecasts">Forecast Lab</a></div>
+    <div class="ministry" data-m="finance"><span class="m-name">Ministry of Finance</span><a href="#markets">Market Board</a><a href="#property">Property Market</a><a href="#flows">Money Flows</a></div>
   </nav>
   <main id="main">
 
@@ -678,6 +703,12 @@
     <div class="stat" hidden><div class="n" id="sWarps">—</div></div>
   </div>
 
+
+  <!-- Ministry of Finance: the ticker and headline figures sit above the map on all three pages -->
+  <section class="only-finance">
+    <div class="ticker" id="finTicker" aria-label="Market ticker"><div class="tk-track" id="tkTrack"></div></div>
+    <div class="stats" id="finStats"></div>
+  </section>
 
   <section class="only-moves">
     <div class="mv-bar">
@@ -710,6 +741,9 @@
       <span style="--c:var(--hq)">Bleeding Heart HQ</span>
       <span class="only-dossier" style="--c:var(--blue)">Ally</span><span class="only-dossier" style="--c:var(--green)">Friendly</span><span class="only-dossier" style="--c:rgba(255,255,255,.4)">Neutral</span><span class="only-dossier" style="--c:var(--orange)">Wary</span><span class="only-dossier" style="--c:var(--red)">Hostile / front line</span>
       <span class="only-moves" style="--c:var(--red)">Hostile player</span><span class="only-moves" style="--c:var(--orange)">Wary</span><span class="only-moves" style="--c:var(--blue)">Ally</span><span class="only-moves" style="--c:rgba(255,255,255,.55)">Other player</span>
+      <span class="only-markets" style="--c:var(--gold)">Town wealth (bank and residents)</span><span class="only-markets" style="--c:var(--red)">Running out of gold</span>
+      <span class="only-property" style="--c:var(--gold)">Quarter for sale</span><span class="only-property" style="--c:var(--green)">Steal</span><span class="only-property" style="--c:var(--purple)">Town for sale</span>
+      <span class="only-flows" style="--c:var(--gold)">Gold moving</span><span class="only-flows" style="--c:var(--green)">Received</span><span class="only-flows" style="--c:var(--red)">Paid out</span>
       <span class="only-ruins" style="--c:var(--red)">Ruined</span>
       <span class="only-ruins" style="--c:var(--orange)">Falls &lt; 3 days</span>
       <span class="only-over" style="--c:var(--purple)">Overclaimable now</span>
@@ -758,6 +792,39 @@
       <div class="mv-visits-wrap" id="mvVisits"></div><div id="mvModel"></div></div>
     <div class="mv-cols" style="margin-top:40px"><div class="panel"><h2>Frequent travellers <small>last 7 days</small></h2><div id="mvPeople"></div></div>
       <div class="panel"><h2>How it learns</h2><p class="lab-note" style="margin-top:0">Every visit gets a reconnaissance score from how the visitor behaved: time along the edge of the claims instead of at the town spawn, a wandering path, several towns of one nation in a day, return visits, and whose side they are on. Mark visits as Recon, Trade, Passing or Friendly and the model learns what scouting looks like on this server.<br><br>At each scan, every pair of nations with real traffic in the last day gets a Forecast Lab forecast: will the visitors' nation make a hostile move against the host within seven days (declare enmity, break an alliance, take a town, or cut land where they visited)? The event log checks the outcome, and the model adjusts.</p></div></div>
+  </section>
+
+  <section class="only-markets">
+    <div class="panel"><h2>Wealth of nations <small id="finNatCount"></small></h2><div class="fin-wrap" id="finNations"></div></div>
+    <div class="fin-cols" style="margin-top:40px">
+      <div class="panel"><h2>Biggest movers <small id="finMoverSpan"></small></h2><div id="finMovers"></div></div>
+      <div class="panel"><h2>Richest players</h2><div class="fin-wrap" id="finRich"></div></div>
+    </div>
+    <div class="fin-cols">
+      <div class="panel"><h2>Treasury watch <small>towns running out of gold</small></h2><div id="finWatch"></div></div>
+      <div class="panel"><h2>Town banks <small>last 24 hours</small></h2><div id="finTownMoves"></div></div>
+    </div>
+    <p class="fin-note" id="finAbout"></p>
+  </section>
+
+  <section class="only-property">
+    <div class="fin-cols">
+      <div class="panel"><h2>Steals <small>priced at half the local rate or less</small></h2><div class="fin-wrap" id="propSteals"></div></div>
+      <div class="panel"><h2>Towns for sale</h2><div class="fin-wrap" id="propTowns"></div></div>
+    </div>
+    <div class="fin-cols">
+      <div class="panel"><h2>Price cuts and new listings</h2><div class="fin-wrap" id="propNews"></div></div>
+      <div class="panel"><h2>Price per block by nation</h2><div class="fin-wrap" id="propNations"></div></div>
+    </div>
+    <div class="panel"><h2>All listings <small id="propCount"></small></h2><div class="fin-wrap" id="propAll"></div></div>
+  </section>
+
+  <section class="only-flows">
+    <div class="fin-cols">
+      <div class="panel"><h2>Largest transfers <small>last 48 hours</small></h2><div class="fin-wrap" id="flowList"></div></div>
+      <div class="panel"><h2>Gold between nations <small>last 7 days</small></h2><div class="fin-wrap" id="flowCorr"></div></div>
+    </div>
+    <p class="fin-note">How flows are found: every few hours the server reads every player's balance. When one balance falls by an amount and another rises by exactly the same amount in the same window, that is very probably a payment, a trade or a deposit. A unique, uneven amount is high confidence; a round amount is moderate; when several players moved the same sum, the pairing is a guess and marked low. Town banks are matched the same way, which catches deposits and withdrawals. Amounts under 50 gold, and sums that dozens of players moved at once (upkeep, taxes), are left out.</p>
   </section>
 
   <section class="only-brief briefroom">
@@ -1528,6 +1595,7 @@ function render() {
   if (tab === "briefings") { renderBriefingRoom(); return; }
   if (tab === "forecasts") { renderForecastLab(); return; }
   if (tab === "moves") { renderMoves(); return; }
+  if (FIN_PAGES.includes(tab)) { renderFinance(); return; }
   const q = $("search").value.toLowerCase().trim();
   let rows = towns.filter(t => !q || [t.name, t.nation, t.mayor].some(v => v && v.toLowerCase().includes(q)));
   if (tab === "ruined") rows = rows.filter(t => t.ruined).sort((a, b) => (b.ruinedAt || 0) - (a.ruinedAt || 0));
@@ -2160,9 +2228,10 @@ function drawMap() {
   const placed = towns.filter(t => t.c);
   const zoomR = M.mode === "flat" ? Math.min(1.6, Math.max(0.8, M.scale * 60)) : 1;
   if (tab !== "dossier") placed.forEach(t => dot(t, 1.3 * zoomR, "rgba(255,255,255,.28)"));
-  if (tab !== "dossier" && tab !== "moves") (window.__warps || []).forEach(w => { const [x, y, d] = townScreen(w); if (d > 0) { ctx.fillStyle = alpha(COL.blue, .7); ctx.fillRect(x - dpr, y - dpr, 2 * dpr, 2 * dpr); } });
+  if (tab !== "dossier" && tab !== "moves" && !FIN_PAGES.includes(tab)) (window.__warps || []).forEach(w => { const [x, y, d] = townScreen(w); if (d > 0) { ctx.fillStyle = alpha(COL.blue, .7); ctx.fillRect(x - dpr, y - dpr, 2 * dpr, 2 * dpr); } });
   if (tab === "dossier") drawIntelLayer(placed, zoomR, dot, spike);
   else if (tab === "moves") drawMovesLayer(placed, zoomR, dot);
+  else if (FIN_PAGES.includes(tab)) drawFinanceLayer(placed, zoomR);
   else if (tab === "over") {
     placed.filter(t => isOverTarget(t) && !isOverclaimable(t)).forEach(t => { spike(t, 0.04, COL.orange); dot(t, 2.6 * zoomR, COL.orange, 6); });
     placed.filter(isOverclaimable).forEach(t => { spike(t, 0.03 + Math.min(0.12, overclaim(t).takeable / 300), COL.purple); dot(t, 3 * zoomR, COL.purple, 8); });
@@ -3606,6 +3675,33 @@ function signalsIntsum(doc) {
   for (let i = 0; i < Math.min(ss.length, 9); i += 3) Para(doc, ss.slice(i, i + 3).map(sigSentence).join(" "));
 }
 
+// ---- the Ministry of Finance's figures, written for the reports ----
+function financeParas(doc, n) {
+  const r = FIN?.nations.find(x => x.n === n.name); if (!r) return;
+  const rank = FIN.nations.indexOf(r) + 1, R = x => gold(Math.round(x));
+  Para(doc, `Counting its members' own gold as well as its banks, ${n.name} commands ${R(r.wealth)}, the ${ordinal(rank)} largest fortune of ${FIN.nations.length} nations: ${R(r.players)} held by its ${plural(r.members, "member")} and ${R(r.bank + r.towns)} in its treasuries.${r.d24 != null ? ` Over the last day this has ${moved(Math.round(r.d24), " gold")}` : ""}${r.d7 != null ? `${r.d24 != null ? ", and" : " Over"} the past week it has ${moved(Math.round(r.d7), " gold")}` : ""}${r.d24 != null || r.d7 != null ? "." : ""}`);
+  const out = FIN.corridors.filter(c => c.from === n.name), inn = FIN.corridors.filter(c => c.to === n.name), dry = FIN.watch.filter(t => t.nation === n.name);
+  const sales = FIN.property.listings.filter(q => q.nation === n.name), steals = FIN.property.steals.filter(q => q.nation === n.name), forSale = FIN.property.townsForSale.filter(t => t.nation === n.name);
+  const bits = [];
+  if (out.length || inn.length) bits.push(`Matched transfers this week show ${inn.length ? `${R(inn.reduce((s, c) => s + c.amt, 0))} reaching ${n.name}, chiefly from ${andList(inn.slice(0, 3).map(c => c.from))}` : "no gold reaching it from abroad"}${out.length ? `, and ${R(out.reduce((s, c) => s + c.amt, 0))} leaving it, chiefly for ${andList(out.slice(0, 3).map(c => c.to))}` : ""}.`);
+  if (dry.length) bits.push(`${plural(dry.length, "town")} ${dry.length === 1 ? "is" : "are"} spending ${dry.length === 1 ? "its" : "their"} bank fast enough to run dry within a week: ${andList(dry.slice(0, 4).map(t => `${t.n} (${R(t.bal)} left, about ${t.runway < 1 ? "a day" : plural(Math.round(t.runway), "day")})`))}.`);
+  if (sales.length || forSale.length) bits.push(`${sales.length ? `${plural(sales.length, "quarter")} ${sales.length === 1 ? "is" : "are"} for sale in its towns${steals.length ? `, ${count(steals.length)} of them at half the local rate or less` : ""}` : "No quarters are for sale in its towns"}${forSale.length ? `, and ${andList(forSale.slice(0, 3).map(t => `${t.n} is offered for ${R(t.price)}${t.bank >= t.price ? `, less than its bank of ${R(t.bank)}` : ""}`))}` : ""}.`);
+  if (bits.length) Para(doc, bits.join(" "));
+}
+function financeIntsum(doc) {
+  if (!FIN) return;
+  const G = FIN.series.global, d1 = finAgo(G, DAY), R = x => gold(Math.round(x));
+  Head(doc, "Economic Developments");
+  const up = FIN.nations.filter(n => n.d24 > 0).sort((a, b) => b.d24 - a.d24).slice(0, 3), dn = FIN.nations.filter(n => n.d24 < 0).sort((a, b) => a.d24 - b.d24).slice(0, 3);
+  Para(doc, `The Ministry of Finance counts ${R(FIN.totals.all)} on Terra Nostra, ${R(FIN.totals.players)} of it held by players and the rest in town and nation banks${d1 ? `; in the last twenty-four hours the total has ${moved(Math.round(FIN.totals.all - d1[1]), " gold")}` : ""}.${up.length ? ` The largest gains were made by ${andList(up.map(n => `${n.n} (${R(n.d24)})`))}.` : ""}${dn.length ? ` The heaviest losses were in ${andList(dn.map(n => `${n.n} (${R(-n.d24)})`))}.` : ""}`);
+  const big = FIN.flows.filter(f => f.conf !== "low").slice(0, 3), dry = FIN.watch.slice(0, 4);
+  const bits = [];
+  if (big.length) bits.push(`The largest transfers matched in the last two days were ${andList(big.map(f => `${R(f.amt)} from ${f.a.n}${f.a.nation ? ` of ${f.a.nation}` : ""} to ${f.b.n}${f.b.nation ? ` of ${f.b.nation}` : ""}`))}.`);
+  if (dry.length) bits.push(`${andList(dry.map(t => `${t.n}${t.nation ? ` of ${t.nation}` : ""}`))} ${dry.length === 1 ? "is" : "are"} spending ${dry.length === 1 ? "its" : "their"} bank fast enough to run dry within days, which would leave ${dry.length === 1 ? "it" : "them"} unable to pay upkeep.`);
+  if (FIN.property.steals.length) bits.push(`On the property market, ${plural(FIN.property.steals.length, "quarter")} ${FIN.property.steals.length === 1 ? "is" : "are"} priced at half the local rate or less, the best being ${andList(FIN.property.steals.slice(0, 2).map(q => `${q.name} in ${q.town || "an unknown town"} for ${R(q.price)}`))}.`);
+  if (bits.length) Para(doc, bits.join(" "));
+}
+
 // ---- Intelligence Assessment ----
 function nationAssessment(n, p, releasable) {
   const a = relTo(n, p), X = anticipate(n, p), home = findNation($("myNation").value), persp = p || home;
@@ -3658,6 +3754,7 @@ function nationAssessment(n, p, releasable) {
 
   Head(doc, "Economy");
   const rich = [...live].filter(t => t.balance != null).sort((x, y) => y.balance - x.balance), broke = rich.filter(t => t.balance < 10);
+  financeParas(doc, n);
   Para(doc, `${n.name}'s town banks hold ${gold(n.townGold)} in total${n.nationGold != null ? `, and the national bank a further ${gold(n.nationGold)}` : ""}, which ranks ${ordinal(rankG)} of ${N}. That is ${gold(Math.round(goldOf(n) / Math.max(1, live.length)))} per town against a server median of ${gold(Math.round(medianOf(nations.map(x => goldOf(x) / Math.max(1, x.towns.length)))))}. ${rich.length ? `Wealth is concentrated in ${andList(rich.slice(0, 3).map(t => `${t.name} (${gold(t.balance)})`))}. ` : ""}${broke.length ? `${plural(broke.length, "town")} hold${broke.length === 1 ? "s" : ""} almost nothing and would struggle to pay daily upkeep. ` : ""}${arcSentence(n.name, "gold", "total gold", v => gold(Math.round(v)))}`);
 
   Head(doc, "Foreign Relations");
@@ -3811,6 +3908,7 @@ function intsum(releasable) {
   const byDay = [...dip7.slice(-10).reduce((m, e) => m.set(fmtDay(e.at), [...(m.get(fmtDay(e.at)) || []), eventText(e, null)]), new Map())];
   Para(doc, byDay.length ? byDay.map(([d, xs]) => `On ${d}, ${andList(xs)}.`).join(" ") : "No alliances or enmities were made or broken this week.");
   signalsIntsum(doc);
+  financeIntsum(doc);
   movementIntsum(doc, releasable);
   Head(doc, "Forecast for the Next Seventy-Two Hours");
   const vac = nations.filter(n => n.kingLast != null && days() - (Date.now() - n.kingLast) / DAY < 3);
@@ -4494,6 +4592,8 @@ const appReady = (async () => {
   await loadML();
   await loadMoves();
   try { SIGNALS = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("signals")))) || []; } catch {}
+  try { FIN = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("finance")))) || null; } catch {}
+  if (FIN && FIN_PAGES.includes(tab)) renderFinance();
   ARCHIVE.frame7 = await frameNear(Date.now() - 7 * DAY);
   let saved = null;
   try { saved = await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("lastScan"))); } catch {}
@@ -4566,6 +4666,159 @@ document.addEventListener("click", async e => {
   }
 });
 
+/* ---------- Ministry of Finance ----------
+   Shop item prices are private to each shop owner on EarthMC, so the ministry reads the public economy instead:
+   every town and nation bank (each hour), every player's balance and every quarter for sale (every few hours).
+   All of it is gathered and analysed on the Ministry server (server/finance.js) and arrives as meta "finance". */
+let FIN = null, finSel = null;
+const FIN_PAGES = ["markets", "property", "flows"];
+const gk = v => { if (v == null || isNaN(v)) return "—"; const a = Math.abs(v); return (v < 0 ? "−" : "") + (a >= 1e6 ? (a / 1e6).toFixed(2) + "M" : a >= 1e4 ? (a / 1e3).toFixed(1) + "k" : Math.round(a).toLocaleString()) + "g"; };
+const dS = v => v == null ? `<span class="fin-dim">—</span>` : `<span class="${v >= 0 ? "fin-up" : "fin-dn"}">${v >= 0 ? "▲" : "▼"} ${gk(Math.abs(v))}</span>`;
+const pS = v => v == null || !isFinite(v) ? "" : `<span class="${v >= 0 ? "fin-up" : "fin-dn"}">${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)}%</span>`;
+const finAgo = (pts, ms) => { const t = Date.now() - ms; let b = null; for (const p of pts || []) if (p[0] <= t + 18e5) b = p; return b; };
+function sparkSvg(pts) {
+  if (!pts || pts.length < 2) return "";
+  const v = pts.map(p => p[1]), lo = Math.min(...v), sp = (Math.max(...v) - lo) || 1, t0 = pts[0][0], tw = (pts[pts.length - 1][0] - t0) || 1;
+  const d = pts.map((p, i) => `${i ? "L" : "M"}${(2 + (p[0] - t0) / tw * 80).toFixed(1)},${(18 - (p[1] - lo) / sp * 16).toFixed(1)}`).join("");
+  return `<svg class="spark" viewBox="0 0 84 20" aria-hidden="true"><path d="${d}" fill="none" stroke="${v[v.length - 1] >= v[0] ? "var(--green)" : "var(--red)"}" stroke-width="1.3"/></svg>`;
+}
+const finTable = (cols, rows, empty) => rows.length ? `<table class="nt"><tr>${cols.map(c => `<th${c[1] ? ' class="num"' : ""}>${c[0]}</th>`).join("")}</tr>${rows.join("")}</table>` : `<p class="fin-empty">${empty}</p>`;
+const finNoData = () => window.BH_SERVER
+  ? "The Ministry server gathers market data between its hourly scans. The first finance scan reads every player and every quarter, which takes a few minutes; this page fills in when it finishes."
+  : "The Ministry of Finance runs on the Ministry server, which reads every player's balance and every quarter for sale. Opened as a file, this page has no market data.";
+
+function renderTicker() {
+  const tr = $("tkTrack"); if (!tr) return;
+  const key = FIN ? String(FIN.at) : "none"; if (tr.dataset.at === key) return; tr.dataset.at = key;
+  if (!FIN) { tr.innerHTML = `<span class="tk-i">${finNoData()}</span>`; tr.style.animation = "none"; return; }
+  tr.style.animation = "";
+  const G = FIN.series.global, d1 = finAgo(G, DAY), items = [];
+  const item = (label, val, now, then) => `<span class="tk-i"><b>${esc(label)}</b>${val}${then ? ` <span class="${now >= then ? "tk-up" : "tk-dn"}">${now >= then ? "▲" : "▼"}${Math.abs((now - then) / Math.max(1, Math.abs(then)) * 100).toFixed(1)}%</span>` : ""}</span>`;
+  items.push(item("ALL GOLD", gk(FIN.totals.all), FIN.totals.all, d1?.[1]));
+  items.push(item("PLAYERS", gk(FIN.totals.players), FIN.totals.players, d1?.[2]));
+  items.push(item("TREASURIES", gk(FIN.totals.towns + FIN.totals.nations), FIN.totals.towns + FIN.totals.nations, d1 ? d1[3] + d1[4] : null));
+  if (FIN.property.idx != null) items.push(item("PROPERTY", FIN.property.idx.toFixed(2) + "g/block", FIN.property.idx, d1?.[6]));
+  for (const n of FIN.nations.slice(0, 24)) items.push(item(n.n.toUpperCase(), gk(n.wealth), n.wealth, n.d24 != null ? n.wealth - n.d24 : null));
+  const up = FIN.movers.up24[0] || FIN.movers.up3[0], dn = FIN.movers.down24[0] || FIN.movers.down3[0];
+  if (up) items.push(`<span class="tk-i"><em>TOP GAINER</em>${esc(up.n)} <span class="tk-up">▲${gk(up.d)}</span></span>`);
+  if (dn) items.push(`<span class="tk-i"><em>TOP LOSER</em>${esc(dn.n)} <span class="tk-dn">▼${gk(-dn.d)}</span></span>`);
+  for (const s of FIN.property.steals.slice(0, 4)) items.push(`<span class="tk-i"><em>STEAL</em>${esc(s.name)}, ${esc(s.town || "?")} · ${gk(s.price)} <span class="tk-up">${Math.round((1 - s.ratio) * 100)}% under</span></span>`);
+  for (const t of FIN.property.townsForSale.filter(t => t.bank >= t.price).slice(0, 2)) items.push(`<span class="tk-i"><em>TOWN FOR SALE</em>${esc(t.n)} · ${gk(t.price)} <span class="tk-up">bank holds ${gk(t.bank)}</span></span>`);
+  const html = items.join("");
+  tr.innerHTML = html + html; // drawn twice so the loop is seamless
+  tr.style.setProperty("--tk-dur", Math.max(40, items.length * 5) + "s");
+}
+function renderFinStats(pg) {
+  const el = $("finStats"); if (!el) return;
+  const stat = (n, l, c) => `<div class="stat" style="--c:${c || "var(--gold)"}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  if (!FIN) { el.innerHTML = stat("—", "Waiting for market data") + stat("—", "") + stat("—", ""); return; }
+  const fl = FIN.flows, moved = fl.reduce((s, f) => s + f.amt, 0);
+  el.innerHTML = pg === "property" ? stat(FIN.property.count.toLocaleString(), "Quarters for sale") + stat(FIN.property.idx == null ? "—" : FIN.property.idx.toFixed(2) + "g", "Median price per block") + stat(FIN.property.steals.length, "Steals right now", "var(--green)")
+    : pg === "flows" ? stat(fl.length.toLocaleString(), "Transfers found, last 48 hours") + stat(gk(moved), "Gold moved") + stat(FIN.corridors.length, "Nation-to-nation channels this week")
+    : stat(gk(FIN.totals.all), "All gold on the server") + stat(gk(FIN.totals.players), "Held by players") + stat(gk(FIN.totals.towns + FIN.totals.nations), "In town and nation banks");
+}
+function renderFinance() {
+  const pg = document.body.dataset.page;
+  renderTicker(); renderFinStats(pg);
+  if (pg === "markets") renderMarkets(); else if (pg === "property") renderProperty(); else renderFlows();
+}
+function renderMarkets() {
+  if (!FIN) { $("finNations").innerHTML = `<p class="fin-empty">${finNoData()}</p>`; for (const id of ["finMovers", "finRich", "finWatch", "finTownMoves"]) $(id).innerHTML = ""; $("finAbout").textContent = ""; return; }
+  $("finNatCount").textContent = `${FIN.nations.length} nations`;
+  $("finNations").innerHTML = finTable([["Nation"], ["Wealth", 1], ["24 hours", 1], ["7 days", 1], ["Members", 1], ["Treasuries", 1], ["Players' gold", 1], ["30 days"]],
+    FIN.nations.slice(0, 150).map((n, i) => `<tr data-finnat="${esc(n.n)}" class="${n.n === finSel ? "on" : ""}" style="cursor:pointer"><td><span class="fin-dim">${i + 1}</span> ${natChip(n.n)}</td><td class="num">${gk(n.wealth)}</td><td class="num">${dS(n.d24)} ${pS(n.pct24)}</td><td class="num">${dS(n.d7)}</td><td class="num">${n.members.toLocaleString()}</td><td class="num">${gk(n.bank + n.towns)}</td><td class="num">${gk(n.players)}</td><td>${sparkSvg(FIN.series.nations[n.n])}</td></tr>`),
+    "No nations yet.");
+  const day = FIN.movers.up24.length || FIN.movers.down24.length, up = day ? FIN.movers.up24 : FIN.movers.up3, dn = day ? FIN.movers.down24 : FIN.movers.down3;
+  $("finMoverSpan").textContent = day ? "last 24 hours" : "since the last player scan";
+  const pr = p => `<tr><td><button class="pl-name" data-player="${esc(p.n)}" data-town="${esc(p.town || "")}">${esc(p.n)}</button></td><td>${natChip(p.nation)}</td><td class="num">${dS(p.d)}</td><td class="num">${gk(p.bal)}</td></tr>`;
+  $("finMovers").innerHTML = finTable([["Player"], ["Nation"], ["Change", 1], ["Now", 1]], [...up.slice(0, 8), ...dn.slice(0, 8)].map(pr), "Movers appear after the second player scan.");
+  $("finRich").innerHTML = finTable([["Player"], ["Town"], ["Nation"], ["Balance", 1]], FIN.richest.slice(0, 50).map(p => `<tr><td><button class="pl-name" data-player="${esc(p.n)}" data-town="${esc(p.town || "")}">${esc(p.n)}</button></td><td>${esc(p.town || "—")}</td><td>${natChip(p.nation)}</td><td class="num">${gk(p.bal)}</td></tr>`), "No player balances yet.");
+  $("finWatch").innerHTML = finTable([["Town"], ["Nation"], ["Bank", 1], ["Spending a day", 1], ["Runs dry", 1]],
+    FIN.watch.slice(0, 20).map(t => `<tr data-fintown="${esc(t.n)}" style="cursor:pointer"><td>${esc(t.n)}</td><td>${natChip(t.nation)}</td><td class="num">${gk(t.bal)}</td><td class="num fin-dn">${gk(t.burn)}</td><td class="num">${t.runway < 1 ? "within a day" : `in ${Math.round(t.runway)} days`}</td></tr>`),
+    "No town is spending its bank fast enough to run dry within a week. This fills in after a day of hourly scans.");
+  $("finTownMoves").innerHTML = finTable([["Town"], ["Nation"], ["Change", 1], ["Bank", 1]], [...FIN.townMovers.up.slice(0, 6), ...FIN.townMovers.down.slice(0, 6)].map(t => `<tr data-fintown="${esc(t.n)}" style="cursor:pointer"><td>${esc(t.n)}</td><td>${natChip(t.nation)}</td><td class="num">${dS(t.d)}</td><td class="num">${gk(t.bal)}</td></tr>`), "Town bank changes appear after a few hourly scans.");
+  $("finAbout").innerHTML = `Wealth counts a nation's own bank, its towns' banks and the gold its members hold. Banks are read every hour; player balances and property every few hours (last read ${FIN.deepAt ? fmtDur(Date.now() - FIN.deepAt) + " ago" : "not yet"}, covering ${FIN.coverage.players.toLocaleString()} players and ${FIN.coverage.quarters.toLocaleString()} quarters). Item prices from shops are private to each shop owner on EarthMC, so they are not included.${FIN.deepErr ? ` <span class="fin-dn">The last player scan failed: ${esc(FIN.deepErr)}.</span>` : ""}`;
+}
+const qRow = q => `<tr data-finx="${q.x ?? ""}" data-finz="${q.z ?? ""}" style="cursor:pointer"><td>${esc(q.name)}<div class="fin-dim">${esc((q.type || "").toLowerCase())}${q.owner ? ` · ${esc(q.owner)}` : ""}</div></td><td>${esc(q.town || "—")}<div>${natChip(q.nation)}</div></td><td class="num">${gk(q.price)}</td><td class="num">${q.vol ? q.vol.toLocaleString() : "—"}</td><td class="num">${q.ppb == null ? "—" : q.ppb.toFixed(2) + "g"}</td><td class="num">${q.ratio == null ? "—" : q.ratio <= 0.5 ? `<span class="fin-steal">${Math.round((1 - q.ratio) * 100)}% under</span>` : q.ratio < 1 ? `<span class="fin-up">${Math.round((1 - q.ratio) * 100)}% under</span>` : `<span class="fin-dim">${Math.round((q.ratio - 1) * 100)}% over</span>`}</td></tr>`;
+const qCols = [["Quarter"], ["Where"], ["Price", 1], ["Blocks", 1], ["Per block", 1], ["Against local", 1]];
+function renderProperty() {
+  if (!FIN) { $("propSteals").innerHTML = `<p class="fin-empty">${finNoData()}</p>`; for (const id of ["propTowns", "propNews", "propNations", "propAll"]) $(id).innerHTML = ""; return; }
+  const P = FIN.property;
+  $("propSteals").innerHTML = finTable(qCols, P.steals.slice(0, 40).map(qRow), "Nothing is priced at half the local rate right now.");
+  $("propTowns").innerHTML = finTable([["Town"], ["Nation"], ["Price", 1], ["Bank", 1], ["Residents", 1]],
+    P.townsForSale.slice(0, 40).map(t => `<tr data-fintown="${esc(t.n)}" style="cursor:pointer"><td>${esc(t.n)}${t.bank >= t.price ? ` <span class="fin-steal">bank covers it</span>` : ""}</td><td>${natChip(t.nation)}</td><td class="num">${gk(t.price)}</td><td class="num">${gk(t.bank)}</td><td class="num">${t.res}</td></tr>`),
+    "No towns are for sale.");
+  $("propNews").innerHTML = finTable([["Quarter"], ["Where"], ["Price", 1], ["Was", 1]],
+    [...P.cuts.slice(0, 15).map(q => `<tr data-finx="${q.x ?? ""}" data-finz="${q.z ?? ""}" style="cursor:pointer"><td>${esc(q.name)} <span class="fin-steal">cut</span></td><td>${esc(q.town || "—")}</td><td class="num">${gk(q.price)}</td><td class="num fin-dim">${gk(q.prev)}</td></tr>`),
+     ...P.fresh.slice(0, 15).map(q => `<tr data-finx="${q.x ?? ""}" data-finz="${q.z ?? ""}" style="cursor:pointer"><td>${esc(q.name)} <span class="fin-dim">new</span></td><td>${esc(q.town || "—")}</td><td class="num">${gk(q.price)}</td><td class="num fin-dim">—</td></tr>`)],
+    "Price cuts and new listings appear from the second property scan.");
+  $("propNations").innerHTML = finTable([["Nation"], ["Listings", 1], ["Median per block", 1]], P.byNation.slice(0, 40).map(n => `<tr data-finnat="${esc(n.n)}" style="cursor:pointer"><td>${natChip(n.n)}</td><td class="num">${n.count}</td><td class="num">${n.median.toFixed(2)}g</td></tr>`), "No listings yet.");
+  $("propCount").textContent = `${P.count.toLocaleString()} for sale${P.listings.length < P.count ? `, best ${P.listings.length} shown` : ""}`;
+  $("propAll").innerHTML = finTable(qCols, P.listings.slice(0, 300).map(qRow), "No quarters are for sale.");
+}
+const flowEnd = e => `${e.k === "t" ? `<span class="fin-dim">town bank</span> ${esc(e.n)}` : `<button class="pl-name" data-player="${esc(e.n)}" data-town="${esc(e.town || "")}">${esc(e.n)}</button>`}<div>${natChip(e.nation)}</div>`;
+function renderFlows() {
+  if (!FIN) { $("flowList").innerHTML = `<p class="fin-empty">${finNoData()}</p>`; $("flowCorr").innerHTML = ""; return; }
+  $("flowList").innerHTML = finTable([["From"], ["To"], ["Gold", 1], ["Confidence"], ["When"]],
+    FIN.flows.slice(0, 120).map(f => `<tr><td>${flowEnd(f.a)}</td><td>${flowEnd(f.b)}</td><td class="num">${gk(f.amt)}</td><td class="fin-dim">${f.conf}</td><td class="fin-dim">${timeShort(f.at)}</td></tr>`),
+    "Transfers appear after the second player scan, a few hours after the server starts.");
+  $("flowCorr").innerHTML = finTable([["From"], ["To"], ["Gold", 1], ["Transfers", 1]], FIN.corridors.slice(0, 30).map(c => `<tr><td>${natChip(c.from)}</td><td>${natChip(c.to)}</td><td class="num">${gk(c.amt)}</td><td class="num">${c.n}</td></tr>`), "No gold has moved between nations yet.");
+}
+// clicks: a nation frames its towns, a town or listing flies the map there
+document.addEventListener("click", e => {
+  const n = e.target.closest("[data-finnat]"); if (n && !e.target.closest(".pl-name")) { finSel = n.dataset.finnat === finSel ? null : n.dataset.finnat; const N = findNation(finSel); if (N) frameNation(N); renderFinance(); return; }
+  const t = e.target.closest("[data-fintown]"); if (t) { const T = towns.find(x => x.name === t.dataset.fintown); if (T) flyTo(T); return; }
+  const q = e.target.closest("[data-finx]"); if (q && q.dataset.finx !== "") flyTo({ c:{ x:+q.dataset.finx, z:+q.dataset.finz } });
+});
+// the map: wealth as gold circles, property for sale, and gold moving between towns
+function drawFinanceLayer(placed, zoomR) {
+  if (!FIN) return;
+  const dpr = M.dpr, pg = document.body.dataset.page, sel = finSel ? findNation(finSel) : null;
+  const at = (x, z) => { const s = townScreen({ c:{ x, z } }); return s[2] > 0 ? s : null; };
+  if (pg === "markets") {
+    const max = Math.max(1, ...Object.values(FIN.townWealth).map(w => w[0] + w[1]));
+    const dry = new Set(FIN.watch.map(w => w.n));
+    for (const t of placed) {
+      const w = FIN.townWealth[t.name]; if (!w) continue;
+      const s = at(t.c.x, t.c.z); if (!s) continue;
+      const r = (1.5 + Math.sqrt((w[0] + w[1]) / max) * 26) * zoomR * dpr, dim = sel && t.nation !== sel.name;
+      ctx.globalAlpha = (M.mode === "globe" ? 0.35 + s[2] * 0.65 : 1) * (dim ? 0.15 : 1);
+      ctx.fillStyle = alpha(dry.has(t.name) ? COL.red : COL.gold, 0.22); ctx.beginPath(); ctx.arc(s[0], s[1], r, 0, 7); ctx.fill();
+      ctx.strokeStyle = alpha(dry.has(t.name) ? COL.red : COL.gold, 0.75); ctx.lineWidth = dpr; ctx.stroke();
+      M.hits.push({ t, x:s[0], y:s[1] });
+    }
+    ctx.globalAlpha = 1;
+  } else if (pg === "property") {
+    const steal = new Set(FIN.property.steals.map(q => q.id));
+    for (const q of FIN.property.listings) {
+      if (q.x == null) continue; const s = at(q.x, q.z); if (!s) continue;
+      const good = steal.has(q.id);
+      ctx.fillStyle = good ? COL.green : alpha(COL.gold, 0.7);
+      if (good) { ctx.shadowColor = COL.green; ctx.shadowBlur = 8 * dpr; }
+      ctx.beginPath(); ctx.arc(s[0], s[1], (good ? 3.2 : 2) * zoomR * dpr, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+    }
+    for (const t of FIN.property.townsForSale) {
+      if (t.x == null) continue; const s = at(t.x, t.z); if (!s) continue;
+      ctx.strokeStyle = COL.purple; ctx.lineWidth = 1.5 * dpr; ctx.beginPath(); ctx.arc(s[0], s[1], 6 * zoomR * dpr, 0, 7); ctx.stroke();
+    }
+  } else {
+    // flows: an arc from payer to receiver, thicker for more gold, with a dash running toward the receiver
+    const byName = new Map(towns.map(t => [t.name, t])), max = Math.max(1, ...FIN.flows.map(f => f.amt));
+    ctx.setLineDash([5 * dpr, 7 * dpr]); ctx.lineDashOffset = -Date.now() / 50;
+    for (const f of FIN.flows) {
+      const A = byName.get(f.a.town), B = byName.get(f.b.town); if (!A?.c || !B?.c || A === B) continue;
+      const a = at(A.c.x, A.c.z), b = at(B.c.x, B.c.z); if (!a || !b) continue;
+      if (sel && f.a.nation !== sel.name && f.b.nation !== sel.name) continue;
+      const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2 - Math.hypot(b[0] - a[0], b[1] - a[1]) * 0.25;
+      ctx.strokeStyle = alpha(COL.gold, f.conf === "low" ? 0.3 : 0.75); ctx.lineWidth = (0.8 + Math.sqrt(f.amt / max) * 3.5) * dpr;
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(mx, my, b[0], b[1]); ctx.stroke();
+      ctx.fillStyle = COL.red; ctx.beginPath(); ctx.arc(a[0], a[1], 2.2 * dpr, 0, 7); ctx.fill();
+      ctx.fillStyle = COL.green; ctx.beginPath(); ctx.arc(b[0], b[1], 2.6 * dpr, 0, 7); ctx.fill();
+    }
+    ctx.setLineDash([]);
+  }
+}
+
 // Two pages, one scan: #ruins and #overclaim
 let ruinTab = "soon";
 const PAGES = {
@@ -4574,6 +4827,9 @@ const PAGES = {
   briefings: { kicker:"Ministry of Intelligence — Briefing Room", title:"BRIEFING ROOM", tag:"Intelligence assessments and daily summaries, ready to brief the Crown or hand to allies.", sort:"", empty:"" },
   moves: { kicker:"Ministry of Intelligence — Movements", title:"MOVEMENT WATCH", tag:"Who is walking into whose land, and why. Read live from the server map.", sort:"", empty:"" },
   forecasts: { kicker:"Ministry of Intelligence — Forecast Lab", title:"FORECAST LAB", tag:"Predictions that check themselves against what happened, and learn from every result.", sort:"", empty:"" },
+  markets: { kicker:"Ministry of Finance — Markets", title:"MARKET BOARD", tag:"The wealth of every nation, town and player, read every hour.", sort:"", empty:"" },
+  property: { kicker:"Ministry of Finance — Property", title:"PROPERTY MARKET", tag:"Every quarter and town for sale on Terra Nostra, and which are steals.", sort:"", empty:"" },
+  flows: { kicker:"Ministry of Finance — Flows", title:"MONEY FLOWS", tag:"Where gold is moving: payments, trades and deposits between players and towns.", sort:"", empty:"" },
   over: { kicker:"Ministry of Attack — Overclaim", title:"OVERCLAIM FINDER", tag:"Land you can take from towns that have outgrown their residents.", sort:"Most takeable", empty:"Run a scan, then pick a town to see how much land you can take." },
 };
 function setPage(pg) {
@@ -4584,13 +4840,13 @@ function setPage(pg) {
   readColors();
   for (const el of [$("pageTitle"), $("main")]) { el.classList.remove(el.id === "main" ? "page-in" : "swap"); void el.offsetWidth; el.classList.add(el.id === "main" ? "page-in" : "swap"); }
   lastViewKey = "";
-  document.title = "Kingdom of The Bleeding Heart · " + ({ over:"Overclaim Finder", dossier:"Ministry of Intelligence", briefings:"Briefing Room", forecasts:"Forecast Lab", moves:"Movement Watch" }[pg] || "Ruin Hunter");
-  $("sysMinistry").textContent = ["dossier", "briefings", "forecasts", "moves"].includes(pg) ? "Ministry of Intelligence" : "Ministry of Attack";
+  document.title = "Kingdom of The Bleeding Heart · " + ({ over:"Overclaim Finder", dossier:"Ministry of Intelligence", briefings:"Briefing Room", forecasts:"Forecast Lab", moves:"Movement Watch", markets:"Market Board", property:"Property Market", flows:"Money Flows" }[pg] || "Ruin Hunter");
+  $("sysMinistry").textContent = MINISTRY_NAME[MINISTRY[pg]] || "Ministry of Attack";
   if (pg === "dossier") requestAnimationFrame(() => { sizeMap(); const n = nations.find(x => x.name === selNation); if (n) frameNation(n); });
   tab = pg === "ruins" ? ruinTab : pg;
   [["tabSoon","soon"],["tabRuined","ruined"],["tabSafe","safe"]].forEach(([id, v]) => $(id).classList.toggle("on", tab === v));
   selected = null;
-  if (towns.length || ["dossier", "briefings", "forecasts", "moves"].includes(pg)) render(); else $("target").innerHTML = `<h2>Target</h2><div class="empty">${P.empty}</div>`;
+  if (towns.length || ["dossier", "briefings", "forecasts", "moves", ...FIN_PAGES].includes(pg)) render(); else $("target").innerHTML = `<h2>Target</h2><div class="empty">${P.empty}</div>`;
 }
 // SHA-256 (pure JS, so it also works where crypto.subtle isn't available, e.g. some file:// pages)
 function sha256(text) {
@@ -4622,9 +4878,9 @@ function sha256(text) {
    is stored here. This keeps casual visitors out; it is not encryption, and the archive in this
    browser is not protected by it. */
 const GATE_HASH = "3d163ccb31365431e6d456af3f1d3d93f49b9e5fd2bf02231bad7adb8371a1d2"; // sha256("bh-ministry:" + password)
-const MINISTRY = { ruins:"attack", over:"attack", dossier:"intel", moves:"intel", briefings:"intel", forecasts:"intel" };
-const MINISTRY_HOME = { attack:"#ruins", intel:"#dossier" };
-const MINISTRY_NAME = { attack:"Ministry of Attack", intel:"Ministry of Intelligence" };
+const MINISTRY = { ruins:"attack", over:"attack", dossier:"intel", moves:"intel", briefings:"intel", forecasts:"intel", markets:"finance", property:"finance", flows:"finance" };
+const MINISTRY_HOME = { attack:"#ruins", intel:"#dossier", finance:"#markets" };
+const MINISTRY_NAME = { attack:"Ministry of Attack", intel:"Ministry of Intelligence", finance:"Ministry of Finance" };
 const unlocked = new Set((() => { try { return JSON.parse(sessionStorage.getItem("bh_unlocked") || "[]"); } catch { return []; } })());
 const saveUnlocked = () => { try { sessionStorage.setItem("bh_unlocked", JSON.stringify([...unlocked])); } catch {} };
 const RESUME_DIRECT = unlocked.size > 0; // reopened in an unlocked tab: straight back in, as before
@@ -4667,13 +4923,16 @@ const LANDING = {
     lede:"Scan every town on Terra Nostra to open the war room: ruins about to fall, land you can overclaim, and the routes to reach them first." },
   intel:{ kicker:"Kingdom of The Bleeding Heart — Ministry of Intelligence", title:"Ministry<br>of Intelligence", mods:["Nation Intelligence", "Movement Watch", "Briefing Room", "Forecast Lab"],
     lede:"Scan every town on Terra Nostra to brief the Crown: nation assessments, movements across our borders, intelligence briefings and forecasts." },
+  finance:{ kicker:"Kingdom of The Bleeding Heart — Ministry of Finance", title:"Ministry<br>of Finance", mods:["Market Board", "Property Market", "Money Flows"],
+    lede:"The economy of Terra Nostra: the wealth of every nation, property for sale and where gold is moving. Market data comes from the Ministry server." },
 };
 let savedScanAt = null;
 // on the Ministry server the server scans every hour, so the landing has no scan button: just the way in
 const SERVER_LEDE = { attack:"Updated every hour from every town on Terra Nostra: ruins about to fall, land you can overclaim, and the routes to reach them first.",
-  intel:"Updated every hour from every town on Terra Nostra: nation assessments, movements across our borders, intelligence briefings and forecasts." };
+  intel:"Updated every hour from every town on Terra Nostra: nation assessments, movements across our borders, intelligence briefings and forecasts.",
+  finance:"Updated every hour from every bank, purse and property on Terra Nostra: the wealth of nations, steals on the property market, and where gold is moving." };
 function setLandingFor(m) {
-  const L = LANDING[m] || LANDING.attack, label = m === "intel" ? "Intelligence" : "Attack", srv = !!window.BH_SERVER;
+  const L = LANDING[m] || LANDING.attack, label = { intel:"Intelligence", finance:"Finance" }[m] || "Attack", srv = !!window.BH_SERVER;
   $("landing").setAttribute("aria-label", MINISTRY_NAME[m] || MINISTRY_NAME.attack);
   $("landKicker").textContent = L.kicker; $("landTitle").innerHTML = L.title; $("landLede").textContent = srv ? SERVER_LEDE[m] || SERVER_LEDE.attack : L.lede;
   $("landTitle").classList.toggle("long", m === "intel");
@@ -4704,7 +4963,7 @@ $("lockBtn").onclick = () => { unlocked.clear(); saveUnlocked(); document.body.c
 setInterval(() => { if (document.body.classList.contains("portal")) $("sClock").textContent = new Date().toISOString().slice(11, 19) + " UTC · Terra Nostra"; }, 1000);
 document.querySelectorAll("img[data-crest]").forEach(i => { i.src = document.querySelector(".crest img").src; });
 
-const pageFromHash = () => ({ "#overclaim":"over", "#dossier":"dossier", "#briefings":"briefings", "#forecasts":"forecasts", "#moves":"moves" })[location.hash] || "ruins";
+const pageFromHash = () => ({ "#overclaim":"over", "#dossier":"dossier", "#briefings":"briefings", "#forecasts":"forecasts", "#moves":"moves", "#markets":"markets", "#property":"property", "#flows":"flows" })[location.hash] || "ruins";
 let lastHash = location.hash;
 addEventListener("hashchange", () => {
   const pg = pageFromHash(), m = MINISTRY[pg], target = location.hash;

@@ -44,6 +44,23 @@ Then open http://localhost:8080. (`INSECURE_COOKIE=1` is only for plain-http loc
 
 The end-to-end test, with a fake EarthMC API and no network: `node tests/server-test.js` from the project folder after `npm install` in `server/`.
 
+## Ministry of Finance
+
+EarthMC keeps shop item prices private to each shop's owner, so the Finance ministry reads the public economy instead:
+
+- **Every hour:** every town and nation bank, taken from the hourly scan with no extra requests.
+- **Every three hours**, between hourly scans (20–50 minutes past the hour): every player's balance (about 45,000 players, roughly 450 requests) and every quarter with its sale price (about 24,000 quarters, roughly 240 requests). That takes a few minutes and stays under the rate limit.
+
+It has three pages:
+
+- **Market Board:** a scrolling ticker; the wealth of every nation (bank, town banks and members' gold) with 24-hour and 7-day changes and 30-day sparklines; the richest players; the biggest movers; and the treasury watch, towns spending their bank fast enough to run dry within a week.
+- **Property Market:** every quarter for sale. **Steals** are priced at half the local rate per block or less. Also price cuts, new listings, and towns for sale, flagged when the town's own bank already covers the price.
+- **Money Flows:** payments found by matching one balance falling and another rising by the same amount between two player scans, drawn on the map as arcs from payer to receiver, plus gold moving between nations over the week.
+
+The Daily Summary gets an "Economic Developments" section, and each Intelligence Assessment's Economy section gets the nation's full wealth, its gold flows, towns running dry and its property listings.
+
+Settings: `FINANCE_EVERY_HOURS` (default `3`). Data is kept in `/data/finance`.
+
 ## Open-channel signals (Discord chat)
 
 The server reads Discord chat exports (DiscordChatExporter JSON) each hour and writes what matters into the briefings, as a "Signals from Open Channels" section in each Intelligence Assessment and in the Daily Summary.

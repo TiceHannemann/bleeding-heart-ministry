@@ -10,6 +10,7 @@ const path = require("path");
 const zlib = require("zlib");
 const { DATA, readJSON, writeJSON } = require("./paths");
 const signals = require("./signals");
+const finance = require("./finance");
 
 const RUNS = path.join(DATA, "runs"), IMPORTS = path.join(DATA, "imports"), PROFILE = path.join(DATA, "profile");
 const STATUS_FILE = path.join(DATA, "status.json");
@@ -26,7 +27,7 @@ function tokenOk(t) {
   tokens.delete(t); // one use only
   return exp > Date.now();
 }
-function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24), signals:signals.status() }; }
+function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24), signals:signals.status(), finance:finance.status() }; }
 
 function schedule() {
   clearTimeout(timer);
@@ -40,6 +41,14 @@ function schedule() {
 }
 function start(o) {
   opts = { ...opts, ...o }; schedule();
+  // the finance deep scan (every player and quarter) runs between hourly scans; when it finishes, visitors get it straight away
+  finance.start({ busy:() => S.running, after:async () => {
+    if (S.running) return;
+    S.running = true;
+    try { const page = await browser(); await pushFinance(page); await exportArchive(page); }
+    catch (e) { console.warn("collector: finance refresh failed:", e.message); }
+    finally { S.running = false; save(); }
+  } });
   // open the browser straight away so live positions are recorded from the start, not only after the first scan
   setTimeout(() => { if (!S.running) browser().catch(e => console.error("collector: browser failed to open:", e.message)); }, 2000);
   // check every few minutes that tracking is still running (the browser reopens itself after a crash or its daily restart)
@@ -90,6 +99,33 @@ function browser() {
   })().finally(() => { B.opening = null; });
 }
 
+// the archive, for visitors' browsers: everything the page keeps, including the last scan and the Forecast Lab
+async function exportArchive(page) {
+  const archive = await page.evaluate(() => idbDo(["meta", "series", "frames", "events", "visits", "predictions"], "readonly", async tx => {
+    const m = tx.objectStore("meta");
+    return JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now(),
+      stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")),
+      signals:await reqP(m.get("signals")), finance:await reqP(m.get("finance")),
+      series:await reqP(tx.objectStore("series").getAll()),
+      frameKeys:await reqP(tx.objectStore("frames").getAllKeys()), frames:await reqP(tx.objectStore("frames").getAll()),
+      events:await reqP(tx.objectStore("events").getAll()), visits:await reqP(tx.objectStore("visits").getAll()),
+      predictions:await reqP(tx.objectStore("predictions").getAll()) });
+  }));
+  const gz = path.join(DATA, "archive.json.gz");
+  fs.writeFileSync(gz + ".tmp", zlib.gzipSync(archive, { level:6 })); fs.renameSync(gz + ".tmp", gz);
+  S.archiveVersion = String(Date.now()); save();
+}
+// banks come from the page's own scan (no extra requests); finance.js adds players, flows and property
+async function pushFinance(page) {
+  const input = await page.evaluate(() => scanData?.details ? {
+    towns:scanData.details.map(t => { const c = coordsOf(t); return [t.name, t.nation?.name || null, t.stats?.balance ?? 0, t.stats?.forSalePrice ?? null, c?.x ?? null, c?.z ?? null, t.stats?.numResidents ?? (t.residents || []).length]; }),
+    nations:Object.values(nationDetails || {}).map(n => [n.name, n.stats?.balance ?? 0]),
+  } : null);
+  if (!input) return;
+  const fin = finance.hourly(input);
+  await page.evaluate(f => { FIN = f; return idbDo(["meta"], "readwrite", tx => tx.objectStore("meta").put(f, "finance")); }, fin);
+}
+
 async function runOnce() {
   if (S.running) return;
   S.running = true; S.lastRun = Date.now(); save();
@@ -129,18 +165,10 @@ async function runOnce() {
       await page.evaluate(ev => { SIGNALS = ev; return idbDo(["meta"], "readwrite", tx => tx.objectStore("meta").put(ev, "signals")); }, sig);
     } catch (e) { console.warn("collector: signals step failed:", e.message); }
 
-    // the archive, for visitors' browsers: everything the page keeps, including the last scan and the Forecast Lab
-    const archive = await page.evaluate(() => idbDo(["meta", "series", "frames", "events", "visits", "predictions"], "readonly", async tx => {
-      const m = tx.objectStore("meta");
-      return JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now(),
-        stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")), signals:await reqP(m.get("signals")),
-        series:await reqP(tx.objectStore("series").getAll()),
-        frameKeys:await reqP(tx.objectStore("frames").getAllKeys()), frames:await reqP(tx.objectStore("frames").getAll()),
-        events:await reqP(tx.objectStore("events").getAll()), visits:await reqP(tx.objectStore("visits").getAll()),
-        predictions:await reqP(tx.objectStore("predictions").getAll()) });
-    }));
-    const gz = path.join(DATA, "archive.json.gz");
-    fs.writeFileSync(gz + ".tmp", zlib.gzipSync(archive, { level:6 })); fs.renameSync(gz + ".tmp", gz);
+    // the Ministry of Finance: this hour's banks, with the latest player and property scans
+    await pushFinance(page).catch(e => console.warn("collector: finance step failed:", e.message));
+
+    await exportArchive(page);
 
     // the reports: the daily summary (two releases), the leading threats, and our allies' support assessments
     const docs = await page.evaluate(() => {

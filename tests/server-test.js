@@ -4,7 +4,7 @@
 const path = require('path'), fs = require('fs'), os = require('os');
 const { chromium } = require(path.join(__dirname, '../server/node_modules/playwright'));
 process.env.DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'bh-srv-'));
-process.env.PORT = '8799'; process.env.INSECURE_COOKIE = '1'; const OPEN = process.argv.includes('--open'); // --open: no password, the site is open to everyone
+process.env.PORT = '8799'; process.env.INSECURE_COOKIE = '1'; process.env.FINANCE_DEEP = 'off'; const OPEN = process.argv.includes('--open'); // --open: no password, the site is open to everyone
 if (!OPEN) process.env.MINISTRY_PASSWORD = 'test-pass';
 
 const now = Date.now(), off = (k, j) => [2, 20 + (k % 25), 35 + (k % 9), 50][j];
