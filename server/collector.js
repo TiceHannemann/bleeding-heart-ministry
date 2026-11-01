@@ -11,6 +11,7 @@ const zlib = require("zlib");
 const { DATA, readJSON, writeJSON } = require("./paths");
 const signals = require("./signals");
 const finance = require("./finance");
+const keyed = require("./keyed");
 
 const RUNS = path.join(DATA, "runs"), IMPORTS = path.join(DATA, "imports"), PROFILE = path.join(DATA, "profile");
 const STATUS_FILE = path.join(DATA, "status.json");
@@ -27,7 +28,7 @@ function tokenOk(t) {
   tokens.delete(t); // one use only
   return exp > Date.now();
 }
-function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24), signals:signals.status(), finance:finance.status() }; }
+function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24), signals:signals.status(), finance:finance.status(), keyed:keyed.status() }; }
 
 function schedule() {
   clearTimeout(timer);
@@ -45,9 +46,17 @@ function start(o) {
   finance.start({ busy:() => S.running, after:async () => {
     if (S.running) return;
     S.running = true;
-    try { const page = await browser(); await pushFinance(page); await exportArchive(page); }
+    try { const page = await browser(); await pushFinance(page); await pushKeyed(page); await exportArchive(page); }
     catch (e) { console.warn("collector: finance refresh failed:", e.message); }
     finally { S.running = false; save(); }
+  } });
+  // with an EarthMC API key: leaderboards, pursuits and the event stream. Towns fall at the new day, so a scan
+  // follows a few minutes after it, once nothing else is running, and fresh ruins show straight away.
+  keyed.start({ busy:() => S.running || finance.status().running, onNewDay:() => {
+    const t0 = Date.now(), DELAY = (+process.env.NEWDAY_DELAY_S || 180) * 1000;
+    const go = () => { if (S.running || finance.status().running) { if (Date.now() - t0 < 30 * 6e4) setTimeout(go, 3e4); return; }
+      console.log("collector: new day; scanning for fresh ruins"); S.newDayScan = Date.now(); runSoon(); };
+    setTimeout(go, DELAY);
   } });
   // open the browser straight away so live positions are recorded from the start, not only after the first scan
   setTimeout(() => { if (!S.running) browser().catch(e => console.error("collector: browser failed to open:", e.message)); }, 2000);
@@ -105,7 +114,7 @@ async function exportArchive(page) {
     const m = tx.objectStore("meta");
     return JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now(),
       stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")),
-      signals:await reqP(m.get("signals")), finance:await reqP(m.get("finance")),
+      signals:await reqP(m.get("signals")), finance:await reqP(m.get("finance")), keyed:await reqP(m.get("keyed")),
       series:await reqP(tx.objectStore("series").getAll()),
       frameKeys:await reqP(tx.objectStore("frames").getAllKeys()), frames:await reqP(tx.objectStore("frames").getAll()),
       events:await reqP(tx.objectStore("events").getAll()), visits:await reqP(tx.objectStore("visits").getAll()),
@@ -124,6 +133,11 @@ async function pushFinance(page) {
   if (!input) return;
   const fin = finance.hourly(input);
   await page.evaluate(f => { FIN = f; return idbDo(["meta"], "readwrite", tx => tx.objectStore("meta").put(f, "finance")); }, fin);
+}
+// leaderboards, pursuits and the key owner's own shops and books (nothing when no API key is set)
+async function pushKeyed(page) {
+  const k = keyed.snapshot();
+  await page.evaluate(k => { KEYED = k; return idbDo(["meta"], "readwrite", tx => k ? tx.objectStore("meta").put(k, "keyed") : tx.objectStore("meta").delete("keyed")); }, k);
 }
 
 async function runOnce() {
@@ -167,6 +181,7 @@ async function runOnce() {
 
     // the Ministry of Finance: this hour's banks, with the latest player and property scans
     await pushFinance(page).catch(e => console.warn("collector: finance step failed:", e.message));
+    await pushKeyed(page).catch(e => console.warn("collector: leaderboards step failed:", e.message));
 
     await exportArchive(page);
 
@@ -228,7 +243,7 @@ function prune() {
   }
 }
 
-module.exports = { start, status, tokenOk, runSoon, runOnce, closeBrowser };
+module.exports = { start, status, tokenOk, runSoon, runOnce, closeBrowser, stop:keyed.stop };
 
 // `node collector.js` runs one scan against a server already listening on PORT
 if (require.main === module) { opts.port = +process.env.PORT || 8080; runOnce().then(async () => { await closeBrowser(); process.exit(S.lastError ? 1 : 0); }); }

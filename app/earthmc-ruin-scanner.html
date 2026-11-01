@@ -102,7 +102,7 @@
   .crest-text { display:flex; flex-direction:column; gap:3px; }
   .crest-text b { font:700 17px/1.05 var(--gov); letter-spacing:-.01em; color:var(--fg); }
   .crest-text small { font:500 10px var(--mono); letter-spacing:.16em; text-transform:uppercase; color:var(--mut); }
-  body:is([data-page="dossier"], [data-page="briefings"], [data-page="forecasts"], [data-page="moves"]) .crest-text small { color:var(--intel); }
+  body:is([data-page="dossier"], [data-page="briefings"], [data-page="forecasts"], [data-page="moves"], [data-page="rankings"]) .crest-text small { color:var(--intel); }
   .crest:hover img { filter:drop-shadow(0 0 14px rgba(232,64,111,.5)); }
   .sysbar b { color:var(--fg); font-weight:500; }
   .sysbar #sysPurge { min-width:150px; text-align:right; }
@@ -399,11 +399,24 @@
   .hmeta { flex-direction:row; align-items:center; justify-content:flex-end; }
 
   /* Ministry of Finance: three pages, gold accent */
-  body:is([data-page="markets"],[data-page="property"],[data-page="flows"]) :is(.only-ruins,.only-over,.only-dossier,.not-dossier,.only-brief,.only-fore) { display:none !important; }
-  body:not(:is([data-page="markets"],[data-page="property"],[data-page="flows"])) .only-finance,
+  body:is([data-page="markets"],[data-page="property"],[data-page="flows"],[data-page="ledger"]) :is(.only-ruins,.only-over,.only-dossier,.not-dossier,.only-brief,.only-fore) { display:none !important; }
+  body:not(:is([data-page="markets"],[data-page="property"],[data-page="flows"],[data-page="ledger"])) .only-finance, body:not([data-page="ledger"]) .only-ledger,
   body:not([data-page="markets"]) .only-markets, body:not([data-page="property"]) .only-property, body:not([data-page="flows"]) .only-flows { display:none !important; }
   body[data-page="markets"] .pages a[href="#markets"], body[data-page="property"] .pages a[href="#property"], body[data-page="flows"] .pages a[href="#flows"] { color:var(--fg); }
   body[data-page="markets"] .pages a[href="#markets"]::after, body[data-page="property"] .pages a[href="#property"]::after, body[data-page="flows"] .pages a[href="#flows"]::after { background:var(--gold); transform:scaleX(1); }
+  /* Rankings (Intelligence) and Ledger (Finance) come from the Ministry server's EarthMC API key; their icons show only when it has one */
+  body:not(.has-ranks) .pages a[href="#rankings"], body:not(.has-ledger) .pages a[href="#ledger"] { display:none; }
+  body[data-page="ledger"] .pages a[href="#ledger"], body[data-page="rankings"] .pages a[href="#rankings"] { color:var(--fg); }
+  body[data-page="ledger"] .pages a[href="#ledger"]::after { background:var(--gold); transform:scaleX(1); }
+  body[data-page="rankings"] .pages a[href="#rankings"]::after { background:var(--intel); transform:scaleX(1); }
+  body[data-page="rankings"] :is(.only-ruins,.only-over,.only-dossier,.not-dossier,.mapstage,.only-brief,.only-fore) { display:none !important; }
+  body:not([data-page="rankings"]) .only-rankings { display:none !important; }
+  .stat .n.word { font-size:clamp(22px,2.6vw,34px); letter-spacing:-.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #rkSkills { gap:6px 16px; margin-bottom:14px; }
+  .rk-h { font:500 13px var(--display); margin:0 0 10px; } .rk-h ~ .rk-h, .fin-wrap .nt + .rk-h { margin-top:28px; }
+  .rk-me td { color:var(--hq); }
+  .dtiles.five { grid-template-columns:repeat(5,1fr); }
+  @media (max-width:640px) { .dtiles.five { grid-template-columns:repeat(2,1fr); } }
   .ticker { position:relative; overflow:hidden; border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin:0 0 40px; white-space:nowrap;
     -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent); }
   .tk-track { display:inline-flex; gap:40px; padding:12px 0; animation:tk var(--tk-dur,80s) linear infinite; font:500 12px var(--mono); letter-spacing:.04em; }
@@ -716,8 +729,8 @@
 
   <nav class="pages">
     <div class="ministry" data-m="attack"><a href="#ruins" data-tip="Ruin Hunter" aria-label="Ruin Hunter" data-ico="target"></a><a href="#overclaim" data-tip="Overclaim Finder" aria-label="Overclaim Finder" data-ico="flag"></a></div>
-    <div class="ministry" data-m="intel"><a href="#dossier" data-tip="Nations" aria-label="Nation Intelligence" data-ico="globe"></a><a href="#moves" data-tip="Movement Watch" aria-label="Movement Watch" data-ico="radar"></a><a href="#briefings" data-tip="Briefing Room" aria-label="Briefing Room" data-ico="file"></a><a href="#forecasts" data-tip="Forecast Lab" aria-label="Forecast Lab" data-ico="flask"></a></div>
-    <div class="ministry" data-m="finance"><a href="#markets" data-tip="Market Board" aria-label="Market Board" data-ico="candles"></a><a href="#property" data-tip="Property Market" aria-label="Property Market" data-ico="home"></a><a href="#flows" data-tip="Money Flows" aria-label="Money Flows" data-ico="flows"></a></div>
+    <div class="ministry" data-m="intel"><a href="#dossier" data-tip="Nations" aria-label="Nation Intelligence" data-ico="globe"></a><a href="#moves" data-tip="Movement Watch" aria-label="Movement Watch" data-ico="radar"></a><a href="#briefings" data-tip="Briefing Room" aria-label="Briefing Room" data-ico="file"></a><a href="#forecasts" data-tip="Forecast Lab" aria-label="Forecast Lab" data-ico="flask"></a><a href="#rankings" data-tip="Rankings" aria-label="Rankings" data-ico="trophy"></a></div>
+    <div class="ministry" data-m="finance"><a href="#markets" data-tip="Market Board" aria-label="Market Board" data-ico="candles"></a><a href="#property" data-tip="Property Market" aria-label="Property Market" data-ico="home"></a><a href="#flows" data-tip="Money Flows" aria-label="Money Flows" data-ico="flows"></a><a href="#ledger" data-tip="Ledger" aria-label="Ledger" data-ico="wallet"></a></div>
   </nav>
   <main id="main">
 
@@ -774,6 +787,7 @@
       <span class="only-markets" style="--c:var(--gold)">Wealth</span><span class="only-markets" style="--c:var(--red)">Running dry</span>
       <span class="only-property" style="--c:var(--gold)">Quarter</span><span class="only-property" style="--c:var(--green)">Steal</span><span class="only-property" style="--c:var(--purple)">Town</span>
       <span class="only-flows" style="--c:var(--green)">Received</span><span class="only-flows" style="--c:var(--red)">Paid</span>
+      <span class="only-ledger" style="--c:var(--gold)">Shop</span><span class="only-ledger" style="--c:var(--red)">Empty</span>
       <span class="only-ruins" style="--c:var(--red)">Ruined</span>
       <span class="only-ruins" style="--c:var(--orange)">Falls &lt; 3 days</span>
       <span class="only-over" style="--c:var(--purple)">Overclaimable now</span>
@@ -853,6 +867,26 @@
       <div class="panel"><h2 data-tip="Last 48 hours. Found by matching one balance falling and another rising by the same amount between player scans">Largest transfers</h2><div class="fin-wrap" id="flowList"></div></div>
       <div class="panel"><h2 data-tip="Last 7 days">Gold between nations</h2><div class="fin-wrap" id="flowCorr"></div></div>
     </div>
+  </section>
+
+  <section class="only-ledger">
+    <div class="fin-cols">
+      <div class="panel"><h2>Shops</h2><div class="fin-wrap" id="lgShops"></div></div>
+      <div class="panel"><h2 data-tip="Last 7 days">Trades</h2><div class="fin-wrap" id="lgTrades"></div></div>
+    </div>
+    <div class="fin-cols">
+      <div class="panel"><h2>Treasury</h2><div class="fin-wrap" id="lgBank"></div></div>
+      <div class="panel"><h2 data-tip="Your town and nation">Notices</h2><div class="fin-wrap" id="lgNotices"></div></div>
+    </div>
+  </section>
+
+  <section class="only-rankings">
+    <div class="stats" id="rkStats"></div>
+    <div class="fin-cols">
+      <div class="panel"><h2 data-tip="Places in the top 25 of each combat skill and of overall power, higher places counting more">Fighting strength</h2><div class="fin-wrap" id="rkNations"></div></div>
+      <div class="panel"><h2 id="rkBoardH">Power</h2><div class="tseg" id="rkSkills"></div><div class="fin-wrap" id="rkBoard"></div></div>
+    </div>
+    <div class="panel"><h2>Pursuits</h2><div class="fin-cols three" id="rkPursuits"></div></div>
   </section>
 
   <section class="only-brief briefroom">
@@ -950,6 +984,7 @@ const API_CANDIDATES = ["https://api.earthmc.net/v4", ...["v4", "v3", "v2"].flat
   ["terranostra", "terra_nostra", "terra-nostra", "nostra", "TerraNostra", "terra"].map(w => `https://api.earthmc.net/${v}/${w}`))];
 let API = API_CANDIDATES[0];
 let towns = [], tab = "soon", selected = null, view = [];
+let KEYED = null; // from the Ministry server's EarthMC API key: leaderboards, pursuits, the new day, the owner's shops (see Rankings and Ledger)
 
 const $ = id => document.getElementById(id);
 if (window.BH_SERVER) document.body.classList.add("server");
@@ -974,6 +1009,8 @@ const ICON = {
   reports:'<path d="M16 22h2a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v3"/><path d="M14 2v6h6"/><circle cx="8" cy="16" r="6"/><path d="M9.5 17.5 8 16.25V14"/>',
   copy:'<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  trophy:'<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  wallet:'<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
 };
 const ico = name => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">${ICON[name] || ""}</svg>`;
 const paintIcons = (root = document) => root.querySelectorAll("[data-ico]:not([data-ico-done])").forEach(el => { el.insertAdjacentHTML("afterbegin", ico(el.dataset.ico)); el.dataset.icoDone = "1"; });
@@ -1464,7 +1501,8 @@ function renderDossier(n) {
       </div>
       <div class="a-acts"><button class="deep" data-copybrief="${esc(n.name)}">Copy brief</button><button class="deep" data-frame="${esc(n.name)}">Show on map</button>${A.dA != null ? `<span class="a-mom">Since last scan: ${A.dA >= 0 ? "+" : ""}${A.dA} active · ${A.dC >= 0 ? "+" : ""}${A.dC} chunks</span>` : ""}</div>
     </div>
-    <div class="dtiles">
+    <div class="dtiles${hasRanks() ? " five" : ""}">
+      ${hasRanks() ? (f => tile(new Set(f.map(x => x.p)).size, "Fighters", "", f.length ? f.slice(0, 4).map(x => `#${x.rank} ${skillName(x.sk)} · ${x.p}`).join("  ") : "None in the top 25 of a combat skill"))(fightersOf(n.name)) : ""}
       ${tile(n.towns.length, "Towns", "", `${n.residents} residents`)}
       ${tile(n.active30, "Active 30d", "", `${n.active7} active in the last 7 days · ${n.known} of ${n.residents} residents checked`)}
       ${tile(n.chunks, "Chunks", "", `${n.allies.length} allies · ${n.enemies.length} enemies`)}
@@ -1567,8 +1605,11 @@ function learnFromRuins() {
 }
 // the most recent purge before now (null if unknown)
 function lastPurge() {
-  if (learned.purgeMin == null) return null;
-  const d = new Date(); d.setUTCHours(0, learned.purgeMin, 0, 0);
+  // the server's event stream gives the new day to the minute; otherwise it is learned from when towns fell
+  const nd = KEYED?.newDayAt && Date.now() - KEYED.newDayAt < 3 * 864e5 ? new Date(KEYED.newDayAt) : null;
+  const min = nd ? nd.getUTCHours() * 60 + nd.getUTCMinutes() : learned.purgeMin;
+  if (min == null) return null;
+  const d = new Date(); d.setUTCHours(0, min, 0, 0);
   if (d > Date.now()) d.setUTCDate(d.getUTCDate() - 1);
   return +d;
 }
@@ -1647,6 +1688,7 @@ function render() {
   if (tab === "briefings") { renderBriefingRoom(); return; }
   if (tab === "forecasts") { renderForecastLab(); return; }
   if (tab === "moves") { renderMoves(); return; }
+  if (tab === "rankings") { renderRankings(); return; }
   if (FIN_PAGES.includes(tab)) { renderFinance(); return; }
   const q = $("search").value.toLowerCase().trim();
   let rows = towns.filter(t => !q || [t.name, t.nation, t.mayor].some(v => v && v.toLowerCase().includes(q)));
@@ -3827,6 +3869,7 @@ function nationAssessment(n, p, releasable) {
   Head(doc, "Military Potential");
   const ratio = persp && persp !== n && persp.active30 ? n.active30 / persp.active30 : null;
   Para(doc, `In Towny warfare, active manpower determines how quickly a nation can claim, defend and contest land, and treasury determines whether it can sustain those claims. ${n.name} ranks ${ordinal(rankA)} of ${N} by active members and ${ordinal(rankG)} by gold. ${ratio != null ? `Its active membership is ${Math.round(ratio * 100)} per cent of ${persp.name}'s. ` : ""}${a.strength >= 70 ? "It has the capacity to mount sustained territorial operations." : a.strength >= 40 ? "It could conduct limited operations against a weaker neighbour but would struggle against a peer." : "It lacks the manpower to threaten a well-organised neighbour on its own."} Its overall strength score is ${a.strength} out of 100.`);
+  fightersPara(doc, n);
 
   Head(doc, "Vulnerabilities");
   Para(doc, X.ruin7.length ? `${plural(X.ruin7.length, "town")} will pass the inactivity limit within seven days unless one of their residents logs in: ${andList(X.ruin7.slice(0, 8).map(t => `${t.name} (mayor ${t.mayor}, around ${fmtDay(Date.now() + Math.max(0, etaOf(t)))})`))}${X.ruin7.length > 8 ? `, and ${X.ruin7.length - 8} others` : ""}. Once ruined, their contents can be taken by anyone.` : `No town of ${n.name} is forecast to fall to ruin within seven days.`);
@@ -3960,6 +4003,7 @@ function intsum(releasable) {
   const dip7 = ev7.filter(e => /^(ally|enemy)_/.test(e.type) && !ev7.some(o => o.type === e.type && o.ns[0] === e.who && o.who === e.ns[0] && o.ns[0] < e.ns[0]));
   const byDay = [...dip7.slice(-10).reduce((m, e) => m.set(fmtDay(e.at), [...(m.get(fmtDay(e.at)) || []), eventText(e, null)]), new Map())];
   Para(doc, byDay.length ? byDay.map(([d, xs]) => `On ${d}, ${andList(xs)}.`).join(" ") : "No alliances or enmities were made or broken this week.");
+  fightersIntsum(doc);
   signalsIntsum(doc);
   financeIntsum(doc);
   movementIntsum(doc, releasable);
@@ -4646,7 +4690,10 @@ const appReady = (async () => {
   await loadMoves();
   try { SIGNALS = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("signals")))) || []; } catch {}
   try { FIN = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("finance")))) || null; } catch {}
-  if (FIN && FIN_PAGES.includes(tab)) renderFinance();
+  try { KEYED = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("keyed")))) || null; } catch {}
+  keyedReady();
+  if ((FIN || KEYED) && FIN_PAGES.includes(tab)) renderFinance();
+  if (KEYED && tab === "rankings") renderRankings();
   ARCHIVE.frame7 = await frameNear(Date.now() - 7 * DAY);
   let saved = null;
   try { saved = await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("lastScan"))); } catch {}
@@ -4725,7 +4772,7 @@ document.addEventListener("click", async e => {
    every town and nation bank (each hour), every player's balance and every quarter for sale (every few hours).
    All of it is gathered and analysed on the Ministry server (server/finance.js) and arrives as meta "finance". */
 let FIN = null, finSel = null;
-const FIN_PAGES = ["markets", "property", "flows"];
+const FIN_PAGES = ["markets", "property", "flows", "ledger"];
 const gk = v => { if (v == null || isNaN(v)) return "—"; const a = Math.abs(v); return (v < 0 ? "−" : "") + (a >= 1e6 ? (a / 1e6).toFixed(2) + "M" : a >= 1e4 ? (a / 1e3).toFixed(1) + "k" : Math.round(a).toLocaleString()) + "g"; };
 const dS = v => v == null ? `<span class="fin-dim">—</span>` : `<span class="${v >= 0 ? "fin-up" : "fin-dn"}">${v >= 0 ? "▲" : "▼"} ${gk(Math.abs(v))}</span>`;
 const pS = v => v == null || !isFinite(v) ? "" : `<span class="${v >= 0 ? "fin-up" : "fin-dn"}">${v >= 0 ? "+" : "−"}${Math.abs(v * 100).toFixed(1)}%</span>`;
@@ -4765,6 +4812,11 @@ function renderTicker() {
 function renderFinStats(pg) {
   const el = $("finStats"); if (!el) return;
   const stat = (n, l, c) => `<div class="stat" style="--c:${c || "var(--gold)"}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  if (pg === "ledger") {
+    const sh = KEYED?.shops?.list || [], sold = (KEYED?.trades || []).filter(t => t.k === "sold" && t.at > Date.now() - 7 * DAY);
+    el.innerHTML = stat(sh.length, "Shops") + stat(gk(sold.reduce((s, t) => s + t.price, 0)), "Sold, 7 days", "var(--green)") + stat(sh.filter(s => s.stock === 0).length, "Empty", "var(--red)");
+    return;
+  }
   if (!FIN) { el.innerHTML = stat("—", "Waiting for market data") + stat("—", "") + stat("—", ""); return; }
   const fl = FIN.flows, moved = fl.reduce((s, f) => s + f.amt, 0);
   el.innerHTML = pg === "property" ? stat(FIN.property.count.toLocaleString(), "Quarters for sale") + stat(gk(FIN.property.idx), "Median asking price") + stat(FIN.property.steals.length, "Steals right now", "var(--green)")
@@ -4774,7 +4826,7 @@ function renderFinStats(pg) {
 function renderFinance() {
   const pg = document.body.dataset.page;
   renderTicker(); renderFinStats(pg);
-  if (pg === "markets") renderMarkets(); else if (pg === "property") renderProperty(); else renderFlows();
+  if (pg === "markets") renderMarkets(); else if (pg === "property") renderProperty(); else if (pg === "ledger") renderLedger(); else renderFlows();
 }
 function renderMarkets() {
   if (!FIN) { $("finNations").innerHTML = `<p class="fin-empty">${finNoData()}</p>`; for (const id of ["finMovers", "finRich", "finWatch", "finTownMoves"]) $(id).innerHTML = ""; $("finAbout").textContent = ""; return; }
@@ -4827,6 +4879,7 @@ document.addEventListener("click", e => {
 });
 // the map: wealth as gold circles, property for sale, and gold moving between towns
 function drawFinanceLayer(placed, zoomR) {
+  if (document.body.dataset.page === "ledger") return drawLedgerLayer(zoomR);
   if (!FIN) return;
   const dpr = M.dpr, pg = document.body.dataset.page, sel = finSel ? findNation(finSel) : null;
   const at = (x, z) => { const s = townScreen({ c:{ x, z } }); return s[2] > 0 ? s : null; };
@@ -4876,6 +4929,109 @@ function drawFinanceLayer(placed, zoomR) {
   }
 }
 
+/* ---------- Rankings and Ledger ----------
+   From the Ministry server's EarthMC API key (server/keyed.js), arriving as meta "keyed": the mcMMO leaderboards (the top 25
+   in each skill and in overall power), the server's pursuits, the time of the new day, and the key owner's own shops, trades and books. */
+let rkSkill = "power";
+const COMBAT_SKILLS = ["SWORDS", "AXES", "ARCHERY", "CROSSBOWS", "MACES", "SPEARS", "TRIDENTS", "UNARMED", "ACROBATICS", "TAMING"];
+const CRAFT_SKILLS = ["MINING", "WOODCUTTING", "HERBALISM", "EXCAVATION", "FISHING", "SMELTING", "ALCHEMY", "REPAIR", "SALVAGE"];
+const skillName = s => s === "power" ? "Power" : s[0] + s.slice(1).toLowerCase();
+const humanize = s => String(s || "").replace(/[-_]+/g, " ").trim().replace(/^./, c => c.toUpperCase());
+const itemName = s => humanize(String(s || "?").replace(/^minecraft:/i, "").toLowerCase());
+const hasRanks = () => ["power", ...COMBAT_SKILLS].filter(s => KEYED?.boards?.[s]?.top?.length).length >= 3;
+// a nation's places on the combat boards and the power board, best first
+function fightersOf(name) {
+  const out = [];
+  for (const sk of ["power", ...COMBAT_SKILLS]) (KEYED?.boards?.[sk]?.top || []).forEach(([p, lv, nat], i) => { if (nat === name) out.push({ p, sk, rank:i + 1, lv }); });
+  return out.sort((a, b) => a.rank - b.rank || (a.sk === "power" ? -1 : b.sk === "power" ? 1 : 0));
+}
+// fighting strength: each place scores 26 minus its rank
+function fighting() {
+  const by = new Map();
+  for (const sk of ["power", ...COMBAT_SKILLS]) (KEYED?.boards?.[sk]?.top || []).forEach(([p, lv, nat], i) => {
+    if (!nat) return;
+    const x = by.get(nat) || by.set(nat, { n:nat, score:0, players:new Set(), best:null }).get(nat);
+    x.score += 25 - i; x.players.add(p);
+    if (!x.best || i + 1 < x.best.rank) x.best = { p, sk, rank:i + 1, lv };
+  });
+  return [...by.values()].sort((a, b) => b.score - a.score);
+}
+const myLevel = sk => { const s = KEYED?.me?.skills; return !s ? null : sk === "power" ? Object.values(s).reduce((a, b) => a + b, 0) : s[sk] ?? null; };
+const rkMove = (now, was) => was == null ? "" : was === 0 ? `<span class="fin-up">new</span>` : was > now ? `<span class="fin-up">▲${was - now}</span>` : was < now ? `<span class="fin-dn">▼${now - was}</span>` : "";
+const plBtn = (p, town) => `<button class="pl-name" data-player="${esc(p)}" data-town="${esc(town || "")}">${esc(p)}</button>`;
+function renderRankings() {
+  const st = $("rkStats"); if (!st) return;
+  const stat = (n, l, c, tip) => `<div class="stat" style="--c:${c || "var(--intel)"}"${tip ? ` data-tip="${esc(tip)}"` : ""}><div class="n word">${n}</div><div class="l">${l}</div></div>`;
+  if (!KEYED?.boards || !Object.keys(KEYED.boards).length) { st.innerHTML = stat("—", "Waiting for the leaderboards"); for (const id of ["rkNations", "rkSkills", "rkBoard", "rkPursuits"]) $(id).innerHTML = ""; return; }
+  const F = fighting(), home = findNation($("myNation").value), hi = home ? F.findIndex(x => x.n === home.name) : -1, top = KEYED.boards.power?.top?.[0], mine = myLevel("power");
+  st.innerHTML = (top ? stat(esc(top[0]), "Most powerful", "", `Power ${top[1].toLocaleString()}${top[2] ? " · " + top[2] : ""}`) : "")
+    + (F[0] ? stat(esc(F[0].n), "Strongest fighters", "", `${F[0].players.size} ranked fighters`) : "")
+    + (mine != null ? stat(mine.toLocaleString(), "Your power", "var(--hq)", KEYED.me.name) : home ? stat(hi >= 0 ? ordinal(hi + 1) : "—", esc(home.name), "var(--hq)", hi >= 0 ? `${F[hi].players.size} ranked fighters` : "No ranked fighters") : "");
+  $("rkNations").innerHTML = finTable([["Nation"], ["Strength", 1], ["Fighters", 1], ["Best"]],
+    F.slice(0, 50).map((x, i) => `<tr data-rknat="${esc(x.n)}" style="cursor:pointer"><td><span class="fin-dim">${i + 1}</span> ${natChip(x.n)}</td><td class="num">${x.score}</td><td class="num">${x.players.size}</td><td>${esc(x.best.p)} <span class="fin-dim">#${x.best.rank} ${skillName(x.best.sk)}</span></td></tr>`),
+    "None placed yet.");
+  const have = ["power", ...COMBAT_SKILLS, ...CRAFT_SKILLS].filter(s => KEYED.boards[s]);
+  if (!have.includes(rkSkill)) rkSkill = have[0];
+  $("rkSkills").innerHTML = have.map(s => `<button data-rkskill="${s}" class="${s === rkSkill ? "on" : ""}">${skillName(s)}</button>`).join("");
+  const B = KEYED.boards[rkSkill], lv = myLevel(rkSkill);
+  $("rkBoardH").textContent = skillName(rkSkill); $("rkBoardH").dataset.tip = `Updated ${timeShort(B.upd || B.at)}`;
+  const rows = B.top.map(([p, l, nat, town, was], i) => `<tr><td class="fin-dim">${i + 1}</td><td>${plBtn(p, town)}</td><td>${natChip(nat)}</td><td class="num">${l.toLocaleString()}</td><td class="num">${rkMove(i + 1, was)}</td></tr>`);
+  if (lv != null && !B.top.some(r => r[0] === KEYED.me.name)) { const at = B.top.filter(r => r[1] > lv).length; rows.splice(at, 0, `<tr class="rk-me"><td>${at < 25 ? at + 1 : ""}</td><td>${esc(KEYED.me.name)}</td><td>${natChip(KEYED.me.nation)}</td><td class="num">${lv.toLocaleString()}</td><td></td></tr>`); }
+  $("rkBoard").innerHTML = finTable([["#"], ["Player"], ["Nation"], ["Level", 1], ["", 1]], rows, "Empty.");
+  const P = KEYED.pursuits;
+  $("rkPursuits").innerHTML = !P || P.none ? `<p class="fin-empty">None running.</p>` : [["PLAYER", "Player"], ["TOWN", "Town"], ["NATION", "Nation"]].map(([K, label]) => { const b = P[K]; if (!b) return "";
+    return `<div><h3 class="rk-h" data-tip="${label}s${b.active ? "" : " · ended"}">${esc(humanize(b.name))}</h3>${finTable([["#"], [label], ["Score", 1]],
+      b.top.slice(0, 10).map(([n, s, nat], i) => `<tr><td class="fin-dim">${i + 1}</td><td>${K === "NATION" ? natChip(n) : `${K === "PLAYER" ? plBtn(n) : esc(n)}<div>${natChip(nat)}</div>`}</td><td class="num">${Math.round(s).toLocaleString()}</td></tr>`), "None yet.")}</div>`; }).join("");
+}
+const T_LABEL = { sold:"Sold", bought:"Bought", out_of_stock:"Out of stock", out_of_space:"Full", out_of_gold:"Out of gold" };
+function renderLedger() {
+  const K = KEYED, linked = !!K?.me, sh = K?.shops?.list || [], wk = (K?.trades || []).filter(t => t.at > Date.now() - 7 * DAY);
+  $("lgShops").innerHTML = finTable([["Item"], [""], ["Price", 1], ["Per trade", 1], ["Stock", 1]],
+    sh.map(s => `<tr data-finx="${s.x ?? ""}" data-finz="${s.z ?? ""}" style="cursor:pointer"><td>${esc(itemName(s.item))}</td><td class="fin-dim">${esc(s.type || "")}</td><td class="num">${gk(s.price)}</td><td class="num">${s.amount}</td><td class="num${s.stock === 0 ? " fin-dn" : ""}">${s.stock ?? "—"}</td></tr>`),
+    linked ? "No shops." : "Not linked.");
+  const trade = t => /sold|bought/.test(t.k);
+  $("lgTrades").innerHTML = finTable([["When"], ["Trade"], ["Item"], ["Gold", 1], ["With"]],
+    [...wk].reverse().slice(0, 200).map(t => `<tr><td class="fin-dim">${timeShort(t.at)}</td><td class="${t.k === "sold" ? "fin-up" : trade(t) ? "" : "fin-dn"}">${T_LABEL[t.k] || t.k}${trade(t) && t.amount ? ` ×${t.amount}` : ""}</td><td>${esc(itemName(t.item))}</td><td class="num">${trade(t) ? dS(t.k === "sold" ? t.price : -t.price) : ""}</td><td>${t.who ? esc(t.who) : ""}</td></tr>`),
+    "None yet.");
+  const books = [K?.bank?.town, K?.bank?.nation].filter(b => b?.entries?.length);
+  $("lgBank").innerHTML = books.length ? books.map(b => `<h3 class="rk-h">${esc(b.name)}${b.bal != null ? ` <span class="fin-dim">${gk(b.bal)}</span>` : ""}</h3>${finTable([["When"], ["Entry"], ["Gold", 1], ["Balance", 1]],
+      [...b.entries].reverse().slice(0, 100).map(e => `<tr><td class="fin-dim">${e.at ? timeShort(e.at) : ""}</td><td>${esc(e.what || "")}</td><td class="num">${e.amt == null ? "" : dS(e.amt)}</td><td class="num">${e.bal == null ? "" : gk(e.bal)}</td></tr>`), "")}`).join("")
+    : `<p class="fin-empty">${linked ? "Only for a town or nation you run." : "Not linked."}</p>`;
+  $("lgNotices").innerHTML = finTable([["When"], [""]], [...(K?.notices || [])].reverse().slice(0, 60).map(n => `<tr><td class="fin-dim">${timeShort(n.at)}</td><td>${esc(n.t)}</td></tr>`), "None yet.");
+}
+// the key owner's shops on the map, gold, or red when empty
+function drawLedgerLayer(zoomR) {
+  const dpr = M.dpr, r = 3 * zoomR * dpr;
+  for (const s of KEYED?.shops?.list || []) {
+    if (s.x == null) continue;
+    const p = townScreen({ c:{ x:s.x, z:s.z } }); if (p[2] <= 0) continue;
+    ctx.fillStyle = s.stock === 0 ? COL.red : COL.gold; ctx.fillRect(p[0] - r, p[1] - r, 2 * r, 2 * r);
+  }
+}
+document.addEventListener("click", e => {
+  const sk = e.target.closest("[data-rkskill]"); if (sk) { rkSkill = sk.dataset.rkskill; renderRankings(); return; }
+  const n = e.target.closest("[data-rknat]"); if (n && !e.target.closest(".pl-name")) { selNation = n.dataset.rknat; location.hash = "#dossier"; }
+});
+// the Rankings and Ledger icons show once the server has sent something for them
+function keyedReady() { document.body.classList.toggle("has-ranks", !!KEYED?.boards && Object.keys(KEYED.boards).length > 0); document.body.classList.toggle("has-ledger", !!KEYED?.me); }
+
+// ---- the leaderboards, written for the reports ----
+function fightersPara(doc, n) {
+  if (!hasRanks()) return;
+  const f = fightersOf(n.name), F = fighting(), i = F.findIndex(x => x.n === n.name), ppl = [...new Set(f.map(x => x.p))];
+  const where = x => `${ordinal(x.rank)} in ${x.sk === "power" ? "overall power" : skillName(x.sk).toLowerCase()}`;
+  Para(doc, ppl.length ? `The server's combat leaderboards, which list the 25 strongest players in each fighting skill, include ${plural(ppl.length, "member")} of ${n.name}: ${andList(ppl.slice(0, 4).map(p => `${p} (${where(f.find(x => x.p === p))})`))}${ppl.length > 4 ? ` and ${count(ppl.length - 4)} others` : ""}. By the number and rank of those places it fields the ${i === 0 ? "" : ordinal(i + 1) + " "}strongest body of skilled fighters of the ${plural(F.length, "nation")} on the boards.`
+    : `None of ${n.name}'s members ranks among the 25 strongest players in any combat skill, so in close fighting it would rely on numbers rather than individual skill.`);
+}
+function fightersIntsum(doc) {
+  if (!hasRanks()) return;
+  const F = fighting(), pw = KEYED.boards.power?.top || [], up = pw.map((r, i) => ({ p:r[0], nat:r[2], now:i + 1, was:r[4] })).filter(x => x.was === 0 || x.was > x.now + 2).slice(0, 3);
+  const P = KEYED.pursuits, runs = P && !P.none ? [["PLAYER", "player"], ["TOWN", "town"], ["NATION", "nation"]].map(([K]) => P[K]).filter(b => b?.active && b.top.length) : [];
+  Head(doc, "Fighting Strength and Pursuits");
+  Para(doc, `${F.length ? `On the server's combat leaderboards the most skilled fighters belong to ${andList(F.slice(0, 3).map(x => `${x.n} (${plural(x.players.size, "ranked fighter")})`))}.` : ""}${pw[0] ? ` The most powerful player overall is ${pw[0][0]}${pw[0][2] ? ` of ${pw[0][2]}` : ""}, at power level ${nf(pw[0][1])}.` : ""}${up.length ? ` Rising on the power board are ${andList(up.map(x => `${x.p}${x.nat ? ` of ${x.nat}` : ""} (${x.was === 0 ? "new at" : "up to"} ${ordinal(x.now)})`))}.` : ""}`);
+  if (runs.length) Para(doc, `The server's running pursuits are ${andList(runs.map(b => `${humanize(b.name).toLowerCase()}, led by ${b.top[0][0]}${b.top[0][2] && b.top[0][2] !== b.top[0][0] ? ` of ${b.top[0][2]}` : ""} with ${nf(Math.round(b.top[0][1]))}`))}.`);
+}
+
 // Two pages, one scan: #ruins and #overclaim
 let ruinTab = "soon";
 const PAGES = {
@@ -4887,6 +5043,8 @@ const PAGES = {
   markets: { kicker:"Ministry of Finance — Markets", title:"MARKET BOARD", tag:"The wealth of every nation, town and player, read every hour.", sort:"", empty:"" },
   property: { kicker:"Ministry of Finance — Property", title:"PROPERTY MARKET", tag:"Every quarter and town for sale on Terra Nostra, and which are steals.", sort:"", empty:"" },
   flows: { kicker:"Ministry of Finance — Flows", title:"MONEY FLOWS", tag:"Where gold is moving: payments, trades and deposits between players and towns.", sort:"", empty:"" },
+  ledger: { kicker:"Ministry of Finance — Ledger", title:"LEDGER", tag:"", sort:"", empty:"" },
+  rankings: { kicker:"Ministry of Intelligence — Rankings", title:"RANKINGS", tag:"", sort:"", empty:"" },
   over: { kicker:"Ministry of Attack — Overclaim", title:"OVERCLAIM FINDER", tag:"Land you can take from towns that have outgrown their residents.", sort:"Most takeable", empty:"Pick a town." },
 };
 function setPage(pg) {
@@ -4898,13 +5056,13 @@ function setPage(pg) {
   readColors();
   for (const el of [$("pageTitle"), $("main")]) { el.classList.remove(el.id === "main" ? "page-in" : "swap"); void el.offsetWidth; el.classList.add(el.id === "main" ? "page-in" : "swap"); }
   lastViewKey = "";
-  document.title = "Kingdom of The Bleeding Heart · " + ({ over:"Overclaim Finder", dossier:"Ministry of Intelligence", briefings:"Briefing Room", forecasts:"Forecast Lab", moves:"Movement Watch", markets:"Market Board", property:"Property Market", flows:"Money Flows" }[pg] || "Ruin Hunter");
+  document.title = "Kingdom of The Bleeding Heart · " + ({ over:"Overclaim Finder", dossier:"Ministry of Intelligence", briefings:"Briefing Room", forecasts:"Forecast Lab", moves:"Movement Watch", markets:"Market Board", property:"Property Market", flows:"Money Flows", ledger:"Ledger", rankings:"Rankings" }[pg] || "Ruin Hunter");
   $("sysMinistry").textContent = MINISTRY_NAME[MINISTRY[pg]] || "Ministry of Attack";
   if (pg === "dossier") requestAnimationFrame(() => { sizeMap(); const n = nations.find(x => x.name === selNation); if (n) frameNation(n); });
   tab = pg === "ruins" ? ruinTab : pg;
   [["tabSoon","soon"],["tabRuined","ruined"],["tabSafe","safe"]].forEach(([id, v]) => $(id).classList.toggle("on", tab === v));
   selected = null;
-  if (towns.length || ["dossier", "briefings", "forecasts", "moves", ...FIN_PAGES].includes(pg)) render(); else $("target").innerHTML = `<h2>Target</h2><div class="empty">${P.empty}</div>`;
+  if (towns.length || ["dossier", "briefings", "forecasts", "moves", "rankings", ...FIN_PAGES].includes(pg)) render(); else $("target").innerHTML = `<h2>Target</h2><div class="empty">${P.empty}</div>`;
 }
 // SHA-256 (pure JS, so it also works where crypto.subtle isn't available, e.g. some file:// pages)
 function sha256(text) {
@@ -4936,7 +5094,7 @@ function sha256(text) {
    is stored here. This keeps casual visitors out; it is not encryption, and the archive in this
    browser is not protected by it. */
 const GATE_HASH = "3d163ccb31365431e6d456af3f1d3d93f49b9e5fd2bf02231bad7adb8371a1d2"; // sha256("bh-ministry:" + password)
-const MINISTRY = { ruins:"attack", over:"attack", dossier:"intel", moves:"intel", briefings:"intel", forecasts:"intel", markets:"finance", property:"finance", flows:"finance" };
+const MINISTRY = { ruins:"attack", over:"attack", dossier:"intel", moves:"intel", briefings:"intel", forecasts:"intel", rankings:"intel", markets:"finance", property:"finance", flows:"finance", ledger:"finance" };
 const MINISTRY_HOME = { attack:"#ruins", intel:"#dossier", finance:"#markets" };
 const MINISTRY_NAME = { attack:"Ministry of Attack", intel:"Ministry of Intelligence", finance:"Ministry of Finance" };
 const unlocked = new Set((() => { try { return JSON.parse(sessionStorage.getItem("bh_unlocked") || "[]"); } catch { return []; } })());
@@ -5024,7 +5182,7 @@ $("lockBtn").onclick = () => { unlocked.clear(); saveUnlocked(); document.body.c
 setInterval(() => { if (document.body.classList.contains("portal")) $("sClock").textContent = new Date().toISOString().slice(11, 19) + " UTC · Terra Nostra"; }, 1000);
 document.querySelectorAll("img[data-crest]").forEach(i => { i.src = document.querySelector(".crest img").src; });
 
-const pageFromHash = () => ({ "#overclaim":"over", "#dossier":"dossier", "#briefings":"briefings", "#forecasts":"forecasts", "#moves":"moves", "#markets":"markets", "#property":"property", "#flows":"flows" })[location.hash] || "ruins";
+const pageFromHash = () => ({ "#overclaim":"over", "#dossier":"dossier", "#briefings":"briefings", "#forecasts":"forecasts", "#moves":"moves", "#markets":"markets", "#property":"property", "#flows":"flows", "#ledger":"ledger", "#rankings":"rankings" })[location.hash] || "ruins";
 let lastHash = location.hash;
 addEventListener("hashchange", () => {
   const pg = pageFromHash(), m = MINISTRY[pg], target = location.hash;

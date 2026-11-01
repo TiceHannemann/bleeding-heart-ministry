@@ -61,6 +61,25 @@ The Daily Summary gets an "Economic Developments" section, and each Intelligence
 
 Settings: `FINANCE_EVERY_HOURS` (default `3`). Data is kept in `/data/finance`.
 
+## EarthMC API key
+
+Make a key in game with `/api key create`. It belongs to your account, so keep it out of this repository (it is public) and out of `docker-compose.yml`. On the server, put it in a file the rebuild doesn't delete:
+
+```bash
+printf 'EMC_KEY=your-key\nEMC_PLAYER=YourMinecraftName\n' > /root/bh.env && chmod 600 /root/bh.env
+```
+
+Then rebuild with `--env-file /root/bh.env` added to `docker compose`. The key stays in the server process. It never reaches a browser, the archive, the reports or `/api/status`.
+
+What it adds:
+
+- **Rankings (Intelligence):** the mcMMO leaderboards, the top 25 in every combat and gathering skill and in overall power, read one board every two minutes (EarthMC's limit), so all twenty refresh about every 45 minutes. Each ranked player is placed in their town and nation. Nations are scored by their fighters' places. Also the server's running pursuits, for players, towns and nations.
+- **In the reports:** each Intelligence Assessment's Military Potential section names the nation's ranked fighters, and the Daily Summary gets a "Fighting Strength and Pursuits" section. Nation dossiers get a Fighters tile.
+- **The new day:** the event stream reports the new day. A scan follows three minutes later, so towns that fell show in the Ruin Hunter within minutes rather than up to an hour, and the purge countdown uses the exact time.
+- **Ledger (Finance), with `EMC_PLAYER`:** your shops with stock (and on the map), your trades as they happen (sales, purchases, out of stock, full, out of gold), the bank history of a town or nation you lead or keep the books of, and notices for your town and nation. The site is open, so anyone who has its address can see this page.
+
+EarthMC sends shop, town and nation events only to the shop owner, mayor or leader concerned. Other players' mcMMO profiles are refused, so per-player skills come only from the leaderboards. Settings: `EMC_KEY`, `EMC_PLAYER`. Data is kept in `/data/keyed`. Status: the `keyed` part of `/api/status`.
+
 ## Open-channel signals (Discord chat)
 
 The server reads Discord chat exports (DiscordChatExporter JSON) each hour and writes what matters into the briefings, as a "Signals from Open Channels" section in each Intelligence Assessment and in the Daily Summary.

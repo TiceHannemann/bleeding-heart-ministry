@@ -17,6 +17,10 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       # the password your upload script sends with chat exports (any long random string)
       CHAT_UPLOAD_TOKEN: ${CHAT_UPLOAD_TOKEN:-}
+      # an EarthMC API key (in game: /api key create) adds Rankings, the new-day scan and, with your player name, the Ledger.
+      # Keep the key itself out of this file: put it in /root/bh.env on the server (see server/DEPLOY.md)
+      EMC_KEY: ${EMC_KEY:-}
+      EMC_PLAYER: ${EMC_PLAYER:-}
     volumes:
       - bh_data:/data
     mem_limit: 1500m
