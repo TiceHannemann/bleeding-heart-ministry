@@ -67,7 +67,16 @@ require('http').createServer((req, res) => {
     send(404, 'Not found', 'text/plain');
   });
 }).listen(8796);
-Object.assign(process.env, { EMC_API:'http://127.0.0.1:8796', EMC_KEY:KEY, EMC_PLAYER:'Me', KEYED_EVERY:'2', NEWDAY_DELAY_S:'5' });
+Object.assign(process.env, { EMC_API:'http://127.0.0.1:8796', EMC_KEY:KEY, EMC_PLAYER:'Me', KEYED_EVERY:'2', NEWDAY_DELAY_S:'5', CHAT_UPLOAD_TOKEN:'chat-token' });
+// a small history, as tools/send-history.ps1 would send it
+const HISTORY = { kind:'terra-nostra-history', v:1, asOf:'2026-10-01', title:'TERRA NOSTRA: A TEST HISTORY', basis:'A test archive.',
+  summary:['Rome and Carthage have been rivals since the opening of the map.'],
+  chapters:[{ title:'The Opening', from:'2026-04-17', to:'2026-04-30', paras:['Rome was founded first, and Carthage declared war on it within a week.'] }],
+  themes:[{ title:'How Wars Are Fought', paras:['Mostly by overclaim.'] }],
+  sources:[{ guild:'Rome Official', channels:['announcements'], kind:'own', nation:'Rome', messages:120, from:'2026-04-17', to:'2026-09-30', note:"Rome's own government." },
+    { guild:'Test Press', channels:['news'], kind:'press', nation:null, messages:900, from:'2026-04-17', to:'2026-09-30', note:'A newspaper.' }],
+  bias:['Rome speaks for itself; Carthage is seen only through the press.'], gaps:["Read Carthage's server."],
+  timeline:[{ d:'2026-04-20', t:'Carthage declares war on Rome', n:['Carthage', 'Rome'], s:'press', c:'high' }] };
 global.__collectorRoutes = async ctx => {
   await ctx.route('https://map.earthmc.net/**', r => r.abort());
   await ctx.route('https://api.earthmc.net/**', async r => {
@@ -99,6 +108,12 @@ global.__collectorRoutes = async ctx => {
   const ks = collector.status().keyed;
   console.log('key:', `${ks.boards} boards, live stream ${ks.live}, ${ks.events} events, errors ${JSON.stringify(ks.errs)}`, '| stream auth', seen.auth, '| key in bodies', seen.bodyKey, '| cooldowns honoured', seen.cool);
   console.log('new-day scan ran:', !!collector.status().newDayScan, '| scans so far', collector.status().recent.length);
+  // the history: refused without the token, accepted with it, then refreshed into the archive without a scan
+  const send = (body, token) => fetch('http://127.0.0.1:8799/api/history-import', { method:'POST', headers:{ 'Content-Type':'application/json', ...(token ? { 'x-chat-token':token } : {}) }, body:JSON.stringify(body) });
+  const v0 = collector.status().archiveVersion;
+  console.log('history upload without token:', (await send(HISTORY)).status, '| not a history:', (await send({ kind:'x' }, 'chat-token')).status, '| with token:', JSON.stringify(await (await send(HISTORY, 'chat-token')).json()));
+  for (let i = 0; i < 60 && collector.status().archiveVersion === v0; i++) await new Promise(r => setTimeout(r, 1000));
+  console.log('archive refreshed with the history:', collector.status().archiveVersion !== v0);
   const leaks = [JSON.stringify(collector.status()), require('zlib').gunzipSync(fs.readFileSync(path.join(process.env.DATA_DIR, 'archive.json.gz'))).toString(), fs.readFileSync(path.join(process.env.DATA_DIR, 'keyed', 'state.json'), 'utf8')];
   console.log('key leaked into status/archive/state:', leaks.map(t => t.includes(KEY)).join('/'));
   const runs = fs.readdirSync(path.join(process.env.DATA_DIR, 'runs'));
@@ -140,6 +155,16 @@ global.__collectorRoutes = async ctx => {
   console.log('swords board title:', await p.textContent('#rkBoardH'), '| first row:', (await p.locator('#rkBoard tr').nth(1).innerText()).replace(/\s+/g, ' '));
   await shot('rankings');
   console.log('assessment names fighters:', await p.evaluate(() => /combat leaderboards/.test(docText(nationAssessment(findNation('Rome'), null, false)))), '| summary section:', await p.evaluate(() => /FIGHTING STRENGTH|Fighting Strength/.test(docText(intsum(false)))));
+  // the History document in the Briefing Room
+  await p.evaluate(() => { location.hash = '#briefings'; }); await p.waitForTimeout(800);
+  console.log('history button shown:', await p.isVisible('#brHistBtn'));
+  await p.click('#brHistBtn'); await p.waitForTimeout(800);
+  const ht = await p.evaluate(() => docText(brDoc));
+  console.log('history doc:', await p.evaluate(() => brDoc.docTitle), '| chapters in:', /THE OPENING/i.test(ht), '| coverage line:', (ht.match(/Against the latest scan[^.]*\./) || ['none'])[0].slice(0, 160));
+  console.log('history annexes:', (ht.match(/Annex [A-C] — [^\n]*/g) || []).join(' | '), '| releasable drops sources:', await p.evaluate(() => !/Annex B/.test(docText(historyDoc(true)))));
+  console.log('assessment coverage line:', await p.evaluate(() => (docText(nationAssessment(findNation('Carthage'), null, false)).match(/The Ministry (does not read|reads) [^.]*\./) || ['none'])[0]));
+  await shot('history');
+  await p.evaluate(() => { location.hash = '#rankings'; }); await p.waitForTimeout(800);
   await p.click('#rkNations tr[data-rknat="Rome"]'); await p.waitForTimeout(1200);
   console.log('nation click opens dossier:', await p.evaluate(() => location.hash + ' ' + selNation), '| fighters tile:', (await p.locator('#dossierPanel .dtile').first().innerText()).replace(/\s+/g, ' '));
   await p.click('.m-switch a[data-m="finance"]'); await p.waitForTimeout(1200);

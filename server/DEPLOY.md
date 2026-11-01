@@ -91,6 +91,16 @@ The server reads Discord chat exports (DiscordChatExporter JSON) each hour and w
 
 Settings: `ANTHROPIC_API_KEY` (without it, chat is collected but not analysed) and `CHAT_UPLOAD_TOKEN` (any long random string; the upload script sends it). Upload from your PC with `tools/send-chat.ps1`. Status: `/api/signals`.
 
+## History of Terra Nostra
+
+The Briefing Room has a **History** document. It is a narrative of the server written from full Discord archives. It covers chapters by period, how wars are actually fought, the powers today, a dated timeline, a register of sources, and an assessment of their biases. Parts of it are computed live from the latest scan: which of the leading nations the Ministry reads directly, which it sees only second-hand, and what has happened since the archive ended. Intelligence Assessments also note whether the Ministry reads the nation's own server. Chat signals say when a report comes only from one side's server.
+
+1. Distil the exports, of any size: `node tools/discord-digest.js <exports folder> <out folder>`. It writes `sources.json` (coverage per channel), `kept.jsonl` and monthly `digest/*.txt`.
+2. Write the history JSON from the digest (`kind: "terra-nostra-history"`). The format is the one `server/history.js` checks: `asOf`, `title`, `basis`, `summary`, `chapters`, `themes`, `sources`, `bias`, `gaps`, `timeline`.
+3. Send it with `tools/send-history.ps1 -File <json> -Server <site address> -Token <CHAT_UPLOAD_TOKEN>`. It reaches the page within minutes, with no scan needed.
+
+The history is kept on the data volume (`/data/history`), not in this repository, because it names the servers the Ministry reads. The releasable version leaves out the source register and the collection plan.
+
 ## Bringing over earlier collection
 
 In a browser that ran Watch mode, open the Briefing Room and export the archive, then on `/gov/reports` press **Send an archive to the server**. It is merged at the next hourly scan.

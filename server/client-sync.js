@@ -34,7 +34,7 @@
     await idbDo(["meta", "series", "frames", "events", "predictions", "visits"], "readwrite", async tx => {
       for (const s of ["series", "frames", "events", "predictions"]) tx.objectStore(s).clear();
       const m = tx.objectStore("meta");
-      for (const k of ["stats", "frame", "lastScan", "ml", "signals", "finance", "keyed"]) { if (j[k] != null) m.put(j[k], k); else m.delete(k); }
+      for (const k of ["stats", "frame", "lastScan", "ml", "signals", "finance", "keyed", "history"]) { if (j[k] != null) m.put(j[k], k); else m.delete(k); }
       const ser = tx.objectStore("series"); for (const s of j.series || []) if (s?.name) ser.put(s, s.name);
       const fr = tx.objectStore("frames"); (j.frameKeys || []).forEach((k, i) => { if (j.frames?.[i]) fr.put(j.frames[i], k); });
       const ev = tx.objectStore("events"); for (const e of j.events || []) ev.add(e);

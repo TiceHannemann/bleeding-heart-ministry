@@ -144,6 +144,13 @@ app.post("/api/chat-import", express.text({ type:"*/*", limit:"100mb" }), (req, 
   catch (e) { res.status(400).json({ error:e.message }); }
 });
 app.get("/api/signals", needLogin, (req, res) => res.json({ status:SIG.status(), events:SIG.events().sort((a, b) => b.last - a.last).slice(0, 200) }));
+// the history of Terra Nostra written from the Discord archives (tools/send-history.ps1); same rule as chat uploads
+const HISTORY = require("./history");
+app.post("/api/history-import", express.text({ type:"*/*", limit:"20mb" }), (req, res) => {
+  if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"History uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
+  try { const r = HISTORY.save(req.body); collector.refresh(); res.json({ ok:true, ...r, message:"Received. It reaches the Briefing Room within a few minutes." }); }
+  catch (e) { res.status(400).json({ error:e.message }); }
+});
 
 // at most one extra scan per ten minutes, however many people press the button
 app.post("/api/scan-now", needLogin, (req, res) => {

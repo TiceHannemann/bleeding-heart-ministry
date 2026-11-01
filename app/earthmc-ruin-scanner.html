@@ -895,6 +895,7 @@
         <button data-kind="intsum" data-tip="The whole server, last 24 hours">Daily Summary</button>
         <button data-kind="nation">Assessment</button>
         <button data-kind="support" data-tip="For an ally">Support</button>
+        <button data-kind="history" id="brHistBtn" data-tip="Terra Nostra from the Discord archives, with the sources' biases" hidden>History</button>
       </div>
       <div class="br-field" id="brPerspField"><label for="brPersp">Perspective</label><select id="brPersp"></select></div>
       <div class="br-field" id="brNationField"><label for="brSearch">Nation</label><input id="brSearch" placeholder="Find a nation"><div id="brNations" class="br-nations"></div></div>
@@ -985,6 +986,7 @@ const API_CANDIDATES = ["https://api.earthmc.net/v4", ...["v4", "v3", "v2"].flat
 let API = API_CANDIDATES[0];
 let towns = [], tab = "soon", selected = null, view = [];
 let KEYED = null; // from the Ministry server's EarthMC API key: leaderboards, pursuits, the new day, the owner's shops (see Rankings and Ledger)
+let HISTORY = null; // the history of Terra Nostra written from the Discord archives (Briefing Room, History)
 
 const $ = id => document.getElementById(id);
 if (window.BH_SERVER) document.body.classList.add("server");
@@ -3741,7 +3743,16 @@ function sigSentence(s) {
     if (A && B) check = A.allies.includes(B.name) || B.allies.includes(A.name) ? " The alliance appears in the server's own records." : " The server's alliance lists do not yet show it.";
   }
   // "The leaders of X..." reads "On 30 Oct, the leaders of X..."; names keep their capitals
-  return `On ${fmtDay(s.at)}, ${s.summary.replace(/^(The|A|An|Several|Two|Three|Members|Reports) /, w => w.toLowerCase()).replace(/\.$/, "")} (${who}${SIG_CONF[s.confidence] || "low confidence"}; ${where}).${check}`;
+  return `On ${fmtDay(s.at)}, ${s.summary.replace(/^(The|A|An|Several|Two|Three|Members|Reports) /, w => w.toLowerCase()).replace(/\.$/, "")} (${who}${SIG_CONF[s.confidence] || "low confidence"}; ${where}${sigPerspective(s)}).${check}`;
+}
+// whose channels a report came from: a nation's own server speaks for its government, and a report carried only by
+// one side's servers is that side's account
+function sigPerspective(s) {
+  const own = [...new Set(s.sources.map(x => guildNation(x.guild)))];
+  if (!own.length || own.includes(null)) return ""; // at least one server-wide or press source
+  const parties = new Set(s.nations.map(sigKey));
+  if (own.every(n => parties.has(sigKey(n)))) return own.length === 1 ? `, ${own[0]}'s own account` : ", the parties' own accounts";
+  return `, carried only in ${andList(own)}'s server${own.length > 1 ? "s" : ""}`;
 }
 const SIG_GROUPS = [
   ["Diplomatic", ["alliance", "non_aggression_pact", "peace_or_truce", "sanctions_or_trade"]],
@@ -3768,6 +3779,73 @@ function signalsIntsum(doc) {
   Head(doc, "Signals from Open Channels");
   Para(doc, `Public Discord channels carried ${plural(ss.length, "report")} of in-game diplomacy or intelligence in the last twenty-four hours. The most significant follow.`);
   for (let i = 0; i < Math.min(ss.length, 9); i += 3) Para(doc, ss.slice(i, i + 3).map(sigSentence).join(" "));
+}
+
+// ---- the history of Terra Nostra, written from the Discord archives (meta "history", uploaded to the server) ----
+// The servers the Ministry reads are each one nation's or the press's; a nation's own server speaks for its government.
+const GUILD_NATION = new Map();
+function guildNation(g) {
+  if (!g || /earthmc/i.test(g)) return null;
+  if (GUILD_NATION.has(g)) return GUILD_NATION.get(g);
+  const listed = (HISTORY?.sources || []).find(s => s.guild === g);
+  let best = listed ? listed.nation : null;
+  if (!listed) { // the longest nation name inside the server's name: "Kingdom Of Germany 👻" is Germany, "The Kingdom of Spain" the Kingdom of Spain
+    const low = " " + g.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ") + " ";
+    for (const n of nations) { const k = " " + n.name.toLowerCase().replace(/_/g, " ") + " "; if (k.length >= 6 && low.includes(k) && (!best || k.length > best.length + 2)) best = n.name; }
+  }
+  if (nations.length) GUILD_NATION.set(g, best);
+  return best;
+}
+function ownCovered() {
+  const s = new Set((HISTORY?.sources || []).filter(x => x.kind === "own" && x.nation).map(x => sigKey(x.nation)));
+  for (const e of SIGNALS) for (const src of e.sources || []) { const n = guildNation(src.guild); if (n) s.add(sigKey(n)); }
+  return s;
+}
+function coverageLine(n) {
+  if (!HISTORY && !SIGNALS.length) return "";
+  return ownCovered().has(sigKey(n.name)) ? `The Ministry reads ${n.name}'s own Discord server, which presents its government's account; claims made there are weighed as such. `
+    : `The Ministry does not read ${n.name}'s own Discord server, so its intentions are seen only through the press and other nations' channels. `;
+}
+const HIST_SRC = { official:"EarthMC", press:"Press", own:"Nation's own", chat:"In-game chat" };
+const histDay = d => d ? fmtDay(Date.parse(d + "T12:00:00")) : "—"; // calendar dates, read at local noon so no time zone moves them a day
+function historyDoc(releasable) {
+  const H = HISTORY, asOf = Date.parse(H.asOf);
+  const doc = docBase("history", "HIST", releasable, "HISTORICAL NARRATIVE", H.title, "HISTORY",
+    releasable ? "Allied governments of the Kingdom of The Bleeding Heart" : "The Crown Council; Ministry of Attack");
+  doc.memo.push(["BASIS", H.basis]);
+  Head(doc, "Summary"); H.summary.forEach(p => Para(doc, p));
+  for (const c of H.chapters) { Head(doc, `${c.title}, ${histDay(c.from)} to ${histDay(c.to)}`); c.paras.forEach(p => Para(doc, p)); }
+  for (const t of H.themes || []) { Head(doc, t.title); t.paras.forEach(p => Para(doc, p)); }
+  // what the Ministry's own collection has recorded after the archive ends
+  const ev = ARCHIVE.events.filter(e => e.at >= asOf), sig = SIGNALS.filter(s => s.at >= asOf).sort(sigOrder);
+  if (ev.length || sig.length) {
+    Head(doc, "Since the Archive");
+    const by = t => ev.filter(e => e.type === t).length, dip = ev.filter(e => /^(ally|enemy)_/.test(e.type));
+    Para(doc, `Since the archive closed on ${histDay(H.asOf)}, the Ministry's scans have recorded ${plural(by("town_ruin"), "town")} falling to ruin, ${plural(by("town_new"), "new town")} and ${plural(dip.length, "change")} of alliance or enmity${dip.length ? `, most recently when ${andList(dip.slice(-3).map(e => eventText(e, null)))}` : ""}.`);
+    if (sig.length) Para(doc, sig.slice(0, 4).map(sigSentence).join(" "));
+  }
+  Head(doc, "Sources and Their Biases");
+  H.bias.forEach(p => Para(doc, p));
+  // measured against today's map: the leading nations, and which of them the Ministry reads directly
+  const cov = ownCovered(), lead = [...nations].sort((a, b) => b.active30 - a.active30).slice(0, 20), seen = lead.filter(n => cov.has(sigKey(n.name))), unseen = lead.filter(n => !cov.has(sigKey(n.name)));
+  if (lead.length) Para(doc, `Against the latest scan, the Ministry reads the own servers of ${plural(seen.length, "nation")} among the twenty with the most active members${seen.length ? `: ${andList(seen.map(n => n.name))}` : ""}. ${unseen.length ? `The other ${count(unseen.length)}, among them ${andList(unseen.slice(0, 5).map(n => n.name))}, are seen only through the press and their neighbours' channels.` : ""}${SIGNALS.length ? ` Chat collected since the archive comes from ${plural(new Set(SIGNALS.flatMap(s => s.sources.map(x => x.guild))).size, "server")}.` : ""}`);
+  if (!releasable) {
+    Head(doc, "Collection Gaps and Recommendations");
+    H.gaps.forEach(p => Para(doc, p));
+    if (unseen.length) Para(doc, `On the latest scan, the largest nations whose own servers the Ministry does not read are ${andList(unseen.slice(0, 8).map(n => `${n.name} (${nf(n.active30)} active members)`))}. Reading them would do most to correct the imbalance described above.`);
+  }
+  Annex(doc, "Annex A — Timeline");
+  doc.sections.push({ type:"table", cols:[{ h:"Date", w:1 }, { h:"Event", w:4.6 }, { h:"Source", w:1.3 }, { h:"Confidence", w:1 }],
+    rows:(H.timeline || []).map(e => [histDay(e.d), e.t, HIST_SRC[e.s] || e.s, e.c || ""]) });
+  if (!releasable) {
+    Annex(doc, "Annex B — Sources");
+    doc.sections.push({ type:"table", cols:[{ h:"Server", w:1.8 }, { h:"Kind", w:1.1 }, { h:"Messages", w:1, align:"right" }, { h:"Period", w:1.7 }, { h:"Note", w:3.4 }],
+      rows:(H.sources || []).map(s => [`${s.guild} (${s.channels.join(", ")})`, HIST_SRC[s.kind] || s.kind, nf(s.messages), s.from ? `${histDay(s.from)} to ${histDay(s.to)}` : "—", s.note]) });
+    if (lead.length) { Annex(doc, "Annex C — The Leading Nations and the Ministry's Reach");
+      doc.sections.push({ type:"table", cols:[{ h:"Nation", w:2.2 }, { h:"Active", w:.9, align:"right" }, { h:"Towns", w:.8, align:"right" }, { h:"Own server read", w:1.4 }],
+        rows:lead.map(n => [n.name, n.active30, n.towns.filter(t => !t.ruined).length, cov.has(sigKey(n.name)) ? "Yes" : "No"]) }); }
+  }
+  return doc;
 }
 
 // ---- the Ministry of Finance's figures, written for the reports ----
@@ -3904,7 +3982,7 @@ function nationAssessment(n, p, releasable) {
 
   Head(doc, "Intelligence Gaps and Confidence");
   const unchecked = n.residents - n.known;
-  Para(doc, `This assessment draws on ${basisLine(n.name).replace(/\.$/, "")}. ${unchecked > 0 ? `The activity of ${plural(unchecked, "resident")} was not checked in the latest collection, so activity figures are a lower bound. ` : "The activity of every resident was checked. "}${!n.king ? "The API did not provide leadership or alliance data, which limits the assessment of intentions. " : ""}Confidence in each judgment reflects the depth of the archive for ${n.name}: it is currently ${X.conf}. ${hasMoves() ? `Movement intelligence rests on ${plural(moveHoursIn(7), "hour")} of live-map collection this week, and players who hide from the map are not seen. ` : ""}${ESTIMATIVE_NOTE}`);
+  Para(doc, `This assessment draws on ${basisLine(n.name).replace(/\.$/, "")}. ${unchecked > 0 ? `The activity of ${plural(unchecked, "resident")} was not checked in the latest collection, so activity figures are a lower bound. ` : "The activity of every resident was checked. "}${!n.king ? "The API did not provide leadership or alliance data, which limits the assessment of intentions. " : ""}Confidence in each judgment reflects the depth of the archive for ${n.name}: it is currently ${X.conf}. ${hasMoves() ? `Movement intelligence rests on ${plural(moveHoursIn(7), "hour")} of live-map collection this week, and players who hide from the map are not seen. ` : ""}${coverageLine(n)}${ESTIMATIVE_NOTE}`);
   addAnnexes(doc, n, persp);
   movementAnnex(doc, n, persp);
   return doc;
@@ -4641,7 +4719,8 @@ let brDoc = null;
 async function renderBriefingRoom() {
   document.querySelectorAll("#brKinds button").forEach(b => b.classList.toggle("on", b.dataset.kind === BR.kind));
   document.querySelectorAll(".br-class button").forEach(b => b.classList.toggle("on", (b.dataset.rel === "1") === BR.releasable));
-  $("brNationField").hidden = BR.kind === "intsum"; $("brPerspField").hidden = BR.kind !== "nation";
+  $("brHistBtn").hidden = !HISTORY; if (BR.kind === "history" && !HISTORY) BR.kind = "intsum";
+  $("brNationField").hidden = BR.kind === "intsum" || BR.kind === "history"; $("brPerspField").hidden = BR.kind !== "nation";
   const home = findNation($("myNation").value);
   renderArchiveStatus();
   if (!nations.length) { $("brDoc").innerHTML = `<div class="br-empty">No scan yet.</div>`; brDoc = null; return; }
@@ -4658,7 +4737,7 @@ async function renderBriefingRoom() {
   if (sel.options.length !== opts.length) sel.innerHTML = opts.map(n => `<option value="${esc(n.name)}">${n === home ? "♥ " : ""}${esc(n.name)}</option>`).join("");
   sel.value = persp?.name || "";
   const n = findNation(BR.nation);
-  brDoc = BR.kind === "intsum" ? intsum(BR.releasable) : BR.kind === "support" ? supportAssessment(n, BR.releasable) : nationAssessment(n, persp, BR.releasable);
+  brDoc = BR.kind === "history" ? historyDoc(BR.releasable) : BR.kind === "intsum" ? intsum(BR.releasable) : BR.kind === "support" ? supportAssessment(n, BR.releasable) : nationAssessment(n, persp, BR.releasable);
   $("brDoc").innerHTML = docHtml(brDoc);
 }
 async function renderArchiveStatus() {
@@ -4691,6 +4770,7 @@ const appReady = (async () => {
   try { SIGNALS = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("signals")))) || []; } catch {}
   try { FIN = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("finance")))) || null; } catch {}
   try { KEYED = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("keyed")))) || null; } catch {}
+  try { HISTORY = (await idbDo(["meta"], "readonly", tx => reqP(tx.objectStore("meta").get("history")))) || null; } catch {}
   keyedReady();
   if ((FIN || KEYED) && FIN_PAGES.includes(tab)) renderFinance();
   if (KEYED && tab === "rankings") renderRankings();

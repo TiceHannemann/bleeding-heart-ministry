@@ -12,6 +12,7 @@ const { DATA, readJSON, writeJSON } = require("./paths");
 const signals = require("./signals");
 const finance = require("./finance");
 const keyed = require("./keyed");
+const history = require("./history");
 
 const RUNS = path.join(DATA, "runs"), IMPORTS = path.join(DATA, "imports"), PROFILE = path.join(DATA, "profile");
 const STATUS_FILE = path.join(DATA, "status.json");
@@ -43,13 +44,7 @@ function schedule() {
 function start(o) {
   opts = { ...opts, ...o }; schedule();
   // the finance deep scan (every player and quarter) runs between hourly scans; when it finishes, visitors get it straight away
-  finance.start({ busy:() => S.running, after:async () => {
-    if (S.running) return;
-    S.running = true;
-    try { const page = await browser(); await pushFinance(page); await pushKeyed(page); await exportArchive(page); }
-    catch (e) { console.warn("collector: finance refresh failed:", e.message); }
-    finally { S.running = false; save(); }
-  } });
+  finance.start({ busy:() => S.running, after:refresh });
   // with an EarthMC API key: leaderboards, pursuits and the event stream. Towns fall at the new day, so a scan
   // follows a few minutes after it, once nothing else is running, and fresh ruins show straight away.
   keyed.start({ busy:() => S.running || finance.status().running, onNewDay:() => {
@@ -63,6 +58,14 @@ function start(o) {
   // check every few minutes that tracking is still running (the browser reopens itself after a crash or its daily restart)
   setInterval(() => { if (!S.running && !B.opening) browser().then(p => p.evaluate(() => ({ polls:MOVES.polls, lastOk:MOVES.lastOk, err:MOVES.err, visits:MOVES.visits.length })))
     .then(m => { S.moves = m; }).catch(() => {}); }, 5 * 6e4).unref();
+}
+// new figures for visitors between scans (a finished finance scan, an uploaded history): no scan, just the archive again
+async function refresh() {
+  if (S.running) return;
+  S.running = true;
+  try { const page = await browser(); await pushFinance(page); await pushKeyed(page); await pushHistory(page); await exportArchive(page); }
+  catch (e) { console.warn("collector: refresh failed:", e.message); }
+  finally { S.running = false; save(); }
 }
 function runSoon() { if (S.running) return; clearTimeout(timer); S.nextRun = Date.now() + 1000; timer = setTimeout(async () => { await runOnce(); schedule(); }, 1000); }
 
@@ -114,7 +117,7 @@ async function exportArchive(page) {
     const m = tx.objectStore("meta");
     return JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now(),
       stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")),
-      signals:await reqP(m.get("signals")), finance:await reqP(m.get("finance")), keyed:await reqP(m.get("keyed")),
+      signals:await reqP(m.get("signals")), finance:await reqP(m.get("finance")), keyed:await reqP(m.get("keyed")), history:await reqP(m.get("history")),
       series:await reqP(tx.objectStore("series").getAll()),
       frameKeys:await reqP(tx.objectStore("frames").getAllKeys()), frames:await reqP(tx.objectStore("frames").getAll()),
       events:await reqP(tx.objectStore("events").getAll()), visits:await reqP(tx.objectStore("visits").getAll()),
@@ -138,6 +141,11 @@ async function pushFinance(page) {
 async function pushKeyed(page) {
   const k = keyed.snapshot();
   await page.evaluate(k => { KEYED = k; return idbDo(["meta"], "readwrite", tx => k ? tx.objectStore("meta").put(k, "keyed") : tx.objectStore("meta").delete("keyed")); }, k);
+}
+// the history of Terra Nostra, when one has been uploaded
+async function pushHistory(page) {
+  const h = history.get();
+  await page.evaluate(h => { HISTORY = h; return idbDo(["meta"], "readwrite", tx => h ? tx.objectStore("meta").put(h, "history") : tx.objectStore("meta").delete("history")); }, h);
 }
 
 async function runOnce() {
@@ -182,6 +190,7 @@ async function runOnce() {
     // the Ministry of Finance: this hour's banks, with the latest player and property scans
     await pushFinance(page).catch(e => console.warn("collector: finance step failed:", e.message));
     await pushKeyed(page).catch(e => console.warn("collector: leaderboards step failed:", e.message));
+    await pushHistory(page).catch(e => console.warn("collector: history step failed:", e.message));
 
     await exportArchive(page);
 
@@ -243,7 +252,7 @@ function prune() {
   }
 }
 
-module.exports = { start, status, tokenOk, runSoon, runOnce, closeBrowser, stop:keyed.stop };
+module.exports = { start, status, tokenOk, runSoon, runOnce, refresh, closeBrowser, stop:keyed.stop };
 
 // `node collector.js` runs one scan against a server already listening on PORT
 if (require.main === module) { opts.port = +process.env.PORT || 8080; runOnce().then(async () => { await closeBrowser(); process.exit(S.lastError ? 1 : 0); }); }
