@@ -455,7 +455,7 @@
   .mv-filter button.on, .mv-filter button:hover { color:#000; background:var(--intel); border-color:var(--intel); }
   .mv-label { white-space:nowrap; } .mv-label button + button { border-left:0; }
   .mv-label button.on { color:#000; background:var(--fg); border-color:var(--fg); } .mv-label button:hover { color:var(--fg); }
-  .mv-visits-wrap { overflow-x:auto; }
+  .mv-visits-wrap { overflow:auto; max-height:560px; }
   #mvModel { font-size:12.5px; color:var(--mut); margin-top:12px; }
   .page-in { animation:pageIn .6s var(--ease); }
 
@@ -706,7 +706,9 @@
   .nt td .vb, .nt td .vd { margin-right:8px; }
   .nt .sub2 { display:block; font-size:11.5px; color:var(--mut); }
   /* Ruin Hunter: the next purges as columns; the town cards grouped by the purge that takes them */
-  .plan { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--gut); margin:0 0 30px; }
+  .plan { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:var(--gut); margin:0 0 30px; }
+  @media (max-width:760px) { .plan { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  body[data-page="ruins"] .stats.not-dossier { display:none; }
   .plan button { all:unset; cursor:pointer; display:grid; grid-template-rows:56px auto auto; gap:6px; border-bottom:1px solid var(--line); padding-bottom:10px; }
   .plan .col { align-self:end; justify-self:start; width:22px; height:var(--h); min-height:2px; background:var(--c); border-radius:3px 3px 0 0; opacity:.85; transition:opacity .2s; }
   .m-switch a { text-decoration:none; }
@@ -834,12 +836,14 @@
     <div class="stat only-over" style="--c:var(--orange)"><div class="n" id="sOverSoon">—</div><div class="l" id="sOverSoonL">Going over their limit soon</div></div>
     <div class="stat" hidden><div class="n" id="sWarps">—</div></div>
   </div>
+  <div class="lead only-dossier" id="natLead"></div>
+  <div class="plan only-ruins" id="ruinPlan"></div>
 
 
   <!-- Ministry of Finance: the ticker and headline figures sit above the map on all three pages -->
   <section class="only-finance">
     <div class="ticker" id="finTicker" aria-label="Market ticker"><div class="tk-track" id="tkTrack"></div></div>
-    <div class="stats" id="finStats"></div>
+    <div class="lead" id="finStats"></div>
   </section>
 
   <section class="only-moves">
@@ -853,7 +857,7 @@
     <details class="mv-src"><summary>Feed source</summary>
       <input id="mvSrc" placeholder="https://map.earthmc.net/tiles/players.json (default)">
     </details>
-    <div class="stats mv-stats" id="mvStats"></div>
+    <div class="lead" id="mvStats"></div>
   </section>
 
   <section class="mapstage" id="mapWrap">
@@ -1047,7 +1051,6 @@
     <p class="lab-note"><span class="lab-reset"><button class="deep" id="labReset">Reset the models</button><span id="labResetConfirm" hidden>Forget everything learned? <button class="deep" id="labResetYes">Reset</button> <button class="deep" id="labResetNo">Keep</button></span></span></p>
   </section>
 
-  <div class="plan only-ruins" id="ruinPlan"></div>
   <div class="toolbar not-dossier">
     <div class="tabs only-ruins">
       <button id="tabSoon" class="on">Next to fall</button>
@@ -1553,13 +1556,33 @@ function renderNations() {
   const rows = ranked.filter(n => !q || n.name.toLowerCase().includes(q));
   $("natCount").textContent = nations.length ? `${nations.length} nations` : "";
   if (!selNation && rows.length) selNation = rows[0].name;
-  $("natTable").innerHTML = nations.length ? `<tr><th>#</th><th>Nation</th><th class="num">Active</th><th class="num">Risk</th><th class="num">Chunks</th></tr>` +
-    rows.slice(0, 300).map(n => `<tr data-nation="${esc(n.name)}" class="${n.name === selNation ? "sel" : ""} ${n === mine ? "mine" : ""}" title="${n.towns.length} towns · ${n.residents} residents · ${n.active30} active in 30 days">
-      <td>${ranked.indexOf(n) + 1}</td><td><span class="sdot" style="--c:${STANCE[assess(n).stance].c}" title="${STANCE[assess(n).stance].label}"></span>${n === mine ? "★ " : ""}${esc(n.name)}</td>
-      <td class="num">${deltaTag(n.name, "a")}${n.active30}</td>
-      <td class="num" style="color:${riskLevel(assess(n).risk).c}">${assess(n).risk}</td><td class="num">${n.chunks}</td></tr>`).join("")
+  // active members as a bar, risk as a bar in its level's colour, so the big and the endangered stand out down the list
+  const amax = Math.max(1, ...nations.map(n => n.active30));
+  $("natTable").innerHTML = nations.length ? `<tr><th>#</th><th>Nation</th><th>Active</th><th>Risk</th><th class="num">Chunks</th></tr>` +
+    rows.slice(0, 300).map(n => { const a = assess(n);
+      return `<tr data-nation="${esc(n.name)}" class="${n.name === selNation ? "sel" : ""} ${n === mine ? "mine" : ""}" title="${n.towns.length} towns · ${n.residents} residents · ${n.active30} active in 30 days">
+      <td>${ranked.indexOf(n) + 1}</td><td><span class="sdot" style="--c:${STANCE[a.stance].c}" title="${STANCE[a.stance].label}"></span>${n === mine ? "★ " : ""}${esc(n.name)}</td>
+      <td class="nowrap">${vBar(n.active30, amax, "var(--intel)", 46)} ${n.active30}${deltaTag(n.name, "a")}</td>
+      <td class="nowrap">${vBar(a.risk, 100, riskLevel(a.risk).c, 34)} <span style="color:${riskLevel(a.risk).c}">${a.risk}</span></td><td class="num">${n.chunks.toLocaleString()}</td></tr>`; }).join("")
     : `<tr><td style="color:var(--mut)">No data yet. Hit <b>SCAN ALL TOWNS</b>.</td></tr>`;
+  renderNatLead(mine);
   renderDossier(nations.find(n => n.name === selNation));
+}
+// what stands out across all nations: the threat to us, the fastest riser, the one nearest collapse, and the biggest prize
+function renderNatLead(home) {
+  const el = $("natLead"); if (!el) return;
+  if (!nations.length) { el.innerHTML = ""; return; }
+  const map = assessAll(), threat = home ? threatsTo(home)[0] : null;
+  const grow = nations.map(n => ({ n, d:anyDelta(trend(n.name, "a30")) })).filter(x => x.d > 0).sort((a, b) => b.d - a.d)[0];
+  const risky = nations.filter(n => n.active30 >= 10 && n !== home).sort((a, b) => map.get(b.name).risk - map.get(a.name).risk)[0];
+  const prize = nations.filter(n => n !== home && !["ally", "friendly", "home"].includes(map.get(n.name).stance)).map(n => ({ n, t:takeableOf(n) })).sort((a, b) => b.t - a.t)[0];
+  const ra = risky && map.get(risky.name);
+  el.innerHTML = leadRow([
+    threat && { k:"Greatest threat to us", v:threat.n.name, c:"var(--red)", go:"nation:" + threat.n.name, t:`${STANCE[threat.a.stance].label} · ${threat.n.active30} active${threat.a.contact ? ` · ${plural(threat.a.contact, "town")} near ours` : ""}`, viz:meter("Hostility", threat.a.hostility, "var(--red)", "") },
+    grow && { k:"Growing fastest", v:`${grow.n.name} +${grow.d}`, c:"var(--green)", go:"nation:" + grow.n.name, t:`active members over the week · now ${grow.n.active30}`, viz:sparkSvg(seriesPts(grow.n.name, "a30")) },
+    risky && { k:"Nearest collapse", v:risky.name, c:riskLevel(ra.risk).c, go:"nation:" + risky.name, t:`${[ra.falling && `${plural(ra.falling, "town")} falling`, ra.take && `${ra.take.toLocaleString()} chunks open`, ra.leaderGone && "leader gone"].filter(Boolean).join(" · ") || `${risky.active30} active`}`, viz:meter("Risk", ra.risk, riskLevel(ra.risk).c, "") },
+    prize?.t > 0 && { k:"Biggest prize", v:`${prize.n.name}`, c:"var(--purple)", go:"nation:" + prize.n.name, t:`${prize.t.toLocaleString()} chunks can be overclaimed now from ${plural(prize.n.towns.filter(isOverclaimable).length, "town")}`, viz:vBar(prize.t, prize.n.chunks, "var(--purple)", 200) },
+  ]);
 }
 
 function anticipateHtml(n, mine) {
@@ -1625,7 +1648,7 @@ function renderDossier(n) {
     </div><div class="flags">${flag(n.isPublic, "public", "var(--blue)")}${flag(n.isOpen, "open", "var(--green)")}${flag(n.isNeutral, "neutral", "var(--gold)")}</div></div>
     <div class="assess">
       <div class="a-tags"><span class="tag-st" style="--c:${STANCE[A.stance].c}">${STANCE[A.stance].label}</span><span class="tag-st" style="--c:${riskLevel(A.risk).c}">Risk ${riskLevel(A.risk).label.toLowerCase()}</span>${A.flags.map(f => `<span class="tag-st flag">${esc(f)}</span>`).join("")}</div>
-      <p class="brief">${nationBrief(n)}</p>
+      <p class="brief">${dossierLine(n, A)}</p>
       <div class="meters">
         ${meter("Risk", A.risk, riskLevel(A.risk).c, "Towns about to ruin, overclaimable land, inactive members, leader inactivity, decline and bank depth")}
         ${meter("Hostility", A.hostility, "var(--red)", "Enmity with us, alliances with our enemies, hostility to our allies, towns near ours")}
@@ -1905,16 +1928,24 @@ const purgeTime = k => nextPurge() == null ? null : nextPurge() + k * DAY;
 const purgeLabel = k => { const t = purgeTime(k); return t ? (k === 0 ? `Next purge · in ${fmtDur(t - Date.now()).replace(/ \d+s$/, "")}` : new Date(t).toLocaleString([], { weekday:"short", hour:"2-digit", minute:"2-digit" }))
   : k === 0 ? "Due now" : `In ${plural(k, "day")}`; };
 let ruinPurge = null;
-// the next four purges as columns: how many towns each takes, and their gold; a column filters the cards to it
+// what is open to loot now, then the next four purges as columns: how many towns each takes, and their gold.
+// A column shows only its towns; the figures that used to sit above the map said the same thing, so this replaces them.
 function renderRuinPlan() {
   const el = $("ruinPlan"); if (!el) return;
-  if (tab !== "soon" || !towns.length || $("sort").value !== "eta") { el.innerHTML = ""; return; }
-  const cand = towns.filter(t => !t.ruined && t.last && !isProtected(t));
-  const B = [0, 1, 2, 3].map(k => { const ts = cand.filter(t => purgeOf(t) === k); return { k, n:ts.length, g:ts.reduce((s, t) => s + (t.balance || 0), 0) }; });
+  if (document.body.dataset.page !== "ruins" || !towns.length) { el.innerHTML = ""; return; }
+  const cand = towns.filter(t => !t.ruined && t.last && !isProtected(t)), ruined = towns.filter(t => t.ruined);
+  const B = [{ k:"ruined", n:ruined.length, g:ruined.reduce((s, t) => s + (t.balance || 0), 0) }, ...[0, 1, 2, 3].map(k => { const ts = cand.filter(t => purgeOf(t) === k); return { k, n:ts.length, g:ts.reduce((s, t) => s + (t.balance || 0), 0) }; })];
   const mx = Math.max(1, ...B.map(b => b.n));
-  el.innerHTML = B.map(b => `<button data-purge="${b.k}" class="${ruinPurge === b.k ? "on" : ""}" style="--c:${b.k === 0 ? "var(--red)" : "var(--orange)"};--h:${Math.round(b.n / mx * 56)}px" title="${ruinPurge === b.k ? "Show all" : "Show only these"}"><div class="col"></div><b>${plural(b.n, "town")} · ${gk(b.g)}</b><span data-pk="${b.k}">${purgeLabel(b.k)}</span></button>`).join("");
+  el.innerHTML = B.map(b => { const on = b.k === "ruined" ? tab === "ruined" : tab === "soon" && ruinPurge === b.k;
+    return `<button data-purge="${b.k}" class="${on ? "on" : ""}" style="--c:${b.k === "ruined" || b.k === 0 ? "var(--red)" : "var(--orange)"};--h:${Math.round(b.n / mx * 56)}px" title="${on ? "Show all" : "Show only these"}"><div class="col"></div><b>${plural(b.n, "town")} · ${gk(b.g)}</b>${b.k === "ruined" ? `<span>Ruined now, open to loot</span>` : `<span data-pk="${b.k}">${purgeLabel(b.k)}</span>`}</button>`; }).join("");
 }
-document.addEventListener("click", e => { const b = e.target.closest("[data-purge]"); if (b) { ruinPurge = ruinPurge === +b.dataset.purge ? null : +b.dataset.purge; selected = null; render(); } });
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-purge]"); if (!b) return;
+  selected = null;
+  if (b.dataset.purge === "ruined") return setTab(tab === "ruined" ? "soon" : "ruined");
+  const k = +b.dataset.purge; ruinPurge = tab === "soon" && ruinPurge === k ? null : k;
+  $("sort").value = "eta"; if (tab !== "soon") setTab("soon"); else render();
+});
 
 function ocCard(t, i) {
   const s = ocState(t), o = overclaim(t), dm = distMe(t);
@@ -2963,6 +2994,13 @@ function nationBrief(n, plain) {
   const s4 = a.flags.length ? `Assessment: ${a.flags.join(", ")}.` : "";
   const text = [s1, rel, s3, s4].filter(Boolean).join(" ");
   return plain ? text : esc(text);
+}
+// the dossier's one-line judgment: the figures themselves are in the tiles, meters and weak points below it
+function dossierLine(n, a) {
+  const size = a.strength >= 75 ? "A major power" : a.strength >= 50 ? "A mid-sized nation" : a.strength >= 25 ? "A small nation" : "A minor nation";
+  const trend = a.dA == null ? "" : a.dA >= 3 ? ", growing" : a.dA <= -3 ? ", shrinking" : ", holding steady";
+  const rel = a.stance === "home" ? "Our own nation." : a.reasons.length ? `${cap1(a.reasons.slice(0, 2).join(", "))}${a.contact ? `; ${townsN(a.contact)} near ours` : ""}.` : a.contact ? `${townsN(a.contact)} near ours.` : "";
+  return esc(`${size}${trend}. ${rel}`);
 }
 function briefForSharing(n) {
   const a = assess(n);
@@ -4665,21 +4703,26 @@ function renderMoves() {
     : MOVES.err ? `<span style="color:var(--orange)">${esc(MOVES.err)}</span>`
     : MOVES.lastOk ? `<span class="tip-l" data-tip="Updated ${Math.round((now - MOVES.lastOk) / 1000)}s ago${MOVES.liveOnly ? "" : ` · ${moveHoursIn(7)} hours collected this week`}"><i class="live-dot"></i>${MOVES.online} on the map</span>` : "Connecting…";
   $("mvRelay").hidden = !!window.BH_SERVER || (!(MOVES.err && /relay/i.test(MOVES.err)) && !MOVES.src);
-  const stat = (n, l, c) => `<div class="stat" style="--c:${c || "var(--intel)"}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
-  const recon = today.filter(v => v.purpose === RECON).length;
-  $("mvStats").innerHTML = stat(MOVES.on && MOVES.lastOk ? live.length : "—", "Players on the map now") + stat(live.filter(s => s.foreign).length || (MOVES.lastOk ? 0 : "—"), "In foreign land now")
-    + stat(today.length, recon ? `Visits in 24 hours · ${recon} reconnaissance` : "Visits in 24 hours", recon ? "var(--orange)" : "")
-    + stat(intruders.length, hostileIn.length ? `In our land now · ${hostileIn.length} hostile` : "Foreigners in our land now", hostileIn.length ? "var(--red)" : "var(--hq)");
+  // what stands out: who is on the map and inside our land, today's crossings hour by hour, and the busiest crossing this week
+  const recon = today.filter(v => v.purpose === RECON).length, busiest = movePairs(week)[0];
+  const byHour = Array.from({ length:24 }, (_, i) => today.filter(v => Math.floor((now - v.at) / 36e5) === 23 - i).length);
+  const weekHours = MOVES.visits.filter(v => v.at >= week && v.purpose !== PASSING).reduce((h, v) => (h[new Date(v.at).getUTCHours()]++, h), new Array(24).fill(0));
+  $("mvStats").innerHTML = leadRow([
+    { k:"On the map now", v:MOVES.on && MOVES.lastOk ? String(live.length) : "—", c:"var(--intel)", t:`${live.filter(s => s.foreign).length} in foreign land · visitors cross most at these hours (UTC)`, viz:vHours(weekHours) },
+    { k:"In our land now", v:String(intruders.length), c:hostileIn.length ? "var(--red)" : "var(--hq)", t:intruders.length ? `${hostileIn.length ? `${hostileIn.length} hostile · ` : ""}${andList(intruders.slice(0, 2).map(s => `${esc(s.name)} of ${esc(s.visit.pn || "no nation")}`))}` : "Nobody foreign inside Kingdom or allied land" },
+    { k:"Visits, 24 hours", v:String(today.length), c:recon ? "var(--orange)" : "var(--intel)", t:recon ? `${recon} judged reconnaissance` : "none judged reconnaissance", viz:vCols(byHour, recon ? "var(--orange)" : "var(--intel)", { w:200, h:28 }) },
+    busiest && { k:"Busiest crossing, 7 days", v:`${busiest.A} → ${busiest.B}`, c:busiest.recon ? "var(--orange)" : "var(--intel)", go:"nation:" + busiest.B, t:`${plural(busiest.visits, "visit")} by ${plural(busiest.people.size, "player")}${busiest.recon ? ` · ${busiest.recon} recon` : ""}` },
+  ]);
   // who is inside our borders right now
   $("mvLive").innerHTML = intruders.length ? `<table class="nt"><tr><th>Player</th><th>From</th><th>Where</th><th class="num">Inside</th><th>Looks like</th></tr>${intruders.sort((a, b) => relScore(findNation(b.visit.pn), homeNation()) - relScore(findNation(a.visit.pn), homeNation())).map(s => {
       const v = s.visit, dw = now - v.start + MOVES.every * 1000, x = visitFeatures({ ...v, dwell:dw }), p = mlPredict("scout", x), pu = purposeOf({ ...v, dwell:dw }, p);
       return `<tr><td><button class="pl-name" data-player="${esc(s.name)}" data-town="${esc(v.pt || "")}">${esc(s.name)}</button></td><td>${natChip(v.pn)}</td><td>${esc(v.town)} <span class="lab-ev">${esc(v.nation || "")}</span></td><td class="num">${durShort(dw)}</td><td>${mvPurpose(pu, p)}</td></tr>`; }).join("")}</table>`
     : `<p class="br-empty">${MOVES.on && MOVES.lastOk ? "No foreign players are inside Kingdom or allied land right now." : "Waiting for the live map…"}</p>`;
   // nation to nation, last 7 days
-  const pairs = movePairs(week).slice(0, 18);
-  $("mvPairs").innerHTML = pairs.length ? `<table class="nt"><tr><th>Visitors</th><th>Into</th><th class="num">Visits</th><th class="num">People</th><th class="num">Recon</th><th class="num">Hostile move, 7 days</th></tr>${pairs.map(e => {
+  const pairs = movePairs(week).slice(0, 18), pmax = Math.max(1, ...pairs.map(e => e.visits));
+  $("mvPairs").innerHTML = pairs.length ? `<table class="nt"><tr><th>Visitors</th><th>Into</th><th>Visits</th><th class="num">People</th><th class="num">Recon</th><th class="num">Hostile move, 7 days</th></tr>${pairs.map(e => {
       const f = pairForecast(e.A, e.B), p = f ? f.p : mlPredict("probe7", pairFeatures(e));
-      return `<tr><td>${natChip(e.A)}</td><td>${natChip(e.B)}</td><td class="num">${e.visits}</td><td class="num">${e.people.size}</td><td class="num">${e.recon || "—"}</td>
+      return `<tr><td>${natChip(e.A)}</td><td>${natChip(e.B)}</td><td>${vBar(e.visits, pmax, e.recon ? "var(--orange)" : "var(--intel)", 50)}${e.visits}</td><td class="num">${e.people.size}</td><td class="num">${e.recon || "—"}</td>
         <td class="num" title="${f ? "Open Forecast Lab forecast, checked against the event log" : "Current model estimate; a forecast is logged at the next scan"}"><span class="lab-bar"><i style="width:${Math.round(p * 100)}%"></i></span>${pct(p)}${f ? "" : " ~"}</td></tr>`; }).join("")}</table>`
     : `<p class="br-empty">Nation-to-nation traffic appears here once visits are recorded.</p>`;
   // recent visits, with labels that train the model
@@ -4695,8 +4738,8 @@ function renderMoves() {
   // frequent travellers
   const ppl = new Map();
   for (const v of MOVES.visits) { if (v.at < week || v.purpose === PASSING) continue; const e = ppl.get(v.player) || { name:v.player, pn:v.pn, pt:v.pt, n:0, recon:0, nations:new Set(), ours:0 }; e.n++; if (v.purpose === RECON) e.recon++; if (v.nation) e.nations.add(v.nation); if (isOurLand(v.nation)) e.ours++; ppl.set(v.player, e); }
-  const top = [...ppl.values()].sort((a, b) => b.recon - a.recon || b.ours - a.ours || b.n - a.n).slice(0, 14);
-  $("mvPeople").innerHTML = top.length ? `<table class="nt"><tr><th>Player</th><th>Of</th><th class="num">Visits</th><th class="num">Nations</th><th class="num">In our land</th><th class="num">Recon</th></tr>${top.map(e => `<tr><td><button class="pl-name" data-player="${esc(e.name)}" data-town="${esc(e.pt || "")}">${esc(e.name)}</button></td><td>${natChip(e.pn)}</td><td class="num">${e.n}</td><td class="num">${e.nations.size}</td><td class="num">${e.ours || "—"}</td><td class="num">${e.recon || "—"}</td></tr>`).join("")}</table>`
+  const top = [...ppl.values()].sort((a, b) => b.recon - a.recon || b.ours - a.ours || b.n - a.n).slice(0, 14), tmax = Math.max(1, ...top.map(e => e.n));
+  $("mvPeople").innerHTML = top.length ? `<table class="nt"><tr><th>Player</th><th>Of</th><th>Visits</th><th class="num">Nations</th><th class="num">In our land</th><th class="num">Recon</th></tr>${top.map(e => `<tr><td><button class="pl-name" data-player="${esc(e.name)}" data-town="${esc(e.pt || "")}">${esc(e.name)}</button></td><td>${natChip(e.pn)}</td><td>${vBar(e.n, tmax, e.recon ? "var(--orange)" : "var(--intel)", 50)}${e.n}</td><td class="num">${e.nations.size}</td><td class="num">${e.ours || "—"}</td><td class="num">${e.recon || "—"}</td></tr>`).join("")}</table>`
     : `<p class="br-empty">The most travelled players of the week appear here.</p>`;
   const m = mlState().models.scout;
   $("mvModel").innerHTML = `Reconnaissance model: ${m.n ? `${m.n} visit${m.n === 1 ? "" : "s"} labelled, ${pct(m.hits / m.n)} of them called correctly before you labelled them` : "using its starting rules. Label visits to teach it what reconnaissance looks like on this server"}.`;
@@ -4997,19 +5040,47 @@ function renderTicker() {
   tr.innerHTML = html + html; // drawn twice so the loop is seamless
   tr.style.setProperty("--tk-dur", Math.max(40, items.length * 5) + "s");
 }
+// each Finance page leads with what stands out on it, each finding with its own small picture
 function renderFinStats(pg) {
   const el = $("finStats"); if (!el) return;
-  const stat = (n, l, c) => `<div class="stat" style="--c:${c || "var(--gold)"}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  const G = "var(--gold)";
   if (pg === "ledger") {
-    const sh = KEYED?.shops?.list || [], sold = (KEYED?.trades || []).filter(t => t.k === "sold" && t.at > Date.now() - 7 * DAY);
-    el.innerHTML = stat(sh.length, "Shops") + stat(gk(sold.reduce((s, t) => s + t.price, 0)), "Sold, 7 days", "var(--green)") + stat(sh.filter(s => s.stock === 0).length, "Empty", "var(--red)");
+    const sh = KEYED?.shops?.list || [], wk = (KEYED?.trades || []).filter(t => t.at > Date.now() - 7 * DAY), sold = wk.filter(t => t.k === "sold"), empty = sh.filter(s => s.stock === 0);
+    const days7 = Array.from({ length:7 }, (_, i) => sold.filter(t => Math.floor((Date.now() - t.at) / DAY) === 6 - i).reduce((s, t) => s + t.price, 0));
+    el.innerHTML = leadRow([
+      { k:"Sold this week", v:gk(sold.reduce((s, t) => s + t.price, 0)), c:"var(--green)", t:`${plural(sold.length, "sale")} from ${plural(sh.length, "shop")}`, viz:vCols(days7, "var(--green)", { w:140, h:28 }) },
+      { k:"Empty shops", v:String(empty.length), c:empty.length ? "var(--red)" : "var(--fg)", t:empty.length ? andList(empty.slice(0, 3).map(s => esc(itemName(s.item)))) : "All stocked" },
+      wk[wk.length - 1] && { k:"Last trade", v:itemName(wk[wk.length - 1].item), c:G, t:`${T_LABEL[wk[wk.length - 1].k] || wk[wk.length - 1].k} · ${agoT(wk[wk.length - 1].at)}` },
+    ]);
     return;
   }
-  if (!FIN) { el.innerHTML = stat("—", "Waiting for market data") + stat("—", "") + stat("—", ""); return; }
-  const fl = FIN.flows, moved = fl.reduce((s, f) => s + f.amt, 0);
-  el.innerHTML = pg === "property" ? stat(FIN.property.count.toLocaleString(), "Quarters for sale") + stat(gk(FIN.property.idx), "Median asking price") + stat(FIN.property.steals.length, "Steals right now", "var(--green)")
-    : pg === "flows" ? stat(fl.length.toLocaleString(), "Transfers found, last 48 hours") + stat(gk(moved), "Gold moved") + stat(FIN.corridors.length, "Nation-to-nation channels this week")
-    : stat(gk(FIN.totals.all), "All gold on the server") + stat(gk(FIN.totals.players), "Held by players") + stat(gk(FIN.totals.towns + FIN.totals.nations), "In town and nation banks");
+  if (!FIN) { el.innerHTML = leadRow([{ k:"Market data", v:"Not yet", c:G, t:finNoData() }]); return; }
+  const glob = FIN.series.global, d1 = finAgo(glob, DAY), up = [...FIN.nations].filter(n => n.d24 > 0).sort((a, b) => b.d24 - a.d24)[0], dn = [...FIN.nations].filter(n => n.d24 < 0).sort((a, b) => a.d24 - b.d24)[0];
+  if (pg === "property") {
+    const P = FIN.property, s = P.steals[0], cover = P.townsForSale.filter(t => t.bank >= t.price), cheap = [...P.byNation].filter(n => n.count >= 5).sort((a, b) => a.median - b.median)[0];
+    el.innerHTML = leadRow([
+      { k:"For sale", v:`${P.count.toLocaleString()} quarters`, c:G, t:`median asking ${gk(P.idx)}`, viz:sparkSvg(glob.filter(p => p[6] != null).map(p => [p[0], p[6]])) },
+      s && { k:"Best steal", v:s.name, c:"var(--green)", t:`${gk(s.price)} in ${esc(s.town || "?")} · similar ask ${gk(s.ref)}`, viz:vBar(s.price, s.ref, "var(--green)", 200) },
+      { k:"Towns for sale", v:String(P.townsForSale.length), c:"var(--purple)", t:cover.length ? `${plural(cover.length, "town")} whose own bank covers the price` : "none cheaper than its own bank" },
+      cheap && { k:"Cheapest market", v:cheap.n, c:G, go:"nation:" + cheap.n, t:`median ${gk(cheap.median)} over ${cheap.count} listings` },
+    ]);
+    return;
+  }
+  if (pg === "flows") {
+    const fl = FIN.flows, big = fl[0], corr = FIN.corridors[0], byH = Array.from({ length:24 }, (_, i) => fl.filter(f => Math.floor((Date.now() - f.at) / 72e5) === 23 - i).reduce((s, f) => s + f.amt, 0));
+    el.innerHTML = leadRow([
+      { k:"Gold moved, 48 hours", v:gk(fl.reduce((s, f) => s + f.amt, 0)), c:G, t:`${plural(fl.length, "transfer")} matched`, viz:vCols(byH, G, { w:200, h:28 }) },
+      big && { k:"Largest transfer", v:gk(big.amt), c:G, t:`${esc(big.a.n)} → ${esc(big.b.n)} · ${big.conf} confidence` },
+      corr && { k:"Busiest channel", v:`${corr.from} → ${corr.to}`, c:G, go:"nation:" + corr.to, t:`${gk(corr.amt)} in ${plural(corr.n, "transfer")} this week` },
+    ]);
+    return;
+  }
+  el.innerHTML = leadRow([
+    { k:"All gold", v:gk(FIN.totals.all), c:G, t:`${d1 ? `${FIN.totals.all >= d1[1] ? "▲" : "▼"} ${gk(Math.abs(FIN.totals.all - d1[1]))} in a day · ` : ""}${Math.round(FIN.totals.players / Math.max(1, FIN.totals.all) * 100)}% held by players`, viz:sparkSvg(glob.map(p => [p[0], p[1]])) },
+    up && { k:"Richer by the day", v:`${up.n} +${gk(up.d24)}`, c:"var(--green)", go:"nation:" + up.n, t:`now ${gk(up.wealth)}`, viz:sparkSvg(FIN.series.nations[up.n]) },
+    dn && { k:"Poorer by the day", v:`${dn.n} −${gk(-dn.d24)}`, c:"var(--red)", go:"nation:" + dn.n, t:`now ${gk(dn.wealth)}`, viz:sparkSvg(FIN.series.nations[dn.n]) },
+    FIN.watch.length ? { k:"Running dry", v:plural(FIN.watch.length, "town"), c:"var(--red)", t:`${esc(FIN.watch[0].n)} first, ${FIN.watch[0].runway < 1 ? "within a day" : `in ${Math.round(FIN.watch[0].runway)} days`}` } : null,
+  ]);
 }
 function renderFinance() {
   const pg = document.body.dataset.page;
@@ -5019,16 +5090,19 @@ function renderFinance() {
 function renderMarkets() {
   if (!FIN) { $("finNations").innerHTML = `<p class="fin-empty">${finNoData()}</p>`; for (const id of ["finMovers", "finRich", "finWatch", "finTownMoves"]) $(id).innerHTML = ""; $("finAbout").textContent = ""; return; }
   $("finNatCount").textContent = `${FIN.nations.length} nations`;
-  $("finNations").innerHTML = finTable([["Nation"], ["Wealth", 1], ["24 hours", 1], ["7 days", 1], ["Members", 1], ["Treasuries", 1], ["Players' gold", 1], ["30 days"]],
-    FIN.nations.slice(0, 150).map((n, i) => `<tr data-finnat="${esc(n.n)}" class="${n.n === finSel ? "on" : ""}" style="cursor:pointer"><td><span class="fin-dim">${i + 1}</span> ${natChip(n.n)}</td><td class="num">${gk(n.wealth)}</td><td class="num">${dS(n.d24)} ${pS(n.pct24)}</td><td class="num">${dS(n.d7)}</td><td class="num">${n.members.toLocaleString()}</td><td class="num">${gk(n.bank + n.towns)}</td><td class="num">${gk(n.players)}</td><td>${sparkSvg(FIN.series.nations[n.n])}</td></tr>`),
+  const wmax = FIN.nations[0]?.wealth || 1;
+  $("finNations").innerHTML = finTable([["Nation"], ["Wealth"], ["24 hours", 1], ["7 days", 1], ["Members", 1], ["Treasuries", 1], ["Players' gold", 1], ["30 days"]],
+    FIN.nations.slice(0, 150).map((n, i) => `<tr data-finnat="${esc(n.n)}" class="${n.n === finSel ? "on" : ""}" style="cursor:pointer"><td><span class="fin-dim">${i + 1}</span> ${natChip(n.n)}</td><td>${vBar(n.wealth, wmax, "var(--gold)", 70)}${gk(n.wealth)}</td><td class="num">${dS(n.d24)} ${pS(n.pct24)}</td><td class="num">${dS(n.d7)}</td><td class="num">${n.members.toLocaleString()}</td><td class="num">${gk(n.bank + n.towns)}</td><td class="num">${gk(n.players)}</td><td>${sparkSvg(FIN.series.nations[n.n])}</td></tr>`),
     "No nations yet.");
   const day = FIN.movers.up24.length || FIN.movers.down24.length, up = day ? FIN.movers.up24 : FIN.movers.up3, dn = day ? FIN.movers.down24 : FIN.movers.down3;
   $("finMoverH").dataset.tip = day ? "Last 24 hours" : "Since the last player scan";
   const pr = p => `<tr><td><button class="pl-name" data-player="${esc(p.n)}" data-town="${esc(p.town || "")}">${esc(p.n)}</button></td><td>${natChip(p.nation)}</td><td class="num">${dS(p.d)}</td><td class="num">${gk(p.bal)}</td></tr>`;
   $("finMovers").innerHTML = finTable([["Player"], ["Nation"], ["Change", 1], ["Now", 1]], [...up.slice(0, 8), ...dn.slice(0, 8)].map(pr), "After the second player scan.");
-  $("finRich").innerHTML = finTable([["Player"], ["Town"], ["Nation"], ["Balance", 1]], FIN.richest.slice(0, 50).map(p => `<tr><td><button class="pl-name" data-player="${esc(p.n)}" data-town="${esc(p.town || "")}">${esc(p.n)}</button></td><td>${esc(p.town || "—")}</td><td>${natChip(p.nation)}</td><td class="num">${gk(p.bal)}</td></tr>`), "No player balances yet.");
-  $("finWatch").innerHTML = finTable([["Town"], ["Nation"], ["Bank", 1], ["Spending a day", 1], ["Runs dry", 1]],
-    FIN.watch.slice(0, 20).map(t => `<tr data-fintown="${esc(t.n)}" style="cursor:pointer"><td>${esc(t.n)}</td><td>${natChip(t.nation)}</td><td class="num">${gk(t.bal)}</td><td class="num fin-dn">${gk(t.burn)}</td><td class="num">${t.runway < 1 ? "within a day" : `in ${Math.round(t.runway)} days`}</td></tr>`),
+  const rmax = FIN.richest[0]?.bal || 1;
+  $("finRich").innerHTML = finTable([["Player"], ["Nation"], ["Balance"]], FIN.richest.slice(0, 50).map(p => `<tr><td><button class="pl-name" data-player="${esc(p.n)}" data-town="${esc(p.town || "")}">${esc(p.n)}</button><span class="sub2">${esc(p.town || "no town")}</span></td><td>${natChip(p.nation)}</td><td>${vBar(p.bal, rmax, "var(--gold)", 70)}${gk(p.bal)}</td></tr>`), "No player balances yet.");
+  // days left as a draining bar: a week is full, empty is today
+  $("finWatch").innerHTML = finTable([["Town"], ["Nation"], ["Bank", 1], ["Spending a day", 1], ["Runs dry"]],
+    FIN.watch.slice(0, 20).map(t => `<tr data-fintown="${esc(t.n)}" style="cursor:pointer"><td>${esc(t.n)}</td><td>${natChip(t.nation)}</td><td class="num">${gk(t.bal)}</td><td class="num fin-dn">${gk(t.burn)}</td><td>${vBar(t.runway, 7, t.runway < 2 ? "var(--red)" : "var(--orange)", 56)}${t.runway < 1 ? "within a day" : `${Math.round(t.runway)} days`}</td></tr>`),
     "None running dry.");
   $("finTownMoves").innerHTML = finTable([["Town"], ["Nation"], ["Change", 1], ["Bank", 1]], [...FIN.townMovers.up.slice(0, 6), ...FIN.townMovers.down.slice(0, 6)].map(t => `<tr data-fintown="${esc(t.n)}" style="cursor:pointer"><td>${esc(t.n)}</td><td>${natChip(t.nation)}</td><td class="num">${dS(t.d)}</td><td class="num">${gk(t.bal)}</td></tr>`), "No changes yet.");
   $("finAbout").hidden = !FIN.deepErr; $("finAbout").innerHTML = FIN.deepErr ? `<span class="fin-dn">Last player scan failed: ${esc(FIN.deepErr)}</span>` : "";
@@ -5054,10 +5128,11 @@ function renderProperty() {
 const flowEnd = e => `${e.k === "t" ? `<span class="fin-dim">town bank</span> ${esc(e.n)}` : `<button class="pl-name" data-player="${esc(e.n)}" data-town="${esc(e.town || "")}">${esc(e.n)}</button>`}<div>${natChip(e.nation)}</div>`;
 function renderFlows() {
   if (!FIN) { $("flowList").innerHTML = `<p class="fin-empty">${finNoData()}</p>`; $("flowCorr").innerHTML = ""; return; }
-  $("flowList").innerHTML = finTable([["From"], ["To"], ["Gold", 1], ["Confidence"], ["When"]],
-    FIN.flows.slice(0, 120).map(f => `<tr><td>${flowEnd(f.a)}</td><td>${flowEnd(f.b)}</td><td class="num">${gk(f.amt)}</td><td class="fin-dim">${f.conf}</td><td class="fin-dim">${timeShort(f.at)}</td></tr>`),
+  const fmax = FIN.flows[0]?.amt || 1, cmax = FIN.corridors[0]?.amt || 1;
+  $("flowList").innerHTML = finTable([["From"], ["To"], ["Gold"], ["Confidence"], ["When"]],
+    FIN.flows.slice(0, 120).map(f => `<tr><td>${flowEnd(f.a)}</td><td>${flowEnd(f.b)}</td><td>${vBar(f.amt, fmax, f.conf === "low" ? "var(--dim)" : "var(--gold)", 60)}${gk(f.amt)}</td><td class="fin-dim">${f.conf}</td><td class="fin-dim">${timeShort(f.at)}</td></tr>`),
     "None yet.");
-  $("flowCorr").innerHTML = finTable([["From"], ["To"], ["Gold", 1], ["Transfers", 1]], FIN.corridors.slice(0, 30).map(c => `<tr><td>${natChip(c.from)}</td><td>${natChip(c.to)}</td><td class="num">${gk(c.amt)}</td><td class="num">${c.n}</td></tr>`), "None yet.");
+  $("flowCorr").innerHTML = finTable([["From"], ["To"], ["Gold"], ["Transfers", 1]], FIN.corridors.slice(0, 30).map(c => `<tr><td>${natChip(c.from)}</td><td>${natChip(c.to)}</td><td>${vBar(c.amt, cmax, "var(--gold)", 70)}${gk(c.amt)}</td><td class="num">${c.n}</td></tr>`), "None yet.");
 }
 // clicks: a nation frames its towns, a town or listing flies the map there
 document.addEventListener("click", e => {
