@@ -55,8 +55,13 @@ async function deepScan() {
   const at = Date.now();
   const names = (await api("/players")).map(p => p?.name).filter(Boolean);
   const players = {}; // name -> [balance, town, nation]
+  const recs = []; // the fuller record the Ministry of Population reads (server/population.js)
   await pool(chunks(names, 100), 3, async q => {
-    for (const p of await api("/players", { query:q })) if (p?.name) players[p.name] = [r2(p.stats?.balance), p.town?.name || null, p.nation?.name || null];
+    for (const p of await api("/players", { query:q })) if (p?.name) {
+      players[p.name] = [r2(p.stats?.balance), p.town?.name || null, p.nation?.name || null];
+      const ts = p.timestamps || {};
+      recs.push({ n:p.name, reg:ts.registered || null, last:ts.lastOnline || null, joined:ts.joinedTownAt || null, town:p.town?.name || null, nation:p.nation?.name || null, bal:r2(p.stats?.balance) });
+    }
   });
   const ids = (await api("/quarters")).map(q => q?.uuid).filter(Boolean);
   const quarters = [];
@@ -68,6 +73,9 @@ async function deepScan() {
         sale:!!x.status?.isForSale, price:x.stats?.price ?? null, vol:x.stats?.volume ?? null, x:mid?.[0] ?? null, z:mid?.[1] ?? null });
     }
   });
+  // the previous snapshot lets Population see moves from its very first run
+  try { const pv = state.snaps[state.snaps.length - 1]; onPlayers(recs, at, pv ? { at:pv.at, players:gzRead(path.join(DIR, pv.file)) || {} } : null); }
+  catch (e) { console.warn("population:", e.message); }
   // player snapshots live in their own files; the state keeps the list
   const file = `players-${at}.json.gz`;
   gzWrite(path.join(DIR, file), players);
@@ -220,9 +228,9 @@ function compact(pts, now) {
 }
 
 /* ---------- schedule: the deep scan runs between the hourly scans, never during one ---------- */
-let busy = () => false, after = async () => {}, running = false, last = null;
+let busy = () => false, after = async () => {}, onPlayers = () => {}, running = false, last = null;
 function start(opts) {
-  busy = opts.busy || busy; after = opts.after || after;
+  busy = opts.busy || busy; after = opts.after || after; onPlayers = opts.onPlayers || onPlayers;
   if (process.env.FINANCE_DEEP === "off") return; // tests: banks only, no player or property scans
   setInterval(tick, 60e3).unref?.();
   setTimeout(tick, 90e3);

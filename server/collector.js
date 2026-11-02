@@ -13,6 +13,8 @@ const signals = require("./signals");
 const finance = require("./finance");
 const keyed = require("./keyed");
 const history = require("./history");
+const population = require("./population");
+const combat = require("./combat");
 
 const RUNS = path.join(DATA, "runs"), IMPORTS = path.join(DATA, "imports"), PROFILE = path.join(DATA, "profile");
 const STATUS_FILE = path.join(DATA, "status.json");
@@ -29,7 +31,7 @@ function tokenOk(t) {
   tokens.delete(t); // one use only
   return exp > Date.now();
 }
-function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24), signals:signals.status(), finance:finance.status(), keyed:keyed.status() }; }
+function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24), signals:signals.status(), finance:finance.status(), keyed:keyed.status(), population:population.status(), combat:combat.status() }; }
 
 function schedule() {
   clearTimeout(timer);
@@ -44,7 +46,8 @@ function schedule() {
 function start(o) {
   opts = { ...opts, ...o }; schedule();
   // the finance deep scan (every player and quarter) runs between hourly scans; when it finishes, visitors get it straight away
-  finance.start({ busy:() => S.running, after:refresh });
+  // its player records also feed the Ministry of Population
+  finance.start({ busy:() => S.running, after:refresh, onPlayers:(recs, at, prev) => { const r = population.ingest(recs, at, prev); console.log(`population: ${r.players} players, ${r.moves} moved between nations`); } });
   // with an EarthMC API key: leaderboards, pursuits and the event stream. Towns fall at the new day, so a scan
   // follows a few minutes after it, once nothing else is running, and fresh ruins show straight away.
   keyed.start({ busy:() => S.running || finance.status().running, onNewDay:() => {
@@ -63,7 +66,7 @@ function start(o) {
 async function refresh() {
   if (S.running) return;
   S.running = true;
-  try { const page = await browser(); await pushFinance(page); await pushKeyed(page); await pushHistory(page); await exportArchive(page); }
+  try { const page = await browser(); await pushFinance(page); await pushKeyed(page); await pushHistory(page); await pushPeople(page); await exportArchive(page); }
   catch (e) { console.warn("collector: refresh failed:", e.message); }
   finally { S.running = false; save(); }
 }
@@ -118,6 +121,7 @@ async function exportArchive(page) {
     return JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now(),
       stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")),
       signals:await reqP(m.get("signals")), finance:await reqP(m.get("finance")), keyed:await reqP(m.get("keyed")), history:await reqP(m.get("history")),
+      population:await reqP(m.get("population")), combat:await reqP(m.get("combat")), tracks:await reqP(m.get("tracks")),
       series:await reqP(tx.objectStore("series").getAll()),
       frameKeys:await reqP(tx.objectStore("frames").getAllKeys()), frames:await reqP(tx.objectStore("frames").getAll()),
       events:await reqP(tx.objectStore("events").getAll()), visits:await reqP(tx.objectStore("visits").getAll()),
@@ -146,6 +150,12 @@ async function pushKeyed(page) {
 async function pushHistory(page) {
   const h = history.get();
   await page.evaluate(h => { HISTORY = h; return idbDo(["meta"], "readwrite", tx => h ? tx.objectStore("meta").put(h, "history") : tx.objectStore("meta").delete("history")); }, h);
+}
+// the Ministry of Population's picture, and who has been killing whom (nations as of the latest player scan)
+async function pushPeople(page) {
+  const p = population.snapshot(), c = combat.snapshot(population.nationOf);
+  await page.evaluate(([p, c]) => { POP = p; COMBAT = c; return idbDo(["meta"], "readwrite", tx => { const m = tx.objectStore("meta");
+    p ? m.put(p, "population") : m.delete("population"); c ? m.put(c, "combat") : m.delete("combat"); }); }, [p, c]);
 }
 
 async function runOnce() {
@@ -191,6 +201,7 @@ async function runOnce() {
     await pushFinance(page).catch(e => console.warn("collector: finance step failed:", e.message));
     await pushKeyed(page).catch(e => console.warn("collector: leaderboards step failed:", e.message));
     await pushHistory(page).catch(e => console.warn("collector: history step failed:", e.message));
+    await pushPeople(page).catch(e => console.warn("collector: population and combat step failed:", e.message));
 
     await exportArchive(page);
 

@@ -114,6 +114,30 @@ global.__collectorRoutes = async ctx => {
   console.log('history upload without token:', (await send(HISTORY)).status, '| not a history:', (await send({ kind:'x' }, 'chat-token')).status, '| with token:', JSON.stringify(await (await send(HISTORY, 'chat-token')).json()));
   for (let i = 0; i < 60 && collector.status().archiveVersion === v0; i++) await new Promise(r => setTimeout(r, 1000));
   console.log('archive refreshed with the history:', collector.status().archiveVersion !== v0);
+  // the Ministry of Population: two player scans a day apart, between which three Carthaginians join Rome
+  const DAY = 864e5, pop = require('../server/population');
+  const recs = moved => Array.from({ length:200 }, (_, k) => [0, 1, 2, 3].map(j => { const mv = moved && j === 3 && k % 8 === 2 && k < 30;
+    return { n:`R${k}_${j}`, reg:now - (10 + k % 20) * DAY, last:now - off(k, j) * DAY, joined:mv ? now - 3600e3 : now - (k % 10 + 1) * DAY, town:mv ? 'Town1' : townOf(k), nation:mv ? 'Rome' : NAT[k % 8], bal:k * 3 + j }; })).flat()
+    .concat([{ n:'Newbie1', reg:now - 2 * 3600e3, last:now - 600e3, town:null, nation:null, bal:5 }, { n:'Drifter', reg:now - 40 * DAY, last:now - DAY, town:null, nation:null, bal:900 }]);
+  pop.ingest(recs(false), now - DAY, null);
+  console.log('population:', JSON.stringify(pop.ingest(recs(true), now, null)), '| townless active:', pop.snapshot().totals.townlessActive, '| Rome net:', pop.snapshot().nations.find(n => n.n === 'Rome').net);
+  // kills: a war between Carthage and Rome over four days, and a hunter from Persia killing across five nations
+  const kills = [];
+  for (let i = 0; i < 30; i++) { const c = `R${[2, 10, 18][i % 3]}_${i % 4}`, r = `R${[1, 9, 17][i % 3]}_${(i + 1) % 4}`; kills.push(i % 2 ? [now - (i % 4) * DAY - i * 6e4, c, r, 'w' + i] : [now - (i % 4) * DAY - i * 6e4, r, c, 'w' + i]); }
+  for (let i = 0; i < 14; i++) kills.push([now - i * 3600e3, 'R4_1', `R${[1, 2, 3, 5, 6, 7][i % 6] + 8 * (i % 5)}_${i % 3}`, 'h' + i]);
+  const kpost = (body, token) => fetch('http://127.0.0.1:8799/api/kills-import', { method:'POST', headers:{ 'Content-Type':'application/json', ...(token ? { 'x-chat-token':token } : {}) }, body:JSON.stringify(body) });
+  console.log('kills upload without token:', (await kpost({ kind:'kills', kills })).status, '| not kills:', (await kpost({ kind:'x' }, 'chat-token')).status, '| with token:', (await (await kpost({ kind:'kills', kills }, 'chat-token')).json()).message);
+  // a bridge export uploaded for the briefings also gives up its kills
+  const bridge = { guild:{ name:'EarthMC' }, channel:{ name:'terra-nostra' }, messages:[{ id:'k1', type:'Default', timestamp:new Date(now - 6e4).toISOString(), content:'', author:{ name:'Bridge', isBot:true }, embeds:[{ author:{ name:'☠ R3\\_1 was killed by R4\\_1' } }] }] };
+  console.log('kills from a chat upload:', (await (await fetch('http://127.0.0.1:8799/api/chat-import', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-chat-token':'chat-token' }, body:JSON.stringify(bridge) })).json()).kills);
+  const v1 = collector.status().archiveVersion; await collector.refresh();
+  for (let i = 0; i < 60 && collector.status().archiveVersion === v1; i++) await new Promise(r => setTimeout(r, 1000));
+  const cs = require('../server/combat').snapshot(pop.nationOf);
+  console.log('combat:', `${cs.inWindow} kills`, '| conflicts:', cs.conflicts.slice(0, 2).map(c => `${c.A}-${c.B} ${c.kind} ${c.ab}:${c.ba}`).join(', '), '| hunter:', cs.players.filter(p => p.role === 'hunter').map(p => p.p).join(','));
+  // the War Room: changing the plan needs the key (or, with a password, a signed-in officer)
+  const wpost = (body, key) => fetch('http://127.0.0.1:8799/api/warroom', { method:'POST', headers:{ 'Content-Type':'application/json', ...(key ? { 'x-war-key':key } : {}) }, body:JSON.stringify(body) });
+  const mark = { op:'add', by:'Tester', item:{ kind:'route', name:'Road to Carthage', note:'Bring boats', pts:[[-12000, -4500], [-8000, -2000], [-5000, 1500]] } };
+  console.log('war room change without key:', (await wpost(mark)).status, '| bad mark:', (await wpost({ op:'add', item:{ kind:'route', pts:[[0, 0]] } }, 'chat-token')).status, '| with key:', JSON.stringify(await (await wpost(mark, 'chat-token')).json()));
   const leaks = [JSON.stringify(collector.status()), require('zlib').gunzipSync(fs.readFileSync(path.join(process.env.DATA_DIR, 'archive.json.gz'))).toString(), fs.readFileSync(path.join(process.env.DATA_DIR, 'keyed', 'state.json'), 'utf8')];
   console.log('key leaked into status/archive/state:', leaks.map(t => t.includes(KEY)).join('/'));
   const runs = fs.readdirSync(path.join(process.env.DATA_DIR, 'runs'));
@@ -145,7 +169,7 @@ global.__collectorRoutes = async ctx => {
   console.log('picked intel, password asked:', await p.evaluate(() => !document.getElementById('gate').hidden), '| in ministry:', await p.evaluate(() => !document.body.classList.contains('portal')));
   await p.waitForSelector('#boot.done', { state:'attached', timeout:15000 }).catch(() => {}); await p.waitForTimeout(1500);
   console.log('straight into the ministry:', await p.evaluate(() => !document.body.classList.contains('landing')), '| scan buttons visible:', await p.isVisible('#scanBig'), await p.isVisible('#scan'));
-  console.log('nav shows only intel pages:', await p.evaluate(() => [...document.querySelectorAll('nav.pages a')].filter(a => a.offsetParent).map(a => a.dataset.tip).join(', ')));
+  console.log('nav shows only intel pages:', await p.evaluate(() => [...document.querySelectorAll('nav.pages a')].filter(a => a.offsetParent).map(a => a.textContent.trim()).join(', ')));
   await p.hover('nav.pages a[href="#moves"]'); await p.waitForTimeout(300); await shot('intel');
   // Rankings: the leaderboards and pursuits from the API key
   await p.evaluate(() => { location.hash = '#rankings'; }); await p.waitForTimeout(1200);
@@ -154,7 +178,15 @@ global.__collectorRoutes = async ctx => {
   await p.click('[data-rkskill="SWORDS"]'); await p.waitForTimeout(300);
   console.log('swords board title:', await p.textContent('#rkBoardH'), '| first row:', (await p.locator('#rkBoard tr').nth(1).innerText()).replace(/\s+/g, ' '));
   await shot('rankings');
-  console.log('assessment names fighters:', await p.evaluate(() => /combat leaderboards/.test(docText(nationAssessment(findNation('Rome'), null, false)))), '| summary section:', await p.evaluate(() => /FIGHTING STRENGTH|Fighting Strength/.test(docText(intsum(false)))));
+  // Combat: kills, conflicts and hunters
+  console.log('combat lead:', (await p.textContent('#cbLead')).replace(/\s+/g, ' ').slice(0, 220));
+  console.log('conflicts:', await p.locator('#cbConflicts tr').count() - 1, '| first:', (await p.locator('#cbConflicts tr').nth(1).innerText()).replace(/\s+/g, ' '), '| killers:', (await p.locator('#cbPlayers tr').nth(1).innerText()).replace(/\s+/g, ' '));
+  console.log('assessment names fighters:', await p.evaluate(() => /combat leaderboards/.test(docText(nationAssessment(findNation('Rome'), null, false)))), '| summary section:', await p.evaluate(() => /Fighting: Kills/.test(docText(intsum(false)))));
+  console.log('assessment combat:', await p.evaluate(() => (docText(nationAssessment(findNation('Carthage'), null, false)).match(/In combat [^.]*\.[^.]*\./) || ['none'])[0]));
+  // what allies get: no hostility scores, no servers read, no Kingdom section, no implications; an Alliance section instead
+  console.log('releasable:', await p.evaluate(() => { const e = docText(intsum(false)), r = docText(intsum(true)), a = docText(nationAssessment(findNation('Carthage'), null, true));
+    return JSON.stringify({ eyesHasScore:/hostility score/.test(e), relHasScore:/hostility score/.test(r), relAlliance:/THE ALLIANCE|The Alliance/.test(r), relKingdom:/\nTHE KINGDOM\n|\n\d+\. The Kingdom\n/i.test(r), relImplications:/Implications for/.test(a), relPosture:/posture toward/.test(a), relLength:r.length, eyesLength:e.length }); }));
+  console.log('population in reports:', await p.evaluate(() => /Population and Migration/.test(docText(intsum(false)))), '| releasable names recruits:', await p.evaluate(() => /open to recruitment/.test(docText(intsum(true)))));
   // the History document in the Briefing Room
   await p.evaluate(() => { location.hash = '#briefings'; }); await p.waitForTimeout(800);
   console.log('history button shown:', await p.isVisible('#brHistBtn'));
@@ -168,13 +200,31 @@ global.__collectorRoutes = async ctx => {
   await p.click('#rkNations tr[data-rknat="Rome"]'); await p.waitForTimeout(1200);
   console.log('nation click opens dossier:', await p.evaluate(() => location.hash + ' ' + selNation), '| fighters tile:', (await p.locator('#dossierPanel .dtile').first().innerText()).replace(/\s+/g, ' '));
   await p.click('.m-switch a[data-m="finance"]'); await p.waitForTimeout(1200);
-  console.log('switched to finance:', await p.evaluate(() => document.body.dataset.m + ' / ' + document.body.dataset.page), '| visible nav:', await p.evaluate(() => [...document.querySelectorAll('nav.pages a')].filter(a => a.offsetParent).map(a => a.dataset.tip).join(', ')));
+  console.log('switched to finance:', await p.evaluate(() => document.body.dataset.m + ' / ' + document.body.dataset.page), '| visible nav:', await p.evaluate(() => [...document.querySelectorAll('nav.pages a')].filter(a => a.offsetParent).map(a => a.textContent.trim()).join(', ')));
   await shot('finance');
   // Ledger: the key owner's shops, trades, books and notices
   await p.evaluate(() => { location.hash = '#ledger'; }); await p.waitForTimeout(1200);
   console.log('ledger icon shown:', await p.isVisible('nav.pages a[href="#ledger"]'), '| shops', await p.locator('#lgShops tr').count() - 1, '| trades:', (await p.textContent('#lgTrades')).replace(/\s+/g, ' ').slice(0, 120));
   console.log('ledger books:', (await p.textContent('#lgBank')).replace(/\s+/g, ' ').slice(0, 120), '| notices:', (await p.textContent('#lgNotices')).replace(/\s+/g, ' ').slice(0, 80), '| stats:', (await p.textContent('#finStats')).replace(/\s+/g, ' '));
   await shot('ledger');
+  // the Ministry of Population
+  await p.click('.m-switch a[data-m="population"]'); await p.waitForTimeout(1200);
+  console.log('population:', await p.evaluate(() => document.body.dataset.m + ' / ' + document.body.dataset.page), '| lead:', (await p.textContent('#ppLead')).replace(/\s+/g, ' ').slice(0, 200));
+  console.log('townless:', (await p.textContent('#ppTownless')).replace(/\s+/g, ' ').slice(0, 120), '| new:', (await p.textContent('#ppNew')).replace(/\s+/g, ' ').slice(0, 100));
+  await shot('recruits');
+  await p.evaluate(() => { location.hash = '#migration'; }); await p.waitForTimeout(1000);
+  console.log('migration lead:', (await p.textContent('#pmLead')).replace(/\s+/g, ' ').slice(0, 200), '| moves:', (await p.locator('#pmMoves tr').nth(1).innerText()).replace(/\s+/g, ' '));
+  await shot('migration');
+  // the War Room: the mark sent above is on the plan; a waypoint placed on the map is saved for everyone
+  await p.click('.m-switch a[data-m="attack"]'); await p.waitForTimeout(800);
+  await p.evaluate(() => { location.hash = '#warroom'; }); await p.waitForTimeout(2500);
+  console.log('war room plan:', (await p.textContent('#wrList')).replace(/\s+/g, ' ').slice(0, 160));
+  await p.evaluate(() => { WR.key = 'chat-token'; WR.me = 'Officer Test'; });
+  await p.click('[data-wrtool="target"]'); const box = await p.locator('#map').boundingBox();
+  await p.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5); await p.waitForTimeout(300);
+  await p.fill('#wrName', 'Raid Town2'); await p.fill('#wrNote', 'Tonight, 21:00'); await p.click('[data-wract="save"]'); await p.waitForTimeout(1500);
+  console.log('war room after placing:', (await p.textContent('#wrList')).replace(/\s+/g, ' ').slice(0, 220), '| server has:', (await (await p.request.get(base + '/api/warroom')).json()).items.map(x => `${x.kind}:${x.name} by ${x.by}`).join(', '));
+  await shot('warroom');
   await p.click('.m-switch a[data-m="attack"]'); await p.waitForTimeout(1200); await shot('attack');
   console.log('purge countdown:', await p.textContent('#sysPurge'), '| new day known:', await p.evaluate(() => !!KEYED?.newDayAt));
   await p.click('.sysbar .crest'); await p.waitForTimeout(500);

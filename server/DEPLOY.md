@@ -73,7 +73,7 @@ Then rebuild with `--env-file /root/bh.env` added to `docker compose`. The key s
 
 What it adds:
 
-- **Rankings (Intelligence):** the mcMMO leaderboards, the top 25 in every combat and gathering skill and in overall power, read one board every two minutes (EarthMC's limit), so all twenty refresh about every 45 minutes. Each ranked player is placed in their town and nation. Nations are scored by their fighters' places. Also the server's running pursuits, for players, towns and nations.
+- **Leaderboards (on the Combat page, Intelligence):** the mcMMO leaderboards, the top 25 in every combat and gathering skill and in overall power, read one board every two minutes (EarthMC's limit), so all twenty refresh about every 45 minutes. Each ranked player is placed in their town and nation. Nations are scored by their fighters' places. Also the server's running pursuits, for players, towns and nations.
 - **In the reports:** each Intelligence Assessment's Military Potential section names the nation's ranked fighters, and the Daily Summary gets a "Fighting Strength and Pursuits" section. Nation dossiers get a Fighters tile.
 - **The new day:** the event stream reports the new day. A scan follows three minutes later, so towns that fell show in the Ruin Hunter within minutes rather than up to an hour, and the purge countdown uses the exact time.
 - **Ledger (Finance), with `EMC_PLAYER`:** your shops with stock (and on the map), your trades as they happen (sales, purchases, out of stock, full, out of gold), the bank history of a town or nation you lead or keep the books of, and notices for your town and nation. The site is open, so anyone who has its address can see this page.
@@ -100,6 +100,66 @@ The Briefing Room has a **History** document. It is a narrative of the server wr
 3. Send it with `tools/send-history.ps1 -File <json> -Server <site address> -Token <CHAT_UPLOAD_TOKEN>`. It reaches the page within minutes, with no scan needed.
 
 The history is kept on the data volume (`/data/history`), not in this repository, because it names the servers the Ministry reads. The releasable version leaves out the source register and the collection plan.
+
+## Ministry of Population
+
+Built from the Finance player scan (every player's full record, every few hours), so it costs no extra requests.
+
+- **Recruits:** players active this week who are in no town (most recently online first), new accounts from the last two weeks (the townless first), which nations are recruiting fastest, and ranked fighters or killers with no town. On the map: townless players visible right now.
+- **Migration:** each scan is compared with the last, so a player whose nation changed is a move. It shows gains and losses by nation over the week, every move, and the busiest corridors, drawn on the map as arcs. Moves show from the second player scan after this update.
+
+The Daily Summary gets a "Population and Migration" section. Each Intelligence Assessment says who joined the nation and who it gained or lost. Data is kept in `/data/population`.
+
+## Combat: who kills whom
+
+EarthMC's in-game chat bridge posts every player kill to Discord ("☠ Victim was killed by Killer"). Kills reach the server two ways:
+
+1. **Any size of export, from your PC:** `node tools/discord-kills.js <export file or folder> --send http://YOUR-SITE:8080 --token <CHAT_UPLOAD_TOKEN>`. It reads the exports line by line (1.2 GB takes about half a minute), writes `kills.json` and sends it.
+2. **Chat uploads:** any export sent with `tools/send-chat.ps1` is searched for kills too.
+
+From the kills, the Combat page (Intelligence) shows each pair of nations that fought and what kind of fighting it was:
+
+- **War:** both sides killing, three or more fighters each, over several days.
+- **Raid:** one-sided, several killers, many kills on one day.
+- **Hunting:** one-sided, one or two killers.
+- **Skirmish:** anything smaller.
+
+It also lists the killers (a **hunter** has many victims across many nations; **same opponent** is the same victim over and over) with the hours they fight, kills and deaths by nation, and the leaderboards. **On the move** lists ranked fighters and leading killers seen on the live map in the last day, with where they are, which way they are heading and which nations they have been in.
+
+Fighters are followed by the server's browser: every sighting of a ranked fighter or leading killer is kept for a week, and rival players meeting within 8 blocks are noted as clashes. Both reach visitors with the hourly archive. Nations are each player's nation at the latest player scan, so old kills may be credited to a nation the player has since left. Data is kept in `/data/combat`.
+
+## War Room
+
+The War Room (Attack) is the live map with drawing tools: waypoints, routes, targets, danger marks, rally points and notes.
+
+- **Routes** show their length and travel time walking, sprinting, on a horse, by boat and by elytra.
+- **Marks** show their block coordinates and the town they fall in, and can be copied, edited, marked done or removed.
+- **Sharing:** every open map picks up changes within a few seconds, and the plan is kept in `/data/warroom`.
+
+**Changing the plan needs a key.** Anyone who can open the ministries can see the plan. To change it, an officer needs one of these:
+
+- the site password, when one is set;
+- the war room key, which they enter once on the page.
+
+The key is `WARROOM_KEY` if you set it, otherwise `CHAT_UPLOAD_TOKEN`. Give officers a separate key with:
+
+```bash
+echo 'WARROOM_KEY=choose-a-long-random-string' >> /root/bh.env
+```
+
+## What allies receive
+
+Every report comes in two copies, Kingdom eyes only and Releasable to allies. The releasable copy keeps the picture of the server and the threats facing the alliance, and adds a section on the risks facing each ally. It leaves out:
+
+- **How the Ministry collects:** the Discord servers it reads, the movements of named players, collection hours and the Forecast Lab's track record.
+- **The Kingdom's own weak points and plans:** its towns at risk, opportunities, recommendations and recruitment targets.
+- **How the Kingdom rates each nation:** stance labels and hostility scores, except where a nation has declared enmity.
+
+## The map
+
+The globe is the default view. It wraps the world border onto the sphere edge to edge: the border is x −64,512 to 64,511 and z −32,256 to 32,255, from the web map's "World Border" layer. So the Minecraft map covers the whole globe with no gaps at the poles or the date line, and every mark sits exactly on the map. The flat map stops at the border.
+
+Scrolling zooms toward the cursor in both views. The old Earth coastline overlay is gone, since it never lined up with the Minecraft map.
 
 ## Bringing over earlier collection
 
