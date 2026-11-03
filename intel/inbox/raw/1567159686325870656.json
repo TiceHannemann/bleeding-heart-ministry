@@ -1,0 +1,35 @@
+{
+ "message_id": "1567159686325870656",
+ "kind": "content",
+ "channel": {
+  "id": "1567139488801759415",
+  "name": "chat-a",
+  "type": 0
+ },
+ "captured_at": "2026-11-03T13:09:33.577Z",
+ "posted_at": "2026-11-03T12:53:05.639000+00:00",
+ "forwarded": true,
+ "source": {
+  "guild_id": "1433001747277676635",
+  "channel_id": "1464009020963557542",
+  "label": "The Nostra Times News",
+  "channel": "nostra-times"
+ },
+ "author": {
+  "id": "1567141058763034675",
+  "name": "The Nostra Times News #nostra-times",
+  "bot": true,
+  "webhook": true
+ },
+ "text": ":emoji: **Sumer Denounces Persia**\n\nTags: `conflict`\nReported by: @yergemite",
+ "url": "https://discord.com/channels/1567139487673487441/1567139488801759415/1567159686325870656",
+ "attachments": [
+  {
+   "filename": "Screenshot_2026-11-03_075053.png",
+   "size": 153399,
+   "url": "https://cdn.discordapp.com/attachments/1464009020963557542/1567159511003832452/Screenshot_2026-11-03_075053.png?ex=6aeb2a87&is=6ae9d907&hm=b34b3c279d1116834c2c14564015f7465db91363bbc0223943339905555b6d8c&",
+   "saved": "intel/attachments/1567159686325870656-Screenshot_2026-11-03_075053.png"
+  }
+ ],
+ "reactions": 0
+}

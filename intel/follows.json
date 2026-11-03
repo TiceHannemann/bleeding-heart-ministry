@@ -1,0 +1,357 @@
+{
+ "updated": "2026-11-03T13:09:35.614Z",
+ "count": 39,
+ "follows": {
+  "[EMC] 𝐇𝐨𝐥𝐲 𝐂𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐂𝐡𝐮𝐫𝐜𝐡 #curia-announcements": {
+   "label": "[EMC] 𝐇𝐨𝐥𝐲 𝐂𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐂𝐡𝐮𝐫𝐜𝐡",
+   "channel": "curia-announcements",
+   "guild_id": "688590442157178901",
+   "channel_id": "1323515488449597522",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:47:36.146000+00:00",
+   "notice_id": "1567143204837392474"
+  },
+  "[EMC] 𝐇𝐨𝐥𝐲 𝐂𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐂𝐡𝐮𝐫𝐜𝐡 #episcopal-announcements": {
+   "label": "[EMC] 𝐇𝐨𝐥𝐲 𝐂𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐂𝐡𝐮𝐫𝐜𝐡",
+   "channel": "episcopal-announcements",
+   "guild_id": "688590442157178901",
+   "channel_id": "1077048649353277510",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:47:32.230000+00:00",
+   "notice_id": "1567143188412628995"
+  },
+  "[EMC] 𝐇𝐨𝐥𝐲 𝐂𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐂𝐡𝐮𝐫𝐜𝐡 #papal-announcements": {
+   "label": "[EMC] 𝐇𝐨𝐥𝐲 𝐂𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐂𝐡𝐮𝐫𝐜𝐡",
+   "channel": "papal-announcements",
+   "guild_id": "688590442157178901",
+   "channel_id": "706710184638021673",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:47:31.229000+00:00",
+   "notice_id": "1567143184214130692"
+  },
+  "[EMC] 𝐇𝐨𝐥𝐲 𝐂𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐂𝐡𝐮𝐫𝐜𝐡 #vatican-news": {
+   "label": "[EMC] 𝐇𝐨𝐥𝐲 𝐂𝐚𝐭𝐡𝐨𝐥𝐢𝐜 𝐂𝐡𝐮𝐫𝐜𝐡",
+   "channel": "vatican-news",
+   "guild_id": "688590442157178901",
+   "channel_id": "689974158041284652",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:47:20.442000+00:00",
+   "notice_id": "1567143138970046626"
+  },
+  "[TNS] 대한민국 Republic of Korea #📢｜announcements": {
+   "label": "[TNS] 대한민국 Republic of Korea",
+   "channel": "📢｜announcements",
+   "guild_id": "1474431071478087857",
+   "channel_id": "1474597039672266933",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T12:00:21.372000+00:00",
+   "notice_id": "1567146414428135507"
+  },
+  "Al-Andalus [EMC TN] #📢・announcements": {
+   "label": "Al-Andalus [EMC TN]",
+   "channel": "📢・announcements",
+   "guild_id": "1565022215747932230",
+   "channel_id": "1565022873171660890",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:48:37.501000+00:00",
+   "notice_id": "1567143462178918412"
+  },
+  "Cuba #nation-announcements": {
+   "label": "Cuba",
+   "channel": "nation-announcements",
+   "guild_id": "1500244623191441471",
+   "channel_id": "1513639827503976498",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T11:56:42.667000+00:00",
+   "notice_id": "1567145497112617023"
+  },
+  "Denmark (Terra Nostra) #announcements": {
+   "label": "Denmark (Terra Nostra)",
+   "channel": "announcements",
+   "guild_id": "1448165785477578806",
+   "channel_id": "1448877600448708775",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T11:59:08.831000+00:00",
+   "notice_id": "1567146110168997965"
+  },
+  "EarthMC - Minecraft Earth Server #announcements": {
+   "label": "EarthMC - Minecraft Earth Server",
+   "channel": "announcements",
+   "guild_id": "219863747248914433",
+   "channel_id": "221318341166497792",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:33:22.122000+00:00",
+   "notice_id": "1567139622801252477"
+  },
+  "Emirate of Libya #📢┃announcements": {
+   "label": "Emirate of Libya",
+   "channel": "📢┃announcements",
+   "guild_id": "1549513949127639062",
+   "channel_id": "1549757545848119296",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:52:45.018000+00:00",
+   "notice_id": "1567144500340465798"
+  },
+  "Empire of Brazil | EMC #📢・announcements": {
+   "label": "Empire of Brazil | EMC",
+   "channel": "📢・announcements",
+   "guild_id": "1425139628410671326",
+   "channel_id": "1489358506745139410",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:41:51.907000+00:00",
+   "notice_id": "1567141760994385933"
+  },
+  "Florida - EarthMC #📣nation-announcements": {
+   "label": "Florida - EarthMC",
+   "channel": "📣nation-announcements",
+   "guild_id": "1406033461701247028",
+   "channel_id": "1406033868057743471",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:51:55.167000+00:00",
+   "notice_id": "1567144291250212915"
+  },
+  "Florida - EarthMC #nation-events": {
+   "label": "Florida - EarthMC",
+   "channel": "nation-events",
+   "guild_id": "1406033461701247028",
+   "channel_id": "1545523017059405834",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:52:02.640000+00:00",
+   "notice_id": "1567144322594373686"
+  },
+  "𝐅𝐫𝐚𝐧𝐜𝐞 [𝐄𝐌𝐂 𝐓𝐍] #📯・𝐀𝐧𝐧𝐨𝐧𝐜𝐞𝐬": {
+   "label": "𝐅𝐫𝐚𝐧𝐜𝐞 [𝐄𝐌𝐂 𝐓𝐍]",
+   "channel": "📯・𝐀𝐧𝐧𝐨𝐧𝐜𝐞𝐬",
+   "guild_id": "1456404580429463632",
+   "channel_id": "1462516434222715184",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:44:08.565000+00:00",
+   "notice_id": "1567142334179581993"
+  },
+  "𝐈𝐬𝐥𝐚𝐦𝐢𝐜 𝐂𝐚𝐥𝐢𝐩𝐡𝐚𝐭𝐞 #caliphate-announcements": {
+   "label": "𝐈𝐬𝐥𝐚𝐦𝐢𝐜 𝐂𝐚𝐥𝐢𝐩𝐡𝐚𝐭𝐞",
+   "channel": "caliphate-announcements",
+   "guild_id": "1486161413918425210",
+   "channel_id": "1489993735428247602",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:44:43.700000+00:00",
+   "notice_id": "1567142481546584117"
+  },
+  "𝐈𝐬𝐥𝐚𝐦𝐢𝐜 𝐂𝐚𝐥𝐢𝐩𝐡𝐚𝐭𝐞 #islam-news": {
+   "label": "𝐈𝐬𝐥𝐚𝐦𝐢𝐜 𝐂𝐚𝐥𝐢𝐩𝐡𝐚𝐭𝐞",
+   "channel": "islam-news",
+   "guild_id": "1486161413918425210",
+   "channel_id": "1512611488177717298",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:46:01.628000+00:00",
+   "notice_id": "1567142808400306228"
+  },
+  "𝐈𝐬𝐥𝐚𝐦𝐢𝐜 𝐂𝐚𝐥𝐢𝐩𝐡𝐚𝐭𝐞 #muftiate-announcements": {
+   "label": "𝐈𝐬𝐥𝐚𝐦𝐢𝐜 𝐂𝐚𝐥𝐢𝐩𝐡𝐚𝐭𝐞",
+   "channel": "muftiate-announcements",
+   "guild_id": "1486161413918425210",
+   "channel_id": "1489993836678873158",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:45:04.943000+00:00",
+   "notice_id": "1567142570646179954"
+  },
+  "𝐈𝐬𝐥𝐚𝐦𝐢𝐜 𝐂𝐚𝐥𝐢𝐩𝐡𝐚𝐭𝐞 #state-announcements": {
+   "label": "𝐈𝐬𝐥𝐚𝐦𝐢𝐜 𝐂𝐚𝐥𝐢𝐩𝐡𝐚𝐭𝐞",
+   "channel": "state-announcements",
+   "guild_id": "1486161413918425210",
+   "channel_id": "1490802490801655858",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:46:25.089000+00:00",
+   "notice_id": "1567142906802868267"
+  },
+  "Kingdom Of Germany 👻 #announcements": {
+   "label": "Kingdom Of Germany 👻",
+   "channel": "announcements",
+   "guild_id": "1477891817201467488",
+   "channel_id": "1482682157305434164",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:35:01.438000+00:00",
+   "notice_id": "1567140039362879532"
+  },
+  "Kingdom Of Germany 👻 #hall-of-shame": {
+   "label": "Kingdom Of Germany 👻",
+   "channel": "hall-of-shame",
+   "guild_id": "1477891817201467488",
+   "channel_id": "1498717258531340418",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:35:10.307000+00:00",
+   "notice_id": "1567140076562022433"
+  },
+  "Kingdom of Hungary | TN #「📢」𝔸ℕℕ𝕆𝕌ℕℂ𝔼𝕄𝔼ℕ𝕋𝕊": {
+   "label": "Kingdom of Hungary | TN",
+   "channel": "「📢」𝔸ℕℕ𝕆𝕌ℕℂ𝔼𝕄𝔼ℕ𝕋𝕊",
+   "guild_id": "1496911574194192414",
+   "channel_id": "1496927040308510830",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T12:58:35.412000+00:00",
+   "notice_id": "1567161069494075463"
+  },
+  "Kingdom of Sumer #announcements": {
+   "label": "Kingdom of Sumer",
+   "channel": "announcements",
+   "guild_id": "1512334178094678137",
+   "channel_id": "1549454775391752212",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:37:08.912000+00:00",
+   "notice_id": "1567140574027321415"
+  },
+  "Mexico (EMC) #announcements": {
+   "label": "Mexico (EMC)",
+   "channel": "announcements",
+   "guild_id": "1565229942265086132",
+   "channel_id": "1565231514256548021",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:42:28.193000+00:00",
+   "notice_id": "1567141913189154928"
+  },
+  "Oceania #📢public-announcements": {
+   "label": "Oceania",
+   "channel": "📢public-announcements",
+   "guild_id": "1388099028243189931",
+   "channel_id": "1469380766331961598",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:34:27.598000+00:00",
+   "notice_id": "1567139897427370029"
+  },
+  "Switzerland #🔔・announcements": {
+   "label": "Switzerland",
+   "channel": "🔔・announcements",
+   "guild_id": "1363589561070125066",
+   "channel_id": "1363591048395493706",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:53:11.471000+00:00",
+   "notice_id": "1567144611292512334"
+  },
+  "Switzerland #🗳・election-results": {
+   "label": "Switzerland",
+   "channel": "🗳・election-results",
+   "guild_id": "1363589561070125066",
+   "channel_id": "1519061139030278294",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:53:32.792000+00:00",
+   "notice_id": "1567144700719141021"
+  },
+  "Texas  | TN #⭐┃texas-tribune": {
+   "label": "Texas  | TN",
+   "channel": "⭐┃texas-tribune",
+   "guild_id": "1490201822785179740",
+   "channel_id": "1515922723518414888",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:54:49.826000+00:00",
+   "notice_id": "1567145023823282258"
+  },
+  "Texas  | TN #📣┃announcements": {
+   "label": "Texas  | TN",
+   "channel": "📣┃announcements",
+   "guild_id": "1490201822785179740",
+   "channel_id": "1490562505519398932",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:54:43.258000+00:00",
+   "notice_id": "1567144996274970695"
+  },
+  "Texas  | TN #🙋♂┃presidential-office": {
+   "label": "Texas  | TN",
+   "channel": "🙋♂┃presidential-office",
+   "guild_id": "1490201822785179740",
+   "channel_id": "1514300691194314944",
+   "relayed_via": "#chat-b",
+   "first_seen": "2026-11-03T11:54:33.572000+00:00",
+   "notice_id": "1567144955649073163"
+  },
+  "The Blockbuster Insider #announcements": {
+   "label": "The Blockbuster Insider",
+   "channel": "announcements",
+   "guild_id": "395535823564439563",
+   "channel_id": "395559893173534720",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:36:00.044000+00:00",
+   "notice_id": "1567140285174120491"
+  },
+  "The Commonwealth of America #🎉┃election-results": {
+   "label": "The Commonwealth of America",
+   "channel": "🎉┃election-results",
+   "guild_id": "1478543775902076998",
+   "channel_id": "1478579033913556992",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T12:02:53.182000+00:00",
+   "notice_id": "1567147051165155391"
+  },
+  "The Commonwealth of America #📃┃nominations-and-dismissals": {
+   "label": "The Commonwealth of America",
+   "channel": "📃┃nominations-and-dismissals",
+   "guild_id": "1478543775902076998",
+   "channel_id": "1502826836235653270",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T12:02:22.975000+00:00",
+   "notice_id": "1567146924467953748"
+  },
+  "The Commonwealth of America #📃┃passed-laws": {
+   "label": "The Commonwealth of America",
+   "channel": "📃┃passed-laws",
+   "guild_id": "1478543775902076998",
+   "channel_id": "1502827551741972521",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T12:02:20.126000+00:00",
+   "notice_id": "1567146912518373439"
+  },
+  "The Commonwealth of America #📃┃passed-resolutions": {
+   "label": "The Commonwealth of America",
+   "channel": "📃┃passed-resolutions",
+   "guild_id": "1478543775902076998",
+   "channel_id": "1502827580733259816",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T12:02:20.595000+00:00",
+   "notice_id": "1567146914485375092"
+  },
+  "The Commonwealth of America #📃┃treaties": {
+   "label": "The Commonwealth of America",
+   "channel": "📃┃treaties",
+   "guild_id": "1478543775902076998",
+   "channel_id": "1517664967355269221",
+   "relayed_via": "#chat-c",
+   "first_seen": "2026-11-03T12:02:28.944000+00:00",
+   "notice_id": "1567146949503877211"
+  },
+  "The Golden Globe #golden-globe📰": {
+   "label": "The Golden Globe",
+   "channel": "golden-globe📰",
+   "guild_id": "1542903014224953514",
+   "channel_id": "1542923408956858408",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:33:14.084000+00:00",
+   "notice_id": "1567139589087563778"
+  },
+  "The Nostra Times News #articles-newspaper": {
+   "label": "The Nostra Times News",
+   "channel": "articles-newspaper",
+   "guild_id": "1433001747277676635",
+   "channel_id": "1482499831774839027",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:39:09.338000+00:00",
+   "notice_id": "1567141079130570805"
+  },
+  "The Nostra Times News #nostra-times": {
+   "label": "The Nostra Times News",
+   "channel": "nostra-times",
+   "guild_id": "1433001747277676635",
+   "channel_id": "1464009020963557542",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:39:08.271000+00:00",
+   "notice_id": "1567141074655256649"
+  },
+  "スペイン王国 | The Kingdom of Spain【 TNs EMC】 #📢｜notice｜お知らせ": {
+   "label": "スペイン王国 | The Kingdom of Spain【 TNs EMC】",
+   "channel": "📢｜notice｜お知らせ",
+   "guild_id": "1020296884990001224",
+   "channel_id": "1269626075303116862",
+   "relayed_via": "#chat-a",
+   "first_seen": "2026-11-03T11:40:15.394000+00:00",
+   "notice_id": "1567141356189786257"
+  }
+ }
+}

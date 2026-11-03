@@ -1,0 +1,31 @@
+{
+  "item_id": "bh-20261103-1567159686325870656-parthia",
+  "captured_at": "2026-11-03T13:05:00Z",
+  "type": "town_transfer",
+  "nations": ["Persia", "Sumer"],
+  "summary": "Parthia left Persia and joined Sumer, its mayor having approached Sumer voluntarily over dissatisfaction with Persian inactivity.",
+  "confidence": "moderate",
+  "status": "reported",
+  "importance": 3,
+  "at": "2026-11-03T12:53:05.639Z",
+  "tags_from_source": ["conflict"],
+  "sources": [
+    {
+      "message_id": "1567159686325870656",
+      "url": "https://discord.com/channels/1567139487673487441/1567139488801759415/1567159686325870656",
+      "origin": "The Nostra Times News #nostra-times",
+      "origin_guild_id": "1464009020963557542",
+      "relayed_via": "#chat-a",
+      "posted_at": "2026-11-03T12:53:05.639Z",
+      "attachment": "intel/attachments/1567159686325870656-Screenshot_2026-11-03_075053.png",
+      "extraction": "vision-ocr"
+    }
+  ],
+  "evidence": {
+    "key_text": "@bubbleisblue | Parthia's decision to leave Persia and join Sumer due to dissatisfaction with Persian inactivity. Sumer neither purchased nor seized any Persian territory. The mayor of Parthia voluntarily approached Sumer seeking to join our nation.",
+    "ocr_notes": "Reported by Sumer itself, in a document whose purpose is to justify Sumer's position. The defection is stated as fact; the absence of any Persian response is not evidence that Persia agrees with the characterisation."
+  },
+  "analyst_notes": "Split out from the denouncement because a town defection is the kind of event the scan archive can corroborate independently: check Parthia's nation field and Sumer's town count across the last two frames. Sumer is at pains to deny purchase or seizure, which suggests it expects to be accused of poaching. Inactivity in Persia is claimed by an adversary and should be tested against Persian leadership last-online data rather than accepted.",
+  "why_it_matters": "Town defections between nations are a leading indicator of the losing nation's decline and are directly checkable in the archive.",
+  "links_to_scan_data": ["Parthia", "Sumer", "Persia"]
+}

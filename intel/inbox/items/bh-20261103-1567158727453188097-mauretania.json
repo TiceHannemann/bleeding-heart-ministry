@@ -1,0 +1,33 @@
+{
+  "item_id": "bh-20261103-1567158727453188097-mauretania",
+  "captured_at": "2026-11-03T13:05:00Z",
+  "type": "leadership_or_internal",
+  "nations": ["Mauretania"],
+  "summary": "Mauretania announced its 111th government for November 2026, with Lucas as Hoyenah and Proser, Orremorre and Fisher as Chiefs.",
+  "confidence": "high",
+  "status": "announced_officially",
+  "importance": 2,
+  "at": "2026-11-03T12:49:17.026Z",
+  "tags_from_source": ["governance"],
+  "sources": [
+    {
+      "message_id": "1567158727453188097",
+      "url": "https://discord.com/channels/1567139487673487441/1567139488801759415/1567158727453188097",
+      "origin": "The Nostra Times News #nostra-times",
+      "origin_guild_id": "1464009020963557542",
+      "relayed_via": "#chat-a",
+      "posted_at": "2026-11-03T12:49:17.026Z",
+      "attachment": "intel/attachments/1567158727453188097-Screenshot_2026-11-03_074655.png",
+      "extraction": "vision-ocr"
+    }
+  ],
+  "evidence": {
+    "document_type": "Government formation bulletin, posted with an @everyone ping by Orremorre | Granada",
+    "key_text": "@everyone I am proud to announce the 111th government of The Republic for the month of November 2026: Hoyenah: @Lucas | Volublilis. Chiefs: @Proser, @Orremorre | Granada, @Fisher. Long Live the Republic of Mauretania!",
+    "reactions": "Mauretania flag emoji x4, fire x3, keycap-one x2.",
+    "ocr_notes": "Player tag reads Volublilis (sic); the town is almost certainly Volubilis. The ordinal \"111th government\" is as transcribed."
+  },
+  "analyst_notes": "A scheduled monthly transition, not a coup or a contested succession — the tone is ceremonial and the post carries no hint of internal conflict. The continuity marker is Lucas remaining as Hoyenah, which means the head of state did not change and only the supporting bench did. The town name in the tag is the useful part: it identifies which town Lucas holds, which the archive can match. Low analytical value on its own, but it establishes the current point of contact for Mauretania, which matters for any later approach.",
+  "why_it_matters": "Establishes who speaks for Mauretania as of November 2026. Contact-list maintenance rather than news.",
+  "links_to_scan_data": ["Mauretania", "Lucas", "Volubilis"]
+}
