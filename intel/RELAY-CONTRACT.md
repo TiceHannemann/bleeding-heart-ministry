@@ -141,9 +141,9 @@ site's own signals store without translation.
 2. Read `intel/inbox/items/*.json` not already in `processed/`.
 3. For each item, decide how it lands in the site:
    - **Signals** — items are already in `server/signals.js` shape. To feed the live site, run
-     `node tools/send-intel.mjs --server http://SITE:8080 --token-file .env`. It POSTs `{ items:[...] }`
-     to `/api/chat-import` with the `x-chat-token` header (the token is `CHAT_UPLOAD_TOKEN`; never commit
-     it). The server merges them straight into the signals store, with no model needed, so they appear in
+     `node tools/send-intel.mjs --server http://SITE:8080`. It POSTs `{ items:[...] }` to
+     `/api/chat-import`. The site currently takes uploads without a password; if `CHAT_UPLOAD_TOKEN` is
+     ever set on the VPS, add `--token-file .env` (never commit the token). The server merges them straight into the signals store, with no model needed, so they appear in
      the Daily Intelligence Summary and in each named nation's assessments within minutes. The tool then
      moves the sent items to `processed/`. Sending the same item twice does nothing.
    - **Briefings** — fold material into the relevant document type in `app/earthmc-ruin-scanner.html`
