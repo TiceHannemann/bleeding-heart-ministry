@@ -20,7 +20,7 @@ const RUNS = path.join(DATA, "runs"), IMPORTS = path.join(DATA, "imports"), PROF
 const STATUS_FILE = path.join(DATA, "status.json");
 const SCAN_TIMEOUT = 25 * 6e4;
 
-const S = Object.assign({ running:false, lastRun:null, lastOk:null, lastError:null, nextRun:null, archiveVersion:null, scans:0, history:[] }, readJSON(STATUS_FILE) || {}, { running:false });
+const S = Object.assign({ running:false, lastRun:null, lastOk:null, lastError:null, nextRun:null, archiveVersion:null, scans:0, history:[] }, readJSON(STATUS_FILE) || {}, { running:false, fails:0 });
 const save = () => { try { writeJSON(STATUS_FILE, S); } catch (e) { console.warn("status not saved:", e.message); } };
 const tokens = new Map();
 let opts = { port:8080, everyMin:60 }, timer = 0;
@@ -31,15 +31,30 @@ function tokenOk(t) {
   tokens.delete(t); // one use only
   return exp > Date.now();
 }
-function status() { const { history, ...s } = S; return { ...s, recent:history.slice(-24), signals:signals.status(), finance:finance.status(), keyed:keyed.status(), population:population.status(), combat:combat.status() }; }
+// the container's memory, from its cgroup (Linux only): in use (less file cache the kernel can drop, as docker stats
+// counts it), the limit, and how many times the kernel has killed a process for lack of it since the container started
+const mb = b => Math.round(b / 1048576);
+function memory() {
+  const rd = f => { try { return fs.readFileSync("/sys/fs/cgroup/" + f, "utf8").trim(); } catch { return null; } };
+  const v2 = rd("memory.current") != null, num = v => /^\d+$/.test(v || "") ? +v : null;
+  const used = num(v2 ? rd("memory.current") : rd("memory/memory.usage_in_bytes"));
+  if (used == null) return null;
+  const limit = num(v2 ? rd("memory.max") : rd("memory/memory.limit_in_bytes"));
+  const cache = +((v2 ? rd("memory.stat") : rd("memory/memory.stat")) || "").match(v2 ? /^inactive_file (\d+)/m : /^total_inactive_file (\d+)/m)?.[1] || 0;
+  const oomKills = +((v2 ? rd("memory.events") : rd("memory/memory.oom_control")) || "").match(/oom_kill (\d+)/)?.[1] || 0;
+  return { usedMB:mb(used - cache), limitMB:limit && limit < 2 ** 50 ? mb(limit) : null, oomKills };
+}
+function status() { const { history, ...s } = S; return { ...s, memory:memory(), recent:history.slice(-24), signals:signals.status(), finance:finance.status(), keyed:keyed.status(), population:population.status(), combat:combat.status() }; }
 
 function schedule() {
   clearTimeout(timer);
   // line up with the clock: a few minutes past each interval, so reports land at predictable times
   const every = opts.everyMin * 6e4, now = Date.now();
   let due = Math.ceil((now - 3 * 6e4) / every) * every + 3 * 6e4;
-  // if the last good scan is older than an interval (first boot, or after downtime), scan straight away
-  if (!S.lastOk || now - S.lastOk > every) due = now + 15e3;
+  // if the last good scan is older than an interval (first boot, or after downtime), scan straight away. After a
+  // failure, wait ten minutes, then twenty, then forty, up to the interval: a scan that keeps failing must not run
+  // back to back, which holds the CPU at full load and gets the VPS throttled
+  if (!S.lastOk || now - S.lastOk > every) due = now + (S.fails ? Math.min(every, 10 * 6e4 * 2 ** (S.fails - 1)) : 15e3);
   S.nextRun = due; save();
   timer = setTimeout(async () => { await runOnce(); schedule(); }, due - now);
 }
@@ -94,9 +109,12 @@ function browser() {
     if (global.__collectorRoutes) await global.__collectorRoutes(ctx); // tests install a fake EarthMC API here
     const page = ctx.pages()[0] || await ctx.newPage();
     page.on("pageerror", e => { B.logs.push("page error: " + e.message); B.logs = B.logs.slice(-20); });
-    // a crashed or closed browser is reopened in half a minute, so position tracking resumes by itself
-    const lost = () => { if (B.page !== page) return; console.warn("collector: browser lost; reopening"); Object.assign(B, { ctx:null, page:null }); setTimeout(() => browser().catch(e => console.error("collector: reopen failed:", e.message)), 30e3); };
-    page.on("crash", lost); ctx.on("close", lost);
+    // a crashed or closed browser is shut down and reopened in half a minute, so position tracking resumes by itself.
+    // Shutting it down matters: a crashed page leaves Chromium running, holding memory and the profile's lock
+    const lost = why => () => { if (B.page !== page) return; console.warn(`collector: browser ${why}; reopening`);
+      B.lost = { at:Date.now(), why }; Object.assign(B, { ctx:null, page:null }); ctx.close().catch(() => {});
+      setTimeout(() => browser().catch(e => console.error("collector: reopen failed:", e.message)), 30e3); };
+    page.on("crash", lost("crashed")); ctx.on("close", lost("closed"));
     await page.addInitScript(() => {
       window.BH_COLLECTOR = true;
       // nobody looks at this page, so it says it is hidden: the globe stops redrawing sixty times a second and the
@@ -171,7 +189,9 @@ async function pushPeople(page) {
 async function runOnce() {
   if (S.running) return;
   S.running = true; S.lastRun = Date.now(); save();
-  const t0 = Date.now();
+  const t0 = Date.now(), oom0 = memory()?.oomKills || 0;
+  // the most memory the scan needed, sampled every few seconds, so the limit can be set from experience
+  let peak = 0; const sample = setInterval(() => { peak = Math.max(peak, memory()?.usedMB || 0); }, 5e3);
   try {
     const page = await browser();
     const logs = B.logs.splice(0);
@@ -247,17 +267,22 @@ async function runOnce() {
     writeJSON(path.join(dir, "manifest.json"), manifest);
     prune();
 
-    Object.assign(S, { lastOk:Date.now(), lastError:null, archiveVersion:String(Date.now()), scans:docs.scans });
-    S.history.push({ at:t0, ok:true, seconds:manifest.seconds, towns:docs.towns }); S.history = S.history.slice(-200);
-    console.log(`collector: scan ${run} done in ${manifest.seconds}s · ${docs.towns} towns · ${reports.length} reports${logs.length ? " · " + logs.join("; ") : ""}`);
+    Object.assign(S, { lastOk:Date.now(), lastError:null, fails:0, archiveVersion:String(Date.now()), scans:docs.scans });
+    S.history.push({ at:t0, ok:true, seconds:manifest.seconds, towns:docs.towns, ...(peak ? { peakMB:peak } : {}) }); S.history = S.history.slice(-200);
+    console.log(`collector: scan ${run} done in ${manifest.seconds}s · ${docs.towns} towns · ${reports.length} reports${peak ? ` · ${peak} MB at most` : ""}${logs.length ? " · " + logs.join("; ") : ""}`);
   } catch (e) {
-    S.lastError = String(e?.message || e).slice(0, 500);
-    S.history.push({ at:t0, ok:false, error:S.lastError }); S.history = S.history.slice(-200);
-    console.error("collector: run failed:", e);
+    // say why, when it is known: Playwright only reports that the page went away
+    const m = memory(), why = [];
+    if (B.lost?.at >= t0) why.push(`the browser ${B.lost.why}`);
+    if (m && m.oomKills > oom0) why.push(`the server ran out of memory${m.limitMB ? ` (it is allowed ${m.limitMB} MB)` : ""} and the browser was stopped`);
+    S.lastError = (String(e?.message || e).slice(0, 400) + (why.length ? ". Cause: " + why.join("; ") : "")).slice(0, 500);
+    S.fails = (S.fails || 0) + 1;
+    S.history.push({ at:t0, ok:false, error:S.lastError, ...(peak ? { peakMB:peak } : {}) }); S.history = S.history.slice(-200);
+    console.error("collector: run failed:", e, why.length ? "· " + why.join("; ") : "");
     // start the next attempt from a fresh browser, and have one tracking positions again meanwhile
     await closeBrowser(); setTimeout(() => browser().catch(() => {}), 30e3);
   } finally {
-    S.running = false; save();
+    clearInterval(sample); S.running = false; save();
   }
 }
 

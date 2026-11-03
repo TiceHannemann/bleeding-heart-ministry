@@ -31,6 +31,8 @@ The server in this folder hosts both websites and scans EarthMC every hour on it
 
 Plan on about 1 GB of memory (Chromium runs for a few minutes each hour) and a 1 GB volume to start. Keep **one replica**: two would scan twice.
 
+With Docker Compose the site may use at most 1,500 MB. The hourly reports page (`/gov/reports`) says how much the server is using, the most the last scan needed, and whether it has run out of memory; when it has, the error under "Last scan failed" says so too. To allow more, add `BH_MEMORY=2500m` to `/root/bh.env` and rebuild, leaving enough for anything else on the VPS. A failed scan is tried again after ten minutes, then twenty, then forty, then hourly, never back to back.
+
 ## Run it on your own computer
 
 ```bash

@@ -9,6 +9,9 @@ module.exports = (runs, st, { open = false } = {}) => {
   const doc = r => `<a href="/reports/${r.run}/${esc(r.pdf)}">${esc(r.title || r.kind)}${r.subject ? ` — ${esc(r.subject)}` : ""}</a> <span class="cl ${/KINGDOM EYES/.test(r.classification) ? "s" : "c"}">${/KINGDOM EYES/.test(r.classification) ? "Kingdom eyes only" : "Releasable"}</span> <a class="t" href="/reports/${r.run}/${esc(r.txt)}">text</a>`;
   const state = st.running ? "A scan is running now." : st.nextRun ? `The next scan is due at ${new Date(st.nextRun).toISOString().slice(11, 16)} UTC.` : "";
   const err = st.lastError ? `<p class="err">Last scan failed: ${esc(st.lastError)}</p>` : "";
+  // the server's memory, for setting BH_MEMORY: what it uses now, the most the last scan needed, and how often it ran out
+  const m = st.memory, peak = [...(st.recent || [])].reverse().find(r => r.peakMB)?.peakMB;
+  const mem = m ? `<p class="meta">The server is using ${m.usedMB.toLocaleString()} MB${m.limitMB ? ` of its ${m.limitMB.toLocaleString()} MB` : ""}${peak ? `; the last scan needed at most ${peak.toLocaleString()} MB` : ""}.${m.oomKills ? ` It has run out of memory ${m.oomKills === 1 ? "once" : m.oomKills.toLocaleString() + " times"} since it started, and each time the scanning browser was stopped.` : ""}</p>` : "";
   const intsum = latest?.reports.find(r => r.kind === "Daily Intelligence Summary");
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Hourly Intelligence Reports</title><link rel="icon" href="/assets/logo/logo-64.png">
@@ -37,7 +40,7 @@ details ol{margin-top:10px}.err{color:var(--hq)}
 <nav><a href="/gov#dossier">Ministries</a><a href="/gov#briefings">Briefing Room</a>${open ? "" : `<form method="post" action="/logout" style="margin:0"><a href="#" onclick="this.parentNode.submit();return false">Sign out</a></form>`}</nav></header>
 <h1>Hourly intelligence</h1>
 <p class="meta">${latest ? `Last scan ${when(latest.at)} (${ago(latest.at)}) · ${latest.towns.toLocaleString()} towns · ${latest.nations.toLocaleString()} nations · ${latest.scans.toLocaleString()} scans archived · ${latest.events24h.toLocaleString()} events in 24 h` : "No scan has finished yet."} · ${esc(state)} <button class="scan" onclick="fetch('/api/scan-now',{method:'POST'}).then(r=>r.json()).then(j=>{if(j.error)alert(j.error);location.reload()})">Scan now</button></p>
-${err}
+${err}${mem}
 ${latest ? `${intsum?.lead ? `<p class="lead">${esc(intsum.lead)}</p>` : ""}
 <h2>Latest reports</h2><ol>${latest.reports.map(r => `<li>${doc({ ...r, run:latest.run })}</li>`).join("")}</ol>` : `<p>Waiting for the first scan.</p>`}
 ${older.length ? `<h2>Earlier runs</h2>${older.map(o => `<details><summary><b>${when(o.at)}</b> · ${o.towns.toLocaleString()} towns · ${o.events24h} events in 24 h</summary><ol>${o.reports.map(r => `<li>${doc({ ...r, run:o.run })}</li>`).join("")}</ol></details>`).join("")}` : ""}
