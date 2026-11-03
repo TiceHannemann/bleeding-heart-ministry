@@ -130,6 +130,26 @@ function merge(store, found, msgs) {
   for (const e of store.events) e.servers = new Set(e.sources.map(s => s.guild)).size;
 }
 
+// items already analysed by the Agent Heart relay (intel/RELAY-CONTRACT.md) need no model: they join the store as events
+const isItems = j => Array.isArray(j?.items) && j.items.every(i => i?.item_id);
+function receiveItems(j) {
+  const store = load(), msgs = {}, found = [];
+  for (const i of j.items) {
+    if (!TYPES.includes(i.type) || !Array.isArray(i.nations) || !i.summary) continue;
+    const ids = (i.sources || []).map(s => {
+      const id = "ah-" + (s.message_id || i.item_id), at = Date.parse(s.posted_at || i.at);
+      const [g, c] = String(s.origin || "Agent Heart relay").split(/ #/);
+      msgs[id] = { at, g, c:c || "", a:"Agent Heart", r:[] };
+      return id;
+    });
+    found.push({ ...i, importance:Math.min(5, Math.max(1, i.importance | 0 || 1)), source_ids:ids });
+  }
+  const before = store.events.length;
+  merge(store, found, msgs);
+  writeJSON(STORE, store);
+  return { items:found.length, added:store.events.length - before };
+}
+
 /* ---------- the hourly run ---------- */
 let lastRun = null;
 async function run(nationNames) {
@@ -175,4 +195,4 @@ async function run(nationNames) {
 const status = () => lastRun;
 const events = () => load().events;
 
-module.exports = { run, receive, status, events, ingest, INBOX };
+module.exports = { run, receive, receiveItems, isItems, status, events, ingest, INBOX };

@@ -142,6 +142,9 @@ const COMBAT = require("./combat");
 app.post("/api/chat-import", express.text({ type:"*/*", limit:"100mb" }), (req, res) => {
   if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"Chat uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
   try {
+    // a batch of relay items ({ items:[...] }, see intel/RELAY-CONTRACT.md) is already analysed and joins the briefings now
+    let j = null; try { j = JSON.parse(req.body); } catch {}
+    if (SIG.isItems(j)) { const r = SIG.receiveItems(j); collector.refresh(); return res.json({ ok:true, ...r, message:`Received ${r.items} items (${r.added} new events). They reach the briefings within a few minutes.` }); }
     const messages = SIG.receive(req.body);
     // an export of the in-game chat bridge also carries the server's kills
     const k = COMBAT.add(COMBAT.fromExport(JSON.parse(req.body)));

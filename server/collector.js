@@ -66,10 +66,11 @@ function start(o) {
 async function refresh() {
   if (S.running) return;
   S.running = true;
-  try { const page = await browser(); await pushFinance(page); await pushKeyed(page); await pushHistory(page); await pushPeople(page); await exportArchive(page); }
+  try { const page = await browser(); await pushSignals(page, signals.events()); await pushFinance(page); await pushKeyed(page); await pushHistory(page); await pushPeople(page); await exportArchive(page); }
   catch (e) { console.warn("collector: refresh failed:", e.message); }
   finally { S.running = false; save(); }
 }
+const pushSignals = (page, ev) => page.evaluate(ev => { SIGNALS = ev; return idbDo(["meta"], "readwrite", tx => tx.objectStore("meta").put(ev, "signals")); }, ev);
 function runSoon() { if (S.running) return; clearTimeout(timer); S.nextRun = Date.now() + 1000; timer = setTimeout(async () => { await runOnce(); schedule(); }, 1000); }
 
 const stamp = d => d.toISOString().slice(0, 16).replace(/[-:]/g, "") + "Z"; // 20261031T1403Z
@@ -194,7 +195,7 @@ async function runOnce() {
     try {
       const names = await page.evaluate(() => nations.map(n => n.name));
       const sig = await signals.run(names);
-      await page.evaluate(ev => { SIGNALS = ev; return idbDo(["meta"], "readwrite", tx => tx.objectStore("meta").put(ev, "signals")); }, sig);
+      await pushSignals(page, sig);
     } catch (e) { console.warn("collector: signals step failed:", e.message); }
 
     // the Ministry of Finance: this hour's banks, with the latest player and property scans
