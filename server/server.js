@@ -138,9 +138,11 @@ app.post("/api/import", needLogin, express.text({ type:"*/*", limit:"200mb" }), 
 const SIG = require("./signals");
 const chatTokenOk = req => !!process.env.CHAT_UPLOAD_TOKEN && typeof req.headers["x-chat-token"] === "string" &&
   req.headers["x-chat-token"].length === process.env.CHAT_UPLOAD_TOKEN.length && crypto.timingSafeEqual(Buffer.from(req.headers["x-chat-token"]), Buffer.from(process.env.CHAT_UPLOAD_TOKEN));
+// an open site with no CHAT_UPLOAD_TOKEN set takes uploads from anyone (the owner's choice); setting the token locks them again
+const uploadOk = req => chatTokenOk(req) || (OPEN ? !process.env.CHAT_UPLOAD_TOKEN : signedIn(req));
 const COMBAT = require("./combat");
 app.post("/api/chat-import", express.text({ type:"*/*", limit:"100mb" }), (req, res) => {
-  if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"Chat uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
+  if (!uploadOk(req)) return res.status(403).json({ error:"Chat uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
   try {
     // a batch of relay items ({ items:[...] }, see intel/RELAY-CONTRACT.md) is already analysed and joins the briefings now
     let j = null; try { j = JSON.parse(req.body); } catch {}
@@ -155,7 +157,7 @@ app.post("/api/chat-import", express.text({ type:"*/*", limit:"100mb" }), (req, 
 });
 // kills read from Discord exports on your own computer (tools/discord-kills.js); same rule as chat uploads
 app.post("/api/kills-import", express.text({ type:"*/*", limit:"50mb" }), (req, res) => {
-  if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"Kill uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
+  if (!uploadOk(req)) return res.status(403).json({ error:"Kill uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
   let j; try { j = JSON.parse(req.body); } catch { return res.status(400).json({ error:"That isn't JSON." }); }
   if (j?.kind !== "kills" || !Array.isArray(j.kills)) return res.status(400).json({ error:"That isn't a kills file." });
   const r = COMBAT.add(j.kills); collector.refresh();
@@ -165,7 +167,7 @@ app.get("/api/signals", needLogin, (req, res) => res.json({ status:SIG.status(),
 // the history of Terra Nostra written from the Discord archives (tools/send-history.ps1); same rule as chat uploads
 const HISTORY = require("./history");
 app.post("/api/history-import", express.text({ type:"*/*", limit:"20mb" }), (req, res) => {
-  if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"History uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
+  if (!uploadOk(req)) return res.status(403).json({ error:"History uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
   try { const r = HISTORY.save(req.body); collector.refresh(); res.json({ ok:true, ...r, message:"Received. It reaches the Briefing Room within a few minutes." }); }
   catch (e) { res.status(400).json({ error:e.message }); }
 });
