@@ -86,7 +86,8 @@ function browser() {
   return B.opening ||= (async () => {
     await closeBrowser();
     const { chromium } = require("playwright");
-    const ctx = await chromium.launchPersistentContext(PROFILE, { headless:true, viewport:{ width:1280, height:900 }, args:["--disable-dev-shm-usage"],
+    const ctx = await chromium.launchPersistentContext(PROFILE, { headless:true, viewport:{ width:1280, height:900 },
+      args:["--disable-dev-shm-usage", "--disable-gpu", "--disable-extensions", "--disable-background-networking", "--mute-audio", "--no-first-run"],
       ...(process.env.BROWSER_CHANNEL ? { channel:process.env.BROWSER_CHANNEL } : {}) }); // e.g. "msedge" to use an installed browser locally
     // map tiles, skins and web fonts aren't needed to scan or to write PDFs
     await ctx.route(/map\.earthmc\.net\/tiles\/.*\.png|mc-heads\.net|fonts\.(googleapis|gstatic)\.com/, r => r.abort());
@@ -98,6 +99,10 @@ function browser() {
     page.on("crash", lost); ctx.on("close", lost);
     await page.addInitScript(() => {
       window.BH_COLLECTOR = true;
+      // nobody looks at this page, so it says it is hidden: the globe stops redrawing sixty times a second and the
+      // live pages stop rebuilding, while scans, position tracking, the Forecast Lab and the reports carry on
+      Object.defineProperty(document, "hidden", { get:() => true, configurable:true });
+      Object.defineProperty(document, "visibilityState", { get:() => "hidden", configurable:true });
       try { sessionStorage.setItem("bh_unlocked", '["attack","intel"]'); sessionStorage.setItem("rh_booted", "1"); } catch {}
     });
     const token = crypto.randomBytes(24).toString("hex");
@@ -115,21 +120,25 @@ function browser() {
   })().finally(() => { B.opening = null; });
 }
 
-// the archive, for visitors' browsers: everything the page keeps, including the last scan and the Forecast Lab
+// the archive, for visitors' browsers: what their pages use, including the last scan and the Forecast Lab.
+// The server keeps every daily frame and event; visitors get the frames of the last ten days (the page compares
+// with a week ago) and the events of the last sixty (all the page loads), so the export stops growing every day.
+const gzip = require("util").promisify(zlib.gzip);
 async function exportArchive(page) {
   const archive = await page.evaluate(() => idbDo(["meta", "series", "frames", "events", "visits", "predictions"], "readonly", async tx => {
-    const m = tx.objectStore("meta");
+    const m = tx.objectStore("meta"), recent = IDBKeyRange.lowerBound(new Date(Date.now() - 10 * 864e5).toISOString().slice(0, 10));
     return JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now(),
       stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")),
       signals:await reqP(m.get("signals")), finance:await reqP(m.get("finance")), keyed:await reqP(m.get("keyed")), history:await reqP(m.get("history")),
       population:await reqP(m.get("population")), combat:await reqP(m.get("combat")), tracks:await reqP(m.get("tracks")),
       series:await reqP(tx.objectStore("series").getAll()),
-      frameKeys:await reqP(tx.objectStore("frames").getAllKeys()), frames:await reqP(tx.objectStore("frames").getAll()),
-      events:await reqP(tx.objectStore("events").getAll()), visits:await reqP(tx.objectStore("visits").getAll()),
+      frameKeys:await reqP(tx.objectStore("frames").getAllKeys(recent)), frames:await reqP(tx.objectStore("frames").getAll(recent)),
+      events:await reqP(tx.objectStore("events").index("at").getAll(IDBKeyRange.lowerBound(Date.now() - 60 * 864e5))), visits:await reqP(tx.objectStore("visits").getAll()),
       predictions:await reqP(tx.objectStore("predictions").getAll()) });
   }));
+  // compressed off the main thread, so the site keeps answering while it works
   const gz = path.join(DATA, "archive.json.gz");
-  fs.writeFileSync(gz + ".tmp", zlib.gzipSync(archive, { level:6 })); fs.renameSync(gz + ".tmp", gz);
+  fs.writeFileSync(gz + ".tmp", await gzip(archive, { level:6 })); fs.renameSync(gz + ".tmp", gz);
   S.archiveVersion = String(Date.now()); save();
 }
 // banks come from the page's own scan (no extra requests); finance.js adds players, flows and property

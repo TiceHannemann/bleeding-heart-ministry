@@ -23,6 +23,10 @@ services:
       EMC_PLAYER: ${EMC_PLAYER:-}
       # the key officers enter to change the War Room's plan (falls back to CHAT_UPLOAD_TOKEN)
       WARROOM_KEY: ${WARROOM_KEY:-}
+      # how hard the server works: minutes between scans (minimum 15), and hours between the full player and property scans.
+      # Raise them in /root/bh.env if the VPS is being throttled.
+      SCAN_EVERY_MINUTES: ${SCAN_EVERY_MINUTES:-60}
+      FINANCE_EVERY_HOURS: ${FINANCE_EVERY_HOURS:-3}
     volumes:
       - bh_data:/data
     mem_limit: 1500m
