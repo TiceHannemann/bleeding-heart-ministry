@@ -115,9 +115,30 @@ site's own signals store without translation.
   },
   "analyst_notes":   "Reasoning: what is claimed vs what is known, who benefits from the framing, what to watch next.",
   "why_it_matters":  "One line. Why this deserves a place in a briefing at all.",
-  "links_to_scan_data": ["Sumer", "Parthia"]   // names to check against the scan archive
+  "links_to_scan_data": ["Sumer", "Parthia"],  // names to check against the scan archive
+  "relation":     "formed | ended | hostile | pact | peace",  // optional: what the event does to the relationship
+  "contact":      "Hoffywin9999 (in-game)"     // optional: the named point of contact, for recruitment and diplomacy
 }
 ```
+
+### How the site uses items
+
+Items take precedence over what the scans infer. Wherever one bears on a subject, it leads that part of every
+report: the summary of a nation's assessment and of the daily summary, the key judgments, leadership (an announced
+cabinet before the server's leader), foreign relations, and the dossier on the Nations page. The scans still win
+where they record a later change of their own.
+
+- **`relation`** says what the event does to the relationship between the nations named. Without it, the site
+  infers it: `war_or_hostility` and `raid_or_attack_plan` are `hostile`; `alliance` and `non_aggression_pact` are
+  `ended` when the summary says someone left, ended, terminated, withdrew, broke, dissolved, cut, exited, severed or
+  expelled, and otherwise `formed` (`pact` for a non-aggression pact); `peace_or_truce` is `peace`. Set it
+  whenever the summary could be read either way. `ended` or `hostile` removes the alliance from the assessments even
+  while the server's lists still show it; `formed` counts the alliance before the lists catch up.
+- **Name the actor first in `nations`.** For a departure or a defection, the nation that walked out comes first.
+- **Town transfers** are checked against the scans: name the town in the summary and write "joined <nation>" so
+  the site can tell where it went.
+- **`contact`** appears only in Kingdom-eyes-only recommendations, never in a releasable report.
+  `evidence.contact` is read too.
 
 ### Rules for the analysis half
 

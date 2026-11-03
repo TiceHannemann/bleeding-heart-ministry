@@ -1114,6 +1114,7 @@ let API = API_CANDIDATES[0];
 let towns = [], tab = "soon", selected = null, view = [];
 let KEYED = null; // from the Ministry server's EarthMC API key: leaderboards, pursuits, the new day, the owner's shops (see Rankings and Ledger)
 let HISTORY = null; // the history of Terra Nostra written from the Discord archives (Briefing Room, History)
+let SIGNALS = []; // open-channel intelligence (server/signals.js); declared early because the assessments read it
 let POP = null; // the Ministry of Population: arrivals, the townless, and moves between nations (server/population.js)
 let COMBAT = null; // who kills whom, from the in-game chat bridge (server/combat.js)
 
@@ -1577,7 +1578,11 @@ function renderNatLead(home) {
   const risky = nations.filter(n => n.active30 >= 10 && n !== home).sort((a, b) => map.get(b.name).risk - map.get(a.name).risk)[0];
   const prize = nations.filter(n => n !== home && !["ally", "friendly", "home"].includes(map.get(n.name).stance)).map(n => ({ n, t:takeableOf(n) })).sort((a, b) => b.t - a.t)[0];
   const ra = risky && map.get(risky.name);
+  // the weightiest report of the last three days leads; its full text is on hover
+  const news = SIGNALS.filter(s => s.last >= Date.now() - 3 * DAY).sort(sigOrder)[0], newsAt = news && (news.nations.map(findNation).find(Boolean) || null);
   el.innerHTML = leadRow([
+    news && { k:"Latest intelligence", v:news.nations.join(" · "), c:"var(--intel)", go:newsAt ? "nation:" + newsAt.name : null,
+      t:`<span title="${esc(news.summary)}">${esc(cap1((news.type === "alliance" && sigEffect(news) === "ended" ? "the end of an alliance" : SIG_KIND[news.type] || "a report").replace(/^(a|an) /, "")))} · ${news.status === "announced_officially" ? "announced" : "reported"} ${agoT(news.at)}</span>` },
     threat && { k:"Greatest threat to us", v:threat.n.name, c:"var(--red)", go:"nation:" + threat.n.name, t:`${STANCE[threat.a.stance].label} · ${threat.n.active30} active${threat.a.contact ? ` · ${plural(threat.a.contact, "town")} near ours` : ""}`, viz:meter("Hostility", threat.a.hostility, "var(--red)", "") },
     grow && { k:"Growing fastest", v:`${grow.n.name} +${grow.d}`, c:"var(--green)", go:"nation:" + grow.n.name, t:`active members over the week · now ${grow.n.active30}`, viz:sparkSvg(seriesPts(grow.n.name, "a30")) },
     risky && { k:"Nearest collapse", v:risky.name, c:riskLevel(ra.risk).c, go:"nation:" + risky.name, t:`${[ra.falling && `${plural(ra.falling, "town")} falling`, ra.take && `${ra.take.toLocaleString()} chunks open`, ra.leaderGone && "leader gone"].filter(Boolean).join(" · ") || `${risky.active30} active`}`, viz:meter("Risk", ra.risk, riskLevel(ra.risk).c, "") },
@@ -1587,7 +1592,9 @@ function renderNatLead(home) {
 
 function anticipateHtml(n, mine) {
   const X = anticipate(n, mine && mine !== n ? mine : null), ev = eventsFor(n.name, 7).slice(-8).reverse(), st = assess(n).stance;
-  return `<div class="dsec"><h3>Anticipated moves · ${X.conf} confidence</h3><div class="weak">${X.coas.slice(0, 4).map(x => `<div style="--c:${x.s >= .55 ? "var(--intel)" : "var(--dim)"}"><b>${esc(x.likelihood.charAt(0).toUpperCase() + x.likelihood.slice(1))}</b> · ${esc(x.text)}</div>`).join("")}</div></div>
+  // what governments have announced comes first; the sources and the check against the scans sit behind hover
+  const rep = intelOn(n.name).slice(0, 4);
+  return `${rep.length ? `<div class="dsec"><h3>Reported · ${rep.length}</h3><div class="weak">${rep.map(s => `<div style="--c:${s.importance >= 3 ? "var(--intel)" : "var(--dim)"}" title="${esc(sigFull(s, false))}"><b>${fmtDay(s.at)}</b> · ${esc(stripDot(s.summary))}</div>`).join("")}</div></div>` : ""}<div class="dsec"><h3>Anticipated moves · ${X.conf} confidence</h3><div class="weak">${X.coas.slice(0, 4).map(x => `<div style="--c:${x.s >= .55 ? "var(--intel)" : "var(--dim)"}"><b>${esc(x.likelihood.charAt(0).toUpperCase() + x.likelihood.slice(1))}</b> · ${esc(x.text)}</div>`).join("")}</div></div>
     ${ev.length ? `<details class="dsec" ${fold("activity")}><summary><h3>Recent activity · ${ev.length}</h3></summary><div class="weak">${ev.map(e => `<div style="--c:var(--mut)">${fmtDay(e.at)} · ${esc(eventText(e, n.name))}</div>`).join("")}</div></details>` : ""}
     <div class="a-acts"><button class="deep" data-open-brief="${esc(n.name)}" data-kind="nation">Open intelligence assessment</button>${["ally", "friendly", "home"].includes(st) ? `<button class="deep" data-open-brief="${esc(n.name)}" data-kind="support">Support assessment for ${esc(n.name)}</button>` : ""}</div>`;
 }
@@ -2925,7 +2932,7 @@ const assessCaches = new Map(); // one set of assessments per perspective nation
 
 function assessAll(homeName) {
   const home = findNation(homeName ?? $("myNation").value);
-  const key = [nations.length, towns.length, home?.name, scanHistory.length, ARCHIVE.scans, days(), ocWindow(), ocInactive()].join("|");
+  const key = [nations.length, towns.length, home?.name, scanHistory.length, ARCHIVE.scans, days(), ocWindow(), ocInactive(), SIGNALS.length, SIGNALS[0]?.last].join("|");
   if (assessCaches.has(key)) return assessCaches.get(key);
   const pctOf = vals => { const s = [...vals].sort((a, b) => a - b); return v => s.length < 2 ? 0.5 : s.findIndex(x => x >= v) / (s.length - 1); };
   const pA = pctOf(nations.map(n => n.active30)), pC = pctOf(nations.map(n => n.chunks)), pG = pctOf(nations.map(goldOf)), pAl = pctOf(nations.map(n => n.allies.length));
@@ -2933,6 +2940,9 @@ function assessAll(homeName) {
   // our towns, for border contact
   const ours = home ? home.towns.filter(t => t.c && !t.ruined) : [];
   const has = (list, name) => list.some(x => x.toLowerCase() === String(name || "").toLowerCase());
+  // relations as announced: an alliance reported ended or broken by hostility no longer counts, a reported new one does
+  const AL = SIGNALS.length ? new Map(nations.map(n => [n.name, alliesNow(n)])) : null, allies = n => AL?.get(n.name) || n.allies;
+  const homeAllies = home ? allies(home) : [];
   const map = new Map();
   for (const n of nations) {
     const live = n.towns.filter(t => !t.ruined), T = Math.max(1, live.length);
@@ -2950,11 +2960,15 @@ function assessAll(homeName) {
     // relations to Bleeding Heart
     let hostility = 0, friendliness = 0, contact = 0, reasons = [];
     if (home && n !== home) {
-      const allyDirect = has(n.allies, home.name) || has(home.allies, n.name), enemyDirect = has(n.enemies, home.name) || has(home.enemies, n.name);
+      const nAl = allies(n), allyDirect = has(nAl, home.name) || has(homeAllies, n.name), enemyDirect = has(n.enemies, home.name) || has(home.enemies, n.name);
       if (allyDirect) { friendliness += 60; reasons.push("allied with us"); }
       if (enemyDirect) { hostility += 60; reasons.push("an enemy of ours"); }
-      const withOurEnemies = n.allies.filter(x => has(home.enemies, x)), againstOurAllies = n.enemies.filter(x => has(home.allies, x));
-      const sharedAllies = n.allies.filter(x => has(home.allies, x)), sharedEnemies = n.enemies.filter(x => has(home.enemies, x));
+      // open hostility announced in the channels counts before the server's lists catch up
+      const odds = SIGNALS.length ? atOddsWith(n) : [], oddsUs = odds.find(x => has([home.name], x)), oddsAllies = odds.filter(x => has(homeAllies, x));
+      if (oddsUs && !enemyDirect) { hostility += 40; reasons.push(`openly at odds with us (reported ${fmtDay(relOverride(n.name, home.name).s.at)})`); }
+      if (oddsAllies.length) { hostility += oddsAllies.length * 12; reasons.push(`at odds with ${oddsAllies.length === 1 ? "our ally " + oddsAllies[0] : oddsAllies.length + " of our allies"}`); }
+      const withOurEnemies = nAl.filter(x => has(home.enemies, x)), againstOurAllies = n.enemies.filter(x => has(homeAllies, x));
+      const sharedAllies = nAl.filter(x => has(homeAllies, x)), sharedEnemies = n.enemies.filter(x => has(home.enemies, x));
       hostility += withOurEnemies.length * 15 + againstOurAllies.length * 12;
       friendliness += sharedAllies.length * 8 + sharedEnemies.length * 10;
       if (withOurEnemies.length) reasons.push(`allied with ${withOurEnemies.length === 1 ? "our enemy " + withOurEnemies[0] : withOurEnemies.length + " of our enemies"}`);
@@ -2966,7 +2980,7 @@ function assessAll(homeName) {
       if (n.isNeutral) { hostility = Math.round(hostility * 0.5); friendliness = Math.round(friendliness * 0.8); }
       hostility = Math.min(100, Math.round(hostility)); friendliness = Math.min(100, Math.round(friendliness));
     }
-    const stance = !home ? "neutral" : n === home ? "home" : (has(n.allies, home.name) || has(home.allies, n.name)) ? "ally" : (has(n.enemies, home.name) || has(home.enemies, n.name)) ? "hostile"
+    const stance = !home ? "neutral" : n === home ? "home" : (has(allies(n), home.name) || has(homeAllies, n.name)) ? "ally" : (has(n.enemies, home.name) || has(home.enemies, n.name)) ? "hostile"
       : friendliness - hostility >= 15 ? "friendly" : hostility - friendliness >= 15 ? (hostility >= 40 ? "hostile" : "wary") : "neutral";
     const flags = [];
     if (risk >= 45 && ["hostile", "wary", "neutral"].includes(stance) && contact) flags.push("Prime target");
@@ -3571,7 +3585,8 @@ function dataConfidence(name) {
 }
 const ESTIMATIVE = [[.95, "almost certain"], [.8, "highly likely"], [.55, "likely"], [.45, "roughly even chance"], [.2, "unlikely"], [.05, "highly unlikely"], [0, "remote"]];
 const estimate = s => ESTIMATIVE.find(([t]) => s >= t)[1];
-const COA_LABEL = { expand:"Expanding", contract:"Contracting", succession:"Succession due", realign:"Realigning", hostile:"Hostile action", recruit:"Recruiting", encroach:"Encroaching", status:"Stable" };
+const COA_LABEL = { expand:"Expanding", contract:"Contracting", succession:"Succession due", realign:"Realigning", hostile:"Hostile action", recruit:"Recruiting", encroach:"Encroaching", status:"Stable",
+  dispute:"In dispute", patron:"Seeking a patron", defect:"Losing towns" };
 const clamp01 = v => Math.max(0, Math.min(1, v));
 const COMPASS = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
 const bearingName = (dx, dz) => COMPASS[Math.round(((Math.atan2(dx, -dz) * 180 / Math.PI + 360) % 360) / 45) % 8];
@@ -3653,6 +3668,25 @@ function anticipate(n, p) {
   }
   if (gR > 0.08) add("recruit", 0.45 + gR * 2, `${n.name} is running a recruitment drive (residents ${anyDelta(tR) > 0 ? "+" : ""}${anyDelta(tR)} in the period).`);
   if (p && p !== n && p === findNation($("myNation").value) && tD?.slope != null && tD.slope < -25 && a.hostility >= 25) add("encroach", 0.4 + Math.min(0.4, -tD.slope / 300), `${n.name} is closing on ${p.name}'s territory (about ${Math.round(-tD.slope)} blocks a day).`, { danger:0.8 });
+  // reported government business, which outranks what the trends alone suggest
+  if (SIGNALS.length) {
+    const intel = intelOn(n.name), home = findNation($("myNation").value);
+    for (const m of atOddsWith(n)) {
+      const s = relOverride(n.name, m).s, ours = p && (sigKey(m) === sigKey(p.name) || (p === home && alliesNow(home).includes(m)));
+      add("dispute", 0.55 + 0.05 * (s.importance || 1), `${n.name} and ${m} will remain at odds.`, { danger:sigKey(m) === sigKey(p?.name) ? 0.9 : ours ? 0.5 : 0.2, conf:s.confidence });
+      out[out.length - 1].intel = s;
+    }
+    // the nation that walked out (named first) is the one looking for a new home
+    const left = intel.find(s => sigEffect(s) === "ended" && sigKey(s.nations[0]) === sigKey(n.name)), rec = intel.find(s => s.type === "recruitment" && /\b(join|patron|empire|meganation|open to)/i.test(s.summary));
+    if (left || rec) { add("patron", 0.5 + (left && rec ? 0.25 : 0.1), `${n.name} will seek a new patron or alliance${rec ? ", having said openly that it will accept one" : ""}.`, { danger:0.1, conf:(left || rec).confidence });
+      Object.assign(out[out.length - 1], { intel:left || rec, offer:rec || null }); }
+    for (const s of intel.filter(s => s.type === "town_transfer")) {
+      const x = transferCheck(s); if (!x?.dest || sigKey(x.dest) === sigKey(n.name)) continue;
+      add("defect", 0.35 + 0.05 * (s.importance || 1), `${n.name} will lose further towns to defection over the next 7 days.`, { conf:s.confidence });
+      Object.assign(out[out.length - 1], { intel:s, to:x.dest });
+      break;
+    }
+  }
   // blend in the Forecast Lab: the more forecasts a model has had checked, the more it decides
   const ML_FOR = { contract:"loss7", expand:"gain7", succession:"leader7", realign:"diplo7" };
   const ML_TEXT = { contract:`${n.name} will lose at least one town within 7 days.`, expand:`${n.name} will gain land within 7 days.`, succession:`Leadership of ${n.name} will change within 7 days.`, realign:`${n.name} will change an alliance or enmity within 7 days.` };
@@ -3762,6 +3796,9 @@ function reasonFor(x, n, X, persp) {
     recruit:`Its resident count has ${moved(tR)} over the period, well above the server norm.`,
     encroach:`The distance between its towns and ${persp?.name || "ours"} has been falling steadily over the past week.`,
     status:"The indicators the Ministry tracks have moved little over the period, and no event has been recorded that would suggest a change of course.",
+    dispute:x.intel && `The judgment rests on ${sigBasis(x.intel)}, and nothing in the server's records shows the breach being repaired. A declaration of enmity, or claims pressed against the other side's towns, would show it hardening.`,
+    patron:x.intel && `The judgment rests on ${sigBasis(x.intel)}, which records that ${sigClause(x.intel)}${x.offer && x.offer !== x.intel ? `, and on the offer it made at the same time` : ""}.`,
+    defect:x.intel && `The judgment rests on ${sigBasis(x.intel)}, which records that ${sigClause(x.intel)}; defections driven by inactivity tend to come in clusters.`,
   }[x.key] || "";
   return r + (x.ml >= 0.3 ? ` The Forecast Lab model, which has been checked against ${nf(mlState().models[{ contract:"loss7", expand:"gain7", succession:"leader7", realign:"diplo7" }[x.key]]?.n || 0)} real outcomes, contributed to this estimate.` : "");
 }
@@ -3837,8 +3874,8 @@ function movementIntsum(doc, releasable) {
 
 // ---- open-channel signals: diplomacy and intelligence read from public Discord channels ----
 // Extracted on the Ministry server (server/signals.js) and delivered with the archive as meta "signals".
-// Each: { type, nations, summary, confidence, status, importance, at, last, servers, sources:[{guild, channel, author, role, at}] }
-let SIGNALS = [];
+// Each: { type, nations, summary, confidence, status, importance, at, last, servers, sources:[{guild, channel, author, role, at}], relation?, contact? }
+// (SIGNALS itself is declared near the top of the script.)
 const sigKey = s => String(s || "").toLowerCase().replace(/[\s_]+/g, " ").trim();
 const signalsFor = (name, since) => SIGNALS.filter(s => s.last >= since && s.nations.some(x => sigKey(x) === sigKey(name)));
 const SIG_CONF = { high:"high confidence", moderate:"moderate confidence", low:"low confidence" };
@@ -3848,15 +3885,11 @@ function sigSentence(s, rel) {
   if (rel) return `On ${fmtDay(s.at)}, ${s.summary.replace(/^(The|A|An|Several|Two|Three|Members|Reports) /, w => w.toLowerCase()).replace(/\.$/, "")} (${s.status === "announced_officially" ? "announced officially, " : s.status === "rumoured" ? "rumoured, " : ""}${SIG_CONF[s.confidence] || "low confidence"}).`;
   const where = s.servers > 1 ? `reported in ${plural(s.servers, "server")}` : `reported in ${s.sources[0]?.guild || "one server"}`;
   const who = s.status === "announced_officially" ? "announced officially, " : s.status === "rumoured" ? "rumoured, " : s.status === "denied" ? "since denied, " : "";
-  // where the server's own alliance lists can confirm or contradict the report, say so
-  let check = "";
-  if (s.type === "alliance" && s.nations.length === 2) {
-    const [A, B] = s.nations.map(findNation);
-    if (A && B) check = A.allies.includes(B.name) || B.allies.includes(A.name) ? " The alliance appears in the server's own records." : " The server's alliance lists do not yet show it.";
-  }
   // "The leaders of X..." reads "On 30 Oct, the leaders of X..."; names keep their capitals
-  return `On ${fmtDay(s.at)}, ${s.summary.replace(/^(The|A|An|Several|Two|Three|Members|Reports) /, w => w.toLowerCase()).replace(/\.$/, "")} (${who}${SIG_CONF[s.confidence] || "low confidence"}; ${where}${sigPerspective(s)}).${check}`;
+  return `On ${fmtDay(s.at)}, ${s.summary.replace(/^(The|A|An|Several|Two|Three|Members|Reports) /, w => w.toLowerCase()).replace(/\.$/, "")} (${who}${SIG_CONF[s.confidence] || "low confidence"}; ${where}${sigPerspective(s)}).`;
 }
+// a report, then what the server's own records say about it
+const sigFull = (s, rel) => [sigSentence(s, rel), sigCheck(s, rel)].filter(Boolean).join(" ");
 // whose channels a report came from: a nation's own server speaks for its government, and a report carried only by
 // one side's servers is that side's account
 function sigPerspective(s) {
@@ -3872,26 +3905,118 @@ const SIG_GROUPS = [
   ["Territorial", ["merger_or_annexation", "town_transfer"]],
   ["Internal", ["leadership_or_internal", "recruitment"]],
 ];
+// the reports bearing on a nation that the document has not already used where they apply
 function signalsSection(doc, n, rel) {
-  const ss = signalsFor(n.name, Date.now() - 7 * DAY).sort(sigOrder);
+  const all = signalsFor(n.name, Date.now() - 7 * DAY).filter(s => !(rel && s.type === "recruitment")).sort(sigOrder), ss = all.filter(s => !doc.usedSig?.has(s));
   if (!ss.length) return;
-  Head(doc, "Signals from Open Channels");
-  const servers = new Set(ss.flatMap(s => s.sources.map(x => x.guild)));
-  Para(doc, rel ? `Over the past week the Kingdom recorded ${plural(ss.length, "report")} bearing on ${n.name} in public channels. They have not been verified on the ground.`
-    : `Over the past week the Ministry recorded ${plural(ss.length, "report")} bearing on ${n.name} in ${plural(servers.size, "public Discord server")}. Reports are read from open channels, sifted for in-game diplomacy and intelligence, and weighed by who said them and how widely they were carried; they have not been verified on the ground.`);
+  Head(doc, all.length > ss.length ? "Other Reports from Open Channels" : "Signals from Open Channels");
+  const servers = new Set(ss.flatMap(s => s.sources.map(x => x.guild))), other = all.length > ss.length ? "further " : "";
+  Para(doc, rel ? `Over the past week the Kingdom recorded ${plural(ss.length, `${other}report`)} bearing on ${n.name} in public channels. They have not been verified on the ground.`
+    : `Over the past week the Ministry recorded ${plural(ss.length, `${other}report`)} bearing on ${n.name} in ${plural(servers.size, "public Discord server")}. Reports are read from open channels, sifted for in-game diplomacy and intelligence, and weighed by who said them and how widely they were carried; they have not been verified on the ground.`);
   for (const [, types] of SIG_GROUPS) {
     const g = ss.filter(s => types.includes(s.type)).slice(0, 4);
-    if (g.length) Para(doc, g.map(s => sigSentence(s, rel)).join(" "));
+    if (g.length) Para(doc, g.map(s => sigFull(s, rel)).join(" "));
   }
   const rest = ss.filter(s => !SIG_GROUPS.some(([, t]) => t.includes(s.type))).slice(0, 3);
-  if (rest.length) Para(doc, rest.map(s => sigSentence(s, rel)).join(" "));
+  if (rest.length) Para(doc, rest.map(s => sigFull(s, rel)).join(" "));
 }
+// the daily summary leads with the day's government business: the last day's reports, and the weightiest of the last three
+const intsumSignals = rel => SIGNALS.filter(s => (s.last >= Date.now() - DAY || (s.importance >= 4 && s.last >= Date.now() - 3 * DAY)) && !(rel && s.type === "recruitment")).sort(sigOrder);
 function signalsIntsum(doc, rel) {
-  const ss = SIGNALS.filter(s => s.last >= Date.now() - DAY).sort(sigOrder);
+  const ss = intsumSignals(rel).filter(s => !doc.usedSig?.has(s));
   if (!ss.length) return;
-  Head(doc, "Signals from Open Channels");
-  Para(doc, `Public Discord channels carried ${plural(ss.length, "report")} of in-game diplomacy or intelligence in the last twenty-four hours. The most significant follow.`);
-  for (let i = 0; i < Math.min(ss.length, 9); i += 3) Para(doc, ss.slice(i, i + 3).map(s => sigSentence(s, rel)).join(" "));
+  Head(doc, "Government and Diplomatic Intelligence");
+  Para(doc, `${rel ? "Open channels" : `Open channels, ${plural(new Set(ss.flatMap(s => s.sources.map(x => x.guild))).size, "server")} in all,`} carried ${plural(ss.length, doc.usedSig?.size ? "further report" : "report")} of government business in the last twenty-four hours or of lasting weight in the last three days. ${rel ? "The Kingdom" : "The Ministry"} gives announcements of this kind precedence over what the scans alone suggest, and says below where the server's own records bear them out.`);
+  for (const [, types] of SIG_GROUPS) {
+    const g = ss.filter(s => types.includes(s.type)).slice(0, 4);
+    if (g.length) Para(doc, g.map(s => sigFull(s, rel)).join(" "));
+  }
+  const rest = ss.filter(s => !SIG_GROUPS.some(([, t]) => t.includes(s.type))).slice(0, 3);
+  if (rest.length) Para(doc, rest.map(s => sigFull(s, rel)).join(" "));
+  ss.forEach(s => useSig(doc, s));
+}
+
+// ---- open-channel intelligence takes precedence ----
+// What governments announce (treaties, denouncements, cabinets, defections) outranks what the scans infer, so it leads
+// every report and judgment it bears on. The scans still win where they record a later change of their own, and where
+// they can check a report, the report says whether they bear it out.
+const INTEL_DAYS = 14;
+const intelOn = (name, d = INTEL_DAYS) => signalsFor(name, Date.now() - d * DAY).sort(sigOrder);
+const sigHas = (s, name) => s.nations.some(x => sigKey(x) === sigKey(name));
+const useSig = (doc, s) => (doc.usedSig ||= new Set()).add(s);
+const reEsc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+// what a report does to a relationship: hostile, ended, formed (an alliance), pact (non-aggression) or peace
+function sigEffect(s) {
+  if (s.relation) return s.relation; // the relay may say so outright
+  if (s.type === "war_or_hostility" || s.type === "raid_or_attack_plan") return "hostile";
+  const ended = /\b(left|leav|ended|terminat|withdr|broke|dissolv|cut|exit|sever|expel)/i.test(s.summary);
+  return s.type === "alliance" ? (ended ? "ended" : "formed") : s.type === "non_aggression_pact" ? (ended ? "ended" : "pact") : s.type === "peace_or_truce" ? "peace" : null;
+}
+// the latest reported effect between two nations, unless the server's records changed after it
+let relIdx = null;
+function relOverride(a, b) {
+  if (!SIGNALS.length || !a || !b || sigKey(a) === sigKey(b)) return null;
+  const v = SIGNALS.length + "|" + (SIGNALS[0]?.last || 0) + "|" + ARCHIVE.events.length;
+  if (relIdx?.v !== v) {
+    const m = new Map();
+    for (const s of SIGNALS) { const e = sigEffect(s); if (!e) continue;
+      for (const x of s.nations) for (const y of s.nations) { const k = sigKey(x) + "|" + sigKey(y);
+        if (sigKey(x) < sigKey(y) && (!m.has(k) || m.get(k).s.at < s.at)) m.set(k, { effect:e, s }); } }
+    relIdx = { v, m };
+  }
+  const k = [sigKey(a), sigKey(b)].sort().join("|"), r = relIdx.m.get(k);
+  if (!r) return null;
+  const later = ARCHIVE.events.some(e => /^(ally|enemy)_/.test(e.type) && e.at > r.s.at && [sigKey(e.ns?.[0]), sigKey(e.who)].sort().join("|") === k);
+  return later ? null : r;
+}
+// a nation's allies as the reports treat them: the server's list, corrected by later announcements
+function alliesNow(n) {
+  if (!n || !SIGNALS.length) return n?.allies || [];
+  const out = n.allies.filter(x => !["ended", "hostile"].includes(relOverride(n.name, x)?.effect));
+  for (const s of SIGNALS) if (sigEffect(s) === "formed" && sigHas(s, n.name)) for (const x of s.nations) {
+    const m = findNation(x); if (m && m !== n && !out.includes(m.name) && relOverride(n.name, m.name)?.effect === "formed") out.push(m.name); }
+  return out;
+}
+// the nations a report sets at odds with this one
+const atOddsWith = n => !n || !SIGNALS.length ? [] : [...new Set(SIGNALS.filter(s => sigEffect(s) === "hostile" && sigHas(s, n.name)).flatMap(s => s.nations)
+  .map(findNation).filter(m => m && m !== n && relOverride(n.name, m.name)?.effect === "hostile").map(m => m.name))];
+// a reported town transfer, against the scans: the town, where it went, and whether the records show it
+function transferCheck(s) {
+  if (s.type !== "town_transfer") return null;
+  const low = s.summary.toLowerCase(), t = towns.find(t => t.name.length > 2 && low.includes(t.name.toLowerCase()) && new RegExp(`\\b${reEsc(t.name)}\\b`, "i").test(s.summary));
+  const dest = s.nations.find(x => new RegExp(`\\b(joined|to|into|for)\\s+(the\\s+)?${reEsc(x).replace(/_/g, "[ _]")}\\b`, "i").test(s.summary)) || null;
+  const ev = t && ARCHIVE.events.find(e => /^town_(switch|join)$/.test(e.type) && e.town === t.name && e.at >= s.at - 3 * DAY);
+  return { t, dest, ev, seen:ev ? "event" : t && dest && sigKey(t.nation) === sigKey(dest) ? "scan" : "no" };
+}
+// what the server's own records say about a report, in a sentence
+function sigCheck(s, rel) {
+  const own = rel ? "the Kingdom" : "the Ministry", fx = sigEffect(s);
+  const x = transferCheck(s);
+  if (x?.t) return x.seen === "event" ? `The scans recorded ${x.t.name} joining ${x.ev.to || x.t.nation} on ${fmtDay(x.ev.at)}, which confirms the report.`
+    : x.seen === "scan" ? `The latest scan places ${x.t.name} in ${x.t.nation}, which bears the report out.`
+    : `The latest scan still places ${x.t.name} in ${x.t.nation || "no nation"}, so the move is not yet visible in the server's records.`;
+  if (!fx || s.nations.length !== 2) return "";
+  const [A, B] = s.nations.map(findNation); if (!A || !B) return "";
+  const listed = A.allies.includes(B.name) || B.allies.includes(A.name), r = relOverride(A.name, B.name);
+  if (r && r.s !== s) return ""; // a later report, or a later change in the records, speaks for this pair
+  if (fx === "formed") return listed ? "The alliance appears in the server's own records." : `The server's alliance lists do not yet show it; ${own} treats the alliance as in force.`;
+  if (fx === "ended" || fx === "hostile") return listed ? `The server's records still list ${A.name} and ${B.name} as allies; ${own} treats the alliance as ended.`
+    : fx === "hostile" && !(A.enemies.includes(B.name) || B.enemies.includes(A.name)) ? "Neither has yet declared the other an enemy in the server's records." : "";
+  return "";
+}
+// how a report is described when it is the basis of a judgment
+// a report's summary for use inside a sentence: "The Imperium Party..." becomes "the Imperium Party...", names keep their capitals
+const sigClause = s => stripDot(s.summary.replace(/^(The|A|An|Several|Two|Three|Members|Reports) /, w => w.toLowerCase()));
+const sigBasis = s => `${s.status === "announced_officially" ? "the official announcement" : s.status === "rumoured" ? "the rumour" : "the report"} of ${fmtDay(s.at)}`;
+const SIG_KIND = { war_or_hostility:"a diplomatic rupture", raid_or_attack_plan:"a reported attack", alliance:"a change of alliance", non_aggression_pact:"a non-aggression pact",
+  peace_or_truce:"a peace", merger_or_annexation:"a merger", town_transfer:"a transfer of territory", recruitment:"an open bid for allegiance", sanctions_or_trade:"a trade measure",
+  leadership_or_internal:"a change of government", server_news:"server news", other_intel:"a report" };
+// the opening of a summary: the weightiest reports, ahead of anything the scans show
+function intelLead(doc, ss, about, rel, period) {
+  if (!ss.length) return;
+  const [s, ...more] = ss, kind = s.type === "alliance" && sigEffect(s) === "ended" ? "the end of an alliance" : SIG_KIND[s.type] || "a report";
+  Para(doc, `The most significant development ${about ? `concerning ${about} ` : ""}${period} was ${kind}. ${sigFull(s, rel)}${more.length ? " " + more.map(x => sigFull(x, rel)).join(" ") : ""} ${rel ? "The Kingdom" : "The Ministry"} gives announcements of this kind precedence over what the scans alone suggest, and the judgments that follow are read in their light.`);
+  ss.forEach(x => useSig(doc, x));
 }
 
 // ---- the history of Terra Nostra, written from the Discord archives (meta "history", uploaded to the server) ----
@@ -4003,6 +4128,8 @@ function nationAssessment(n, p, releasable) {
   const stanceWord = STANCE[a.stance].label.toLowerCase(), why = reasonsAs(a, persp && persp !== home ? persp.name : null);
 
   Head(doc, "Summary");
+  const intel = intelOn(n.name).filter(s => !(releasable && s.type === "recruitment"));
+  intelLead(doc, intel.filter(s => s.importance >= 3).slice(0, 2), n.name, releasable, "in the past fortnight");
   Para(doc, `${n.name} is ${size}, ranked ${ordinal(rank)} of ${N} nations by overall strength and ${ordinal(rankA)} by active membership. It holds ${plural(live.length, "town")} with ${plural(n.residents, "resident")}, of whom ${nf(n.active30)} were active in the last thirty days, and controls ${plural(n.chunks, "chunk")} of territory with ${gold(goldOf(n))} held in its town banks. On the evidence of the archive it ${mom}: over the period under review its active membership has ${moved(anyDelta(X.tA))} and its territory has ${moved(anyDelta(X.tC), " chunks")}.`);
   // allies are told of declared enmity, not of how the Kingdom rates a nation
   const posture = !persp || persp === n ? "" : !releasable ? `The Ministry assesses ${n.name}'s posture toward ${persp.name} as ${stanceWord}${why.length ? `, because it is ${andList(why.slice(0, 3))}` : ""}. `
@@ -4010,7 +4137,8 @@ function nationAssessment(n, p, releasable) {
   Para(doc, `${posture}The most likely development is that ${lcFirst(clause(X.likely.text), n.name)}, which the Ministry judges ${X.likely.likelihood}. ${X.dangerous && X.dangerous !== X.likely ? `The most dangerous development for ${persp?.name || "the Kingdom"} would be that ${lcFirst(clause(X.dangerous.text), n.name)}; this is judged ${X.dangerous.likelihood}. ` : ""}The risk that ${n.name} itself loses towns or territory in the next thirty days is assessed as ${riskLevel(a.risk).label.toLowerCase()}, with a score of ${a.risk} out of 100.`);
 
   Head(doc, "Key Judgments");
-  const kjs = X.coas.filter(x => x.s >= 0.2 && (x.key !== "status" || X.coas.length === 1)).slice(0, 4);
+  // judgments resting on announcements come first
+  const kjs = [...X.coas.filter(x => x.intel), ...X.coas.filter(x => !x.intel)].filter(x => x.s >= 0.2 && (x.key !== "status" || X.coas.length === 1)).slice(0, 4);
   for (const x of kjs) Para(doc, `The Ministry judges it ${x.likelihood} (${x.conf} confidence) that ${lcFirst(clause(x.text), n.name)}. ${reasonFor(x, n, X, persp)}`);
   Para(doc, `The Ministry assesses with ${X.conf} confidence that ${n.name}'s risk of losing towns or land in the next thirty days is ${riskLevel(a.risk).label.toLowerCase()}. ${a.falling ? `${plural(a.falling, "town")} could fall within three days, ` : ""}${a.take ? `${plural(a.take, "chunk")} of its territory can already be overclaimed, ` : ""}and ${a.activeRate != null ? `${Math.round(a.activeRate * 100)} per cent of the members whose activity was checked have been online in the last month` : "member activity could not be fully checked"}.`);
 
@@ -4022,11 +4150,22 @@ function nationAssessment(n, p, releasable) {
   const dipl = ev30.filter(e => /^(ally|enemy)_/.test(e.type) && e.ns[0] === n.name);
   Para(doc, ev30.length ? `Over the past thirty days the archive recorded ${plural(founded, "new town")} founded within ${n.name} and ${plural(lost, "town")} lost to ruin or deletion. ${gainedD || lostD ? `${plural(gainedD, "town")} joined from other nations while ${plural(lostD, "town")} left. ` : "No towns changed allegiance. "}${dipl.length ? `Its government made ${plural(dipl.length, "diplomatic change")} in the same period, most recently when it ${eventText(dipl[dipl.length - 1], n.name)} on ${fmtDay(dipl[dipl.length - 1].at)}.` : "Its alliances and enmities were unchanged."}`
     : ARCHIVE.scans > 1 ? `No significant changes to ${n.name}'s towns or diplomacy have been recorded in the past thirty days.` : `Activity is recorded by comparing successive collections; the archive will begin logging changes for ${n.name} from the next scan.`);
+  // towns reported changing sides, checked against the scans
+  const moves = intel.filter(s => s.type === "town_transfer" || s.type === "merger_or_annexation").filter(s => !doc.usedSig?.has(s)).slice(0, 3);
+  if (moves.length) { Para(doc, moves.map(s => sigFull(s, releasable)).join(" ")); moves.forEach(s => useSig(doc, s)); }
 
   Head(doc, "Leadership and Internal Cohesion");
+  // a government announced in the channels comes before what the server's records say about the leader
+  const gov = intel.find(s => s.type === "leadership_or_internal");
+  if (gov) { const own = releasable ? "the Kingdom" : "the Ministry";
+    Para(doc, gov.status !== "announced_officially" ? `${sigFull(gov, releasable)} The report has not been confirmed by the government itself.`
+      : doc.usedSig?.has(gov) ? `${cap1(own)} treats the government announced on ${fmtDay(gov.at)}, described above, as the one that speaks for ${n.name}.`
+      : `${sigFull(gov, releasable)} ${cap1(own)} treats it as the government that speaks for ${n.name}.`);
+    useSig(doc, gov); }
   const capA = cap ? ` The capital, ${cap.name}, is a town of ${plural(cap.blocks || 0, "chunk")} ${cap.checked >= cap.count ? `with ${cap.active} of its ${cap.count} residents active` : `with ${plural(cap.count, "resident")}`}.` : "";
-  Para(doc, !n.king ? `The API did not report ${n.name}'s leadership, so the Ministry cannot assess the stability of its government directly.${capA}` : n.kingLast == null ? `${n.name} is led by ${n.king}, whose recent activity was not checked in this collection.${capA}`
-    : `${n.name} is led by ${n.king}, who was last online ${proseDur(Date.now() - n.kingLast)} ago. ${X.leaderLeft != null && X.leaderLeft <= 0 ? `This is beyond the ${days()}-day inactivity limit, and the Ministry expects leadership to pass to another member at the next daily purge, a transition that typically brings a period of uncertain direction.` : X.leaderLeft != null && X.leaderLeft < 14 ? `At this rate the leader will reach the inactivity limit around ${fmtDay(Date.now() + X.leaderLeft * DAY)}, after which leadership would pass to another member. A single login before then would reset the clock.` : "The leader is comfortably within the inactivity limit, and the Ministry sees no sign of an imminent change of government."}${capA}`);
+  const ledBy = `${gov ? "In the server's records " : ""}${n.name} is led by ${n.king}`;
+  Para(doc, !n.king ? `The API did not report ${n.name}'s leadership, so the Ministry cannot assess the stability of its government directly.${capA}` : n.kingLast == null ? `${ledBy}, whose recent activity was not checked in this collection.${capA}`
+    : `${ledBy}, who was last online ${proseDur(Date.now() - n.kingLast)} ago. ${X.leaderLeft != null && X.leaderLeft <= 0 ? `This is beyond the ${days()}-day inactivity limit, and the Ministry expects leadership to pass to another member at the next daily purge, a transition that typically brings a period of uncertain direction.` : X.leaderLeft != null && X.leaderLeft < 14 ? `At this rate the leader will reach the inactivity limit around ${fmtDay(Date.now() + X.leaderLeft * DAY)}, after which leadership would pass to another member. A single login before then would reset the clock.` : "The leader is comfortably within the inactivity limit, and the Ministry sees no sign of an imminent change of government."}${capA}`);
   const dead = live.filter(t => t.count && t.checked >= t.count && t.active === 0), med = medianOf(nations.map(x => assess(x).activeRate ?? 0.5));
   Para(doc, `${a.activeRate != null ? `Of the members whose activity was checked, ${Math.round(a.activeRate * 100)} per cent have been online in the last thirty days, against a server median of ${Math.round(med * 100)} per cent; ${nf(n.active7)} were online in the last week alone. ` : ""}${dead.length ? `${plural(dead.length, "town")} ha${dead.length === 1 ? "s" : "ve"} no active residents at all${dead.length <= 5 ? `: ${andList(dead.map(t => t.name))}` : `, including ${andList(dead.slice(0, 4).map(t => t.name))}`}. ` : "Every town checked has at least one active resident. "}${live.filter(mayorReplaced).length ? `In ${plural(live.filter(mayorReplaced).length, "town")} the mayor has exceeded the inactivity limit and is being replaced by another resident.` : ""} Taken together, the Ministry assesses ${n.name}'s internal cohesion as ${a.activeRate == null ? "uncertain" : a.activeRate >= med + 0.1 ? "strong" : a.activeRate >= med - 0.1 ? "typical for the server" : "weak"}.`);
   populationPara(doc, n);
@@ -4050,14 +4189,22 @@ function nationAssessment(n, p, releasable) {
 
   Head(doc, "Foreign Relations");
   const descr = name => { const m = findNation(name); if (!m) return name; const ma = assess(m, persp?.name); return `${name} (strength ${ma.strength}, ${m.active30} active members${persp && persp !== m ? `, ${STANCE[ma.stance].label.toLowerCase()} toward ${persp.name}` : ""})`; };
-  Para(doc, n.allies.length ? `${n.name} is formally allied with ${plural(n.allies.length, "nation")}: ${andList(n.allies.map(descr))}. Together these allies command ${nf(n.allies.reduce((s, x) => s + (findNation(x)?.active30 || 0), 0))} active members.` : `${n.name} has no formal allies, which leaves it without guaranteed support if it is attacked.`);
+  // announced relations first: what has changed since the server's lists were last updated
+  const nAl = alliesNow(n), dropped = n.allies.filter(x => !nAl.includes(x)), added = nAl.filter(x => !n.allies.includes(x)), odds = atOddsWith(n);
+  const relSig = [...new Set([...dropped, ...added, ...odds].map(x => relOverride(n.name, x)?.s).filter(Boolean))].sort(sigOrder);
+  if (relSig.length) {
+    const fresh = relSig.filter(s => !doc.usedSig?.has(s)), own = releasable ? "the Kingdom" : "the Ministry";
+    Para(doc, `${fresh.map(s => sigSentence(s, releasable)).join(" ")} ${dropped.length ? `The server's records still list ${andList(dropped)} among ${n.name}'s allies, but ${own} treats ${dropped.length === 1 ? "that alliance" : "those alliances"} as ended. ` : ""}${added.length ? `The server's lists do not yet show ${n.name}'s alliance with ${andList(added)}, which ${own} treats as in force. ` : ""}${(u => u.length ? `No enmity has yet been declared in the server's records between ${n.name} and ${andList(u)}, but ${u.length === 1 ? "the two are" : "it is"} openly at odds${u.length === 1 ? "" : " with each of them"}.` : "")(odds.filter(x => !n.enemies.includes(x)))}`);
+    relSig.forEach(s => useSig(doc, s));
+  }
+  Para(doc, nAl.length ? `${n.name} is ${relSig.length ? "now " : "formally "}allied with ${plural(nAl.length, "nation")}: ${andList(nAl.map(descr))}. Together these allies command ${nf(nAl.reduce((s, x) => s + (findNation(x)?.active30 || 0), 0))} active members.` : `${n.name} has no ${relSig.length ? "remaining" : "formal"} allies, which leaves it without guaranteed support if it is attacked.`);
   Para(doc, n.enemies.length ? `It has declared ${plural(n.enemies.length, "enemy", "enemies")}: ${andList(n.enemies.map(descr))}.` : `It has declared no enemies.`);
   if (persp && persp !== n) {
-    const bloc = [n, ...n.allies.map(findNation).filter(Boolean)], pbloc = [persp, ...persp.allies.map(findNation).filter(Boolean)];
+    const bloc = [n, ...nAl.map(findNation).filter(Boolean)], pbloc = [persp, ...alliesNow(persp).map(findNation).filter(Boolean)];
     Para(doc, `${why.length ? `From ${persp.name}'s position, the significant facts are that ${n.name} is ${andList(why)}. ` : `${n.name} has no direct or indirect ties to ${persp.name}. `}Measured by active members, ${n.name} and its allies field ${nf(bloc.reduce((s, x) => s + x.active30, 0))} against ${nf(pbloc.reduce((s, x) => s + x.active30, 0))} for ${persp.name} and its allies.`);
   }
   const partner = X.coas.find(x => x.key === "realign"), dip14 = eventsFor(n.name, 14).filter(e => /^(ally|enemy)_/.test(e.type));
-  Para(doc, `${dip14.length ? `In the past fortnight ${n.name}'s diplomatic position has moved: ${andList(dip14.slice(-4).map(e => `on ${fmtDay(e.at)} it ${eventText(e, n.name)}`))}. ` : "Its diplomatic position has been static for at least a fortnight. "}${partner ? `${partner.text.replace(/\.$/, "")}; the Ministry judges this ${partner.likelihood}.` : ""}`);
+  Para(doc, `${dip14.length ? `In the past fortnight ${n.name}'s diplomatic position has moved: ${andList(dip14.slice(-4).map(e => `on ${fmtDay(e.at)} it ${eventText(e, n.name)}`))}. ` : relSig.length ? "The server's records show no change to its alliances or enmities in the past fortnight, so the announcements above are ahead of them. " : "Its diplomatic position has been static for at least a fortnight. "}${partner ? `${partner.text.replace(/\.$/, "")}; the Ministry judges this ${partner.likelihood}.` : ""}`);
 
   movementSection(doc, n, persp, releasable);
   signalsSection(doc, n, releasable);
@@ -4074,7 +4221,8 @@ function nationAssessment(n, p, releasable) {
 
   Head(doc, "Outlook and Scenarios");
   const alt = X.coas.find(x => x !== X.likely && x !== X.dangerous && x.key !== "status");
-  Para(doc, `The most likely scenario over the coming week is that ${lcFirst(clause(X.likely.text), n.name)} (${X.likely.likelihood}, ${X.likely.conf} confidence). ${reasonFor(X.likely, n, X, persp)} The Ministry would regard ${X.likely.key === "expand" ? "new towns or claims along the same axis" : X.likely.key === "contract" ? "further towns ruining or residents leaving" : X.likely.key === "succession" ? "the leader remaining offline past the limit" : "the continuation of current trends"} as confirmation.`);
+  Para(doc, `The most likely scenario over the coming week is that ${lcFirst(clause(X.likely.text), n.name)} (${X.likely.likelihood}, ${X.likely.conf} confidence). ${reasonFor(X.likely, n, X, persp)} ${releasable ? "The Kingdom" : "The Ministry"} would regard ${{ expand:"new towns or claims along the same axis", contract:"further towns ruining or residents leaving", succession:"the leader remaining offline past the limit",
+    dispute:"a declaration of enmity or a formal reply from the other side", patron:"talks with a new partner, or an alliance appearing in the server's records", defect:"another town changing sides" }[X.likely.key] || "the continuation of current trends"} as confirmation.`);
   if (X.dangerous && X.dangerous !== X.likely) Para(doc, `The most dangerous scenario for ${persp?.name || "the Kingdom"} is that ${lcFirst(clause(X.dangerous.text), n.name)} (${X.dangerous.likelihood}). Early warning would come from new enemy declarations, a simultaneous rise in activity and treasury, or claims appearing close to ${persp?.name || "our"} towns.`);
   if (alt) Para(doc, `An alternative development is that ${lcFirst(clause(alt.text), n.name)} (${alt.likelihood}).`);
   const proj = (t, cur, d) => t?.slope != null ? Math.max(0, Math.round(cur + t.slope * d)) : null;
@@ -4094,6 +4242,11 @@ function nationAssessment(n, p, releasable) {
     if (["ally", "friendly"].includes(a.stance) && (X.ruin7.length || a.risk >= 45)) recs.push(`The Crown should issue ${n.name} a Support Assessment, drawing attention to ${X.ruin7.length ? `the ${plural(X.ruin7.length, "town")} at risk this week` : "its elevated risk"}.`);
     if (X.dangerous) recs.push(`Border towns facing ${n.name} should be kept active and within their claim limits, and the indicators described under Outlook monitored at each collection.`);
     if (partner && a.stance === "hostile") recs.push(`Diplomatic contact should be made with the nation ${n.name} appears to be courting before an alignment is formalised.`);
+    // an announced opening is the cheapest diplomatic gain there is
+    const patron = X.coas.find(x => x.key === "patron" && x.offer);
+    if (patron && n !== home && a.stance !== "hostile") recs.push(`The Crown should open talks with ${n.name}, which has said publicly that it will accept a new patron${patron.offer.contact ? `; its named point of contact is ${patron.offer.contact}` : ""}. An approach made before a rival bloc absorbs it costs little.`);
+    const rivalry = X.coas.find(x => x.key === "dispute" && x.danger >= 0.5);
+    if (rivalry && persp === home) recs.push(`Because ${lcFirst(clause(rivalry.text), n.name)} and the dispute touches the Kingdom or its allies, the War Room should mark the border towns on both sides and the Ministry should watch for a declaration of enmity at each collection.`);
     if (!recs.length) recs.push(`No action is required at present. Routine collection should continue so that any change in ${n.name}'s posture is detected early.`);
     recs.forEach(r => Para(doc, r));
   }
@@ -4118,6 +4271,7 @@ function supportAssessment(n, releasable) {
   Head(doc, "Purpose");
   Para(doc, `The Kingdom of The Bleeding Heart prepares this assessment for the Government of ${n.name} as a friend. It sets out, from the data the Kingdom's Ministry of Intelligence collects across Terra Nostra, the risks ${n.name} currently faces, the nations that threaten it, the towns that need attention, and the steps the Ministry recommends.${releasable ? "" : ` It draws on ${basisLine(n.name).replace(/\.$/, "")}.`}`);
   Head(doc, "Summary");
+  intelLead(doc, intelOn(n.name).filter(s => s.importance >= 3 && s.type !== "recruitment").slice(0, 1), n.name, releasable, "in the past fortnight");
   Para(doc, `The Ministry assesses ${n.name}'s overall risk as ${riskLevel(a.risk).label.toLowerCase()}, with a score of ${a.risk} out of 100. ${threats.length ? `The principal external threat${threats.length > 1 ? "s are" : " is"} ${andList(threats.slice(0, 2).map(t => t.n.name))}.` : "No nation currently shows hostile intent toward it."} ${X.ruin7.length + over.length ? `${plural(X.ruin7.length + over.length, "town")} need${X.ruin7.length + over.length === 1 ? "s" : ""} attention within the next seven days.` : "None of its towns is in immediate danger."} ${X.leaderLeft != null && X.leaderLeft < 14 ? `Leadership continuity is also at risk: ${n.king} must log in within ${plural(Math.max(0, Math.ceil(X.leaderLeft)), "day")} to retain the leadership.` : ""} Over the period under review its active membership has ${moved(anyDelta(X.tA))}, which the Ministry reads as ${X.gA > 0.04 ? "a nation gaining strength" : X.gA < -0.04 ? "a nation losing strength" : "broad stability"}.`);
   Head(doc, "Assessment of Risk");
   Para(doc, `The most immediate risk to any nation on Terra Nostra is the loss of towns to inactivity: a town falls to ruin once none of its residents has logged in for ${days()} days, and its contents can then be taken by anyone. ${X.ruin7.length ? `${plural(X.ruin7.length, "of the nation's towns")} will cross that threshold within seven days if nothing changes.` : `None of ${n.name}'s towns will cross that threshold within seven days on current activity.`}`);
@@ -4125,7 +4279,7 @@ function supportAssessment(n, releasable) {
   Para(doc, `Underlying both is the nation's level of activity. ${a.activeRate != null ? `${Math.round(a.activeRate * 100)} per cent of the members whose activity was checked have been online in the last thirty days, and ${nf(n.active7)} members were online in the last week.` : "Member activity could not be fully checked."} ${lowAct.length ? `In ${plural(lowAct.length, "town")}, fewer than a third of residents are active, which leaves them exposed to both risks over the coming weeks.` : ""} ${a.leaderGone ? "The leader has passed the inactivity limit, so leadership will change at the next daily purge." : ""}`);
   Head(doc, "Threat Assessment");
   if (threats.length) {
-    for (const t of threats.slice(0, 4)) Para(doc, `${t.n.name} (strength ${t.a.strength} of 100, ${t.n.active30} active members) is assessed as ${STANCE[t.a.stance].label.toLowerCase()} toward ${n.name} with a hostility score of ${t.a.hostility}${t.a.reasons.length ? `, because it is ${andList(reasonsAs(t.a, n.name).slice(0, 3))}` : ""}. ${t.a.contact ? `${plural(t.a.contact, "of its towns")} lie within ${nf(CONTACT_RANGE)} blocks of ${n.name}'s. ` : "It does not border the nation directly. "}${t.tA != null ? `Its active membership has ${moved(t.tA)} over the period.` : ""} ${(tv => tv.length ? ` Its members were observed on ${plural(tv.length, "visit")} into ${n.name}'s territory this week, ${plural(tv.filter(v => v.purpose === RECON).length, "of them", "of them")} assessed as reconnaissance.` : "")(hasMoves() ? visitsBetween(t.n.name, n.name, Date.now() - 7 * DAY) : [])} The Ministry judges that ${lcFirst(clause(anticipate(t.n, n).likely.text), t.n.name)}.`);
+    for (const t of threats.slice(0, 4)) Para(doc, `${t.n.name} (strength ${t.a.strength} of 100, ${t.n.active30} active members) is assessed as ${STANCE[t.a.stance].label.toLowerCase()} toward ${n.name} with a hostility score of ${t.a.hostility}${t.a.reasons.length ? `, because it is ${andList(reasonsAs(t.a, n.name).slice(0, 3))}` : ""}. ${t.a.contact ? `${plural(t.a.contact, "of its towns")} lie within ${nf(CONTACT_RANGE)} blocks of ${n.name}'s. ` : "It does not border the nation directly. "}${t.tA != null ? `Its active membership has ${moved(t.tA)} over the period.` : ""} ${(tv => tv.length ? ` Its members were observed on ${plural(tv.length, "visit")} into ${n.name}'s territory this week, ${plural(tv.filter(v => v.purpose === RECON).length, "of them", "of them")} assessed as reconnaissance.` : "")(hasMoves() ? visitsBetween(t.n.name, n.name, Date.now() - 7 * DAY) : [])} The Ministry judges that ${lcFirst(clause(anticipate(t.n, n).likely.text), t.n.name)}.${(r => r?.effect === "hostile" ? (doc.usedSig?.has(r.s) ? ` The dispute is the one described in the summary, announced on ${fmtDay(r.s.at)}.` : " " + sigFull(r.s, releasable)) + (useSig(doc, r.s), "") : "")(relOverride(t.n.name, n.name))}`);
   } else Para(doc, `No nation currently shows hostile indicators toward ${n.name}. The Ministry will notify the Government promptly if that changes.`);
   Head(doc, "Holdings at Risk");
   if (X.ruin7.length) Para(doc, `The following towns will fall to ruin unless a resident logs in: ${andList(X.ruin7.slice(0, 10).map(t => `${t.name}, whose mayor is ${t.mayor}, before ${fmtDay(Date.now() + Math.max(0, etaOf(t)))}`))}${X.ruin7.length > 10 ? `, and ${X.ruin7.length - 10} others listed in Annex C` : ""}.`);
@@ -4133,7 +4287,9 @@ function supportAssessment(n, releasable) {
   if (lowAct.length) Para(doc, `Activity is low in ${andList(lowAct.slice(0, 6).map(t => `${t.name} (${t.active} of ${t.count} active)`))}. These towns are not in immediate danger but will become so if activity does not recover.`);
   if (!X.ruin7.length && !over.length && !lowAct.length) Para(doc, `No individual towns are at immediate risk.`);
   Head(doc, "Allies and Support Network");
-  Para(doc, n.allies.length ? `${n.name}'s allies, ${andList(n.allies.map(x => { const m = findNation(x); return m ? `${x} (${m.active30} active members)` : x; }))}, command ${nf(n.allies.reduce((s, x) => s + (findNation(x)?.active30 || 0), 0))} active members between them. ${threats[0] ? (() => { const shared = nations.filter(m => m !== n && m.enemies.includes(threats[0].n.name) && !n.allies.includes(m.name)).slice(0, 3); return shared.length ? `${andList(shared.map(m => m.name))} also count${shared.length === 1 ? "s" : ""} ${threats[0].n.name} as an enemy and may be natural partners.` : ""; })() : ""}` : `${n.name} has no formal allies. The Ministry recommends it consider at least one defensive alliance.`);
+  const sAl = alliesNow(n), sDrop = n.allies.filter(x => !sAl.includes(x));
+  Para(doc, sAl.length ? `${n.name}'s allies, ${andList(sAl.map(x => { const m = findNation(x); return m ? `${x} (${m.active30} active members)` : x; }))}, command ${nf(sAl.reduce((s, x) => s + (findNation(x)?.active30 || 0), 0))} active members between them. ${threats[0] ? (() => { const shared = nations.filter(m => m !== n && m.enemies.includes(threats[0].n.name) && !sAl.includes(m.name)).slice(0, 3); return shared.length ? `${andList(shared.map(m => m.name))} also count${shared.length === 1 ? "s" : ""} ${threats[0].n.name} as an enemy and may be natural partners.` : ""; })() : ""}` : `${n.name} has no ${sDrop.length ? "remaining" : "formal"} allies. The Ministry recommends it consider at least one defensive alliance.`);
+  if (sDrop.length) Para(doc, `The server's records still list ${andList(sDrop)} among ${n.name}'s allies, but ${sDrop.length === 1 ? "that alliance has" : "those alliances have"} since been reported ended, and the Kingdom does not count on ${sDrop.length === 1 ? "it" : "them"}. ${sDrop.map(x => relOverride(n.name, x)?.s).filter(s => s && !doc.usedSig?.has(s)).map(s => sigSentence(s, releasable)).join(" ")}`);
   Head(doc, "Outlook");
   Para(doc, `The Ministry judges it ${X.likely.likelihood} that ${lcFirst(clause(X.likely.text), n.name)}. ${X.tA?.slope != null ? `On current trends, active membership will be about ${nf(Math.max(0, Math.round(n.active30 + X.tA.slope * 7)))} in seven days.` : ""} ${X.ruin7.length || over.length ? "Prompt action on the towns named above would materially improve this outlook." : "The nation is in a sound position provided activity is maintained."}`);
   Head(doc, "Recommended Actions");
@@ -4165,7 +4321,9 @@ function intsum(releasable) {
   const rising = movers.filter(x => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 5), falling = movers.filter(x => x.d < 0).sort((a, b) => a.d - b.d).slice(0, 5);
   const by = t => ev24.filter(e => e.type === t);
   Head(doc, "Summary");
-  Para(doc, `${threats[0] ? `${threats[0].n.name} remains the principal threat to the Kingdom${releasable ? " and its allies" : `, with a hostility score of ${threats[0].a.hostility} and a strength of ${threats[0].a.strength}`}. ` : "No nation currently shows hostile intent toward the Kingdom. "}${by("town_ruin").length ? `${plural(by("town_ruin").length, "town")} fell to ruin in the last twenty-four hours, ` : "No towns fell to ruin in the last twenty-four hours, "}and ${ruin72.length ? `${plural(ruin72.length, "more", "more")} ${ruin72.length === 1 ? "is" : "are"} forecast to fall within seventy-two hours` : "none is forecast to fall within seventy-two hours"}. ${ev7.filter(e => /^(ally|enemy)_add/.test(e.type)).length ? `The week brought ${plural(ev7.filter(e => /^(ally|enemy)_add/.test(e.type)).length, "new alliance or enmity", "new alliances or enmities")}, a sign of diplomatic movement.` : "The diplomatic map has been quiet this week."} ${critical.length ? `${plural(critical.length, "nation")} ${critical.length === 1 ? "is" : "are"} at critical risk: ${andList(critical.slice(0, 4).map(n => n.name))}.` : ""}`);
+  intelLead(doc, intsumSignals(releasable).filter(s => s.importance >= 4).slice(0, 1), null, releasable, "in the last three days");
+  Para(doc, `${threats[0] ? `${threats[0].n.name} remains the principal threat to the Kingdom${releasable ? " and its allies" : `, with a hostility score of ${threats[0].a.hostility} and a strength of ${threats[0].a.strength}`}. ` : "No nation currently shows hostile intent toward the Kingdom. "}${by("town_ruin").length ? `${plural(by("town_ruin").length, "town")} fell to ruin in the last twenty-four hours, ` : "No towns fell to ruin in the last twenty-four hours, "}and ${ruin72.length ? `${plural(ruin72.length, "more", "more")} ${ruin72.length === 1 ? "is" : "are"} forecast to fall within seventy-two hours` : "none is forecast to fall within seventy-two hours"}. ${ev7.filter(e => /^(ally|enemy)_add/.test(e.type)).length ? `The week brought ${plural(ev7.filter(e => /^(ally|enemy)_add/.test(e.type)).length, "new alliance or enmity", "new alliances or enmities")}, a sign of diplomatic movement.` : doc.usedSig?.size || SIGNALS.some(s => s.at >= Date.now() - 7 * DAY && sigEffect(s)) ? "The server's records show no new alliance or enmity this week, but the announcements in the channels show the diplomatic map moving ahead of them." : "The diplomatic map has been quiet this week."} ${critical.length ? `${plural(critical.length, "nation")} ${critical.length === 1 ? "is" : "are"} at critical risk: ${andList(critical.slice(0, 4).map(n => n.name))}.` : ""}`);
+  signalsIntsum(doc, releasable);
   Head(doc, "Significant Activity in the Last Twenty-Four Hours");
   if (!ev24.length) Para(doc, ARCHIVE.scans > 1 ? "No significant changes were recorded in the last twenty-four hours." : "This is the first collection in the archive; activity will be recorded from the next scan.");
   else {
@@ -4194,17 +4352,23 @@ function intsum(releasable) {
     const raid = towns.filter(t => isSoon(t) && t.nation !== home?.name && !["ally", "friendly"].includes(map.get(t.nation)?.stance)).slice(0, 5);
     const oc = towns.filter(t => isOverclaimable(t) && t.nation !== home?.name && !["ally", "friendly"].includes(map.get(t.nation)?.stance)).sort((a, b) => overclaim(b).takeable - overclaim(a).takeable).slice(0, 5);
     Para(doc, raid.length ? `Raiding opportunities over the next few days include ${andList(raid.map(t => `${t.name}${t.nation ? ` (${t.nation})` : ""}, ${stateOf(t).text.toLowerCase()}`))}.` : "No raiding opportunities are expected in the next three days.");
+    // nations that have said they will take a new patron, with whoever speaks for them
+    const offers = SIGNALS.filter(s => s.type === "recruitment" && s.last >= Date.now() - 7 * DAY && /\b(join|patron|empire|meganation|open to)/i.test(s.summary)).sort(sigOrder).slice(0, 3)
+      .filter(s => s.nations.some(x => { const m = findNation(x); return m && m !== home && map.get(m.name)?.stance !== "hostile"; }));
+    if (offers.length) Para(doc, `On the diplomatic side, ${andList(offers.map(s => `${s.nations[0]} has said publicly that it will accept a new patron${s.contact ? `, naming ${s.contact} as its contact` : ""}`))}. An early approach costs little and would add ${offers.length === 1 ? "its" : "their"} towns to the Kingdom's side before a rival bloc absorbs ${offers.length === 1 ? "it" : "them"}.`);
     Para(doc, oc.length ? `The largest overclaim opportunities are ${andList(oc.map(t => `${t.name}${t.nation ? ` of ${t.nation}` : ""} with ${plural(overclaim(t).takeable, "chunk")}`))}.` : "There are no significant overclaim opportunities against non-allied towns.");
   }
   Head(doc, "Shifts in the Balance of Power");
   Para(doc, movers.length ? `${rising.length ? `The fastest-growing nations by active membership are ${andList(rising.map(x => `${x.n.name} (${signed(x.d)})`))}. ` : ""}${falling.length ? `The steepest declines are in ${andList(falling.map(x => `${x.n.name} (${signed(x.d)})`))}. ` : ""}${home ? `Over the same period the Kingdom's own active membership has ${moved(anyDelta(trend(home.name, "a30")))}.` : ""}` : "Shifts in the balance of power become measurable once the archive holds at least two collections.");
   Head(doc, "Diplomatic Developments This Week");
   const dip7 = ev7.filter(e => /^(ally|enemy)_/.test(e.type) && !ev7.some(o => o.type === e.type && o.ns[0] === e.who && o.who === e.ns[0] && o.ns[0] < e.ns[0]));
-  const byDay = [...dip7.slice(-10).reduce((m, e) => m.set(fmtDay(e.at), [...(m.get(fmtDay(e.at)) || []), eventText(e, null)]), new Map())];
-  Para(doc, byDay.length ? byDay.map(([d, xs]) => `On ${d}, ${andList(xs)}.`).join(" ") : "No alliances or enmities were made or broken this week.");
+  // the server's own changes and the week's announced ones, by day; reports already given above are not repeated
+  const dipSig = SIGNALS.filter(s => s.at >= Date.now() - 7 * DAY && sigEffect(s) && !doc.usedSig?.has(s));
+  const dayItems = [...dip7.slice(-10).map(e => [e.at, eventText(e, null)]), ...dipSig.slice(0, 6).map(s => [s.at, `${sigClause(s)} (${s.status === "announced_officially" ? "announced" : "reported"})`])].sort((a, b) => a[0] - b[0]);
+  const byDay = [...dayItems.reduce((m, [at, x]) => m.set(fmtDay(at), [...(m.get(fmtDay(at)) || []), x]), new Map())];
+  Para(doc, byDay.length ? byDay.map(([d, xs]) => `On ${d}, ${andList(xs)}.`).join(" ") : doc.usedSig?.size ? "Beyond the announcements set out above, no alliances or enmities were made or broken in the server's records this week." : "No alliances or enmities were made or broken this week.");
   combatIntsum(doc, releasable);
   populationIntsum(doc, releasable);
-  signalsIntsum(doc, releasable);
   financeIntsum(doc, releasable);
   movementIntsum(doc, releasable);
   Head(doc, "Forecast for the Next Seventy-Two Hours");

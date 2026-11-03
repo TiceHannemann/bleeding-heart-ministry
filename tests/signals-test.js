@@ -41,7 +41,7 @@ global.__signalsClient = { beta:{ messages:{ create:async body => {
   await p.waitForFunction(() => typeof appReady !== 'undefined'); await p.evaluate(() => appReady);
   const out = await p.evaluate(([scan, ev]) => {
     hydrate(scan); SIGNALS = ev;
-    const pick = s => s.sections.filter((x, i, a) => { const h = a.slice(0, i + 1).reverse().find(y => y.type === 'h'); return h && /Open Channels/.test(h.text) && x.type === 'p'; }).map(x => x.text);
+    const pick = s => s.sections.filter((x, i, a) => { const h = a.slice(0, i + 1).reverse().find(y => y.type === 'h'); return h && /Open Channels|Diplomatic Intelligence/.test(h.text) && x.type === 'p'; }).map(x => x.text);
     const dk = findNation('Denmark');
     return { nation:dk ? pick(nationAssessment(dk, findNation('Bleeding_Heart'), false)) : ['Denmark not in this scan'], intsum:pick(intsum(false)) };
   }, [A.lastScan, ev]);

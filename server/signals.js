@@ -119,8 +119,14 @@ function merge(store, found, msgs) {
     if (!src.length || !e.nations.length) continue;
     const ev = { type:e.type, nations:e.nations, summary:e.summary, confidence:e.confidence, status:e.status, importance:e.importance,
       at:Math.min(...src.map(s => s.at)), last:Math.max(...src.map(s => s.at)), sources:src };
+    // relay items may say what the event does to a relationship, and who to approach (intel/RELAY-CONTRACT.md)
+    if (["formed", "ended", "hostile", "pact", "peace"].includes(e.relation)) ev.relation = e.relation;
+    const contact = typeof e.contact === "string" ? e.contact : e.evidence?.contact;
+    if (typeof contact === "string" && contact.trim()) ev.contact = contact.trim().slice(0, 120);
     const old = store.events.find(o => evKey(o) === evKey(ev));
     if (!old) { store.events.push(ev); continue; }
+    if (ev.relation && !old.relation) old.relation = ev.relation;
+    if (ev.contact && !old.contact) old.contact = ev.contact;
     const have = new Set(old.sources.map(s => s.id));
     old.sources.push(...src.filter(s => !have.has(s.id)));
     old.last = Math.max(old.last, ev.last); old.importance = Math.max(old.importance, ev.importance);
