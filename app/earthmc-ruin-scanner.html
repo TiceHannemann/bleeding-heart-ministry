@@ -48,13 +48,15 @@
   .s-body p { font-size:17px; color:#4d4f58; margin:0 0 32px; max-width:52ch; }
   .s-foot { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; font-size:12.5px; color:#7a7c85; border-top:1px solid #e3e4e8; padding-top:16px; }
   #sClock { font-family:var(--mono); }
-  /* the ministry picker: three icon buttons, nothing else */
-  .s-body { margin:auto; }
-  .p-depts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; width:min(660px,100%); }
-  .p-dept { aspect-ratio:1; background:#fff; border:1px solid #dcdde2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; cursor:pointer; font:inherit; color:#16171b;
+  /* the ministry picker: four icon buttons, nothing else. In a row when there is room for each to be square and its
+     label to breathe, two by two when there is not */
+  .s-body { margin:auto; width:min(760px,100%); }
+  .p-depts { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px; width:min(720px,100%); margin:0 auto; }
+  @media (max-width:1240px) { .p-depts { grid-template-columns:repeat(2,minmax(0,1fr)); width:min(440px,100%); } }
+  .p-dept { aspect-ratio:1; background:#fff; border:1px solid #dcdde2; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; padding:0 12px; cursor:pointer; font:inherit; color:#16171b; min-width:0;
     transition:color .2s, border-color .2s, box-shadow .25s, transform .25s var(--ease); }
   .p-dept svg.ico { width:46px; height:46px; stroke-width:1.3; transition:transform .35s var(--ease); }
-  .p-dept b { font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; }
+  .p-dept b { font-size:12px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; margin-right:-.2em; }
   .p-dept:hover, .p-dept:focus-visible { color:var(--mc); border-color:var(--mc); box-shadow:0 16px 36px rgba(22,23,27,.1); transform:translateY(-3px); outline:none; }
   .p-dept:hover svg { transform:scale(1.08); }
   .s-foot { justify-content:flex-end; border-top:0; }
@@ -69,7 +71,7 @@
     #portal { grid-template-columns:1fr; }
     .s-side { flex-direction:row; justify-content:flex-start; text-align:left; padding:18px 16px; gap:12px; border-right:0; border-bottom:1px solid #e3e4e8; }
     .s-crest { width:44px; margin:0; } .s-side b { font-size:15px; } .s-side span { display:none; }
-    .s-main { min-height:0; padding:20px 16px 28px; } .s-body { padding:28px 0; } .p-depts { gap:10px; } .p-dept svg.ico { width:34px; height:34px; } .p-dept b { font-size:10px; letter-spacing:.14em; }
+    .s-main { min-height:0; padding:20px 16px 28px; } .s-body { padding:28px 0; } .p-depts { gap:12px; } .p-dept svg.ico { width:34px; height:34px; } .p-dept b { font-size:10px; letter-spacing:.14em; }
   }
   /* Password gate */
   #gate { position:fixed; inset:0; z-index:95; display:flex; align-items:center; justify-content:center; padding:16px; background:rgba(22,23,27,.55); backdrop-filter:blur(6px); animation:fadeUp .25s var(--ease); }
@@ -1227,7 +1229,25 @@ const CACHE_MS = 30 * 60e3;
 const cache = { towns:{}, players:{}, nations:{} };
 try { Object.assign(cache, JSON.parse(localStorage.getItem("ruinHunterCache") || "{}")); } catch {}
 cache.nations ||= {};
-const saveCache = () => { try { localStorage.setItem("ruinHunterCache", JSON.stringify(cache)); } catch {} };
+// the cache lets a browser resume an interrupted scan. A full server's cache is far bigger than the few megabytes browser
+// storage holds, so saving it failed every time, after first building one string of the whole cache, every thousand
+// records. Only small caches are saved, and never on the Ministry server's own page
+const saveCache = () => {
+  if (window.BH_COLLECTOR) return;
+  let k = 0; for (const p in cache) k += Object.keys(cache[p]).length;
+  if (k > 3000) return;
+  try { localStorage.setItem("ruinHunterCache", JSON.stringify(cache)); } catch {}
+};
+// what a scan keeps of each record. Towns lose the lists nothing reads (quarters, outlaws, trusted players, permissions,
+// ranks, bank history, warps), about a third of their size. On the Ministry server's page, where nobody opens a
+// player's card, players keep only what the scan uses: last login, online, NPC and premium
+const TOWN_UNUSED = ["quarters", "outlaws", "trusted", "perms", "ranks", "bankhistory", "warps"];
+function slimRecord(path, x) {
+  if (path === "towns") { const t = { ...x }; for (const k of TOWN_UNUSED) delete t[k]; return t; }
+  if (path === "players" && window.BH_COLLECTOR) return { name:x.name, status:{ isOnline:!!x.status?.isOnline, isNPC:!!(x.status?.isNPC || x.isNPC) },
+    timestamps:{ lastOnline:x.timestamps?.lastOnline ?? null }, premium:isPremium(x) };
+  return x;
+}
 const fresh = (path, n) => cache[path][n] && Date.now() - cache[path][n].at < CACHE_MS;
 
 // EarthMC allows 180 requests per minute per player/IP (earthmc.net/docs/api).
@@ -1258,7 +1278,7 @@ async function batched(path, names, label, p0, p1) {
     try {
       const got = await post(path, group);
       const at = Date.now();
-      for (const item of got) if (item?.name) cache[path][item.name] = { at, data:item };
+      for (const item of got) if (item?.name) cache[path][item.name] = { at, data:slimRecord(path, item) };
       // names the API didn't return (deleted towns, renamed players) still count as checked
       for (const n of group) if (cache[path][n]?.at !== at) cache[path][n] = { at, data:null };
       done += group.length; fails = 0;

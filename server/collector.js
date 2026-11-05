@@ -140,23 +140,60 @@ function browser() {
 
 // the archive, for visitors' browsers: what their pages use, including the last scan and the Forecast Lab.
 // The server keeps every daily frame and event; visitors get the frames of the last ten days (the page compares
-// with a week ago) and the events of the last sixty (all the page loads), so the export stops growing every day.
-const gzip = require("util").promisify(zlib.gzip);
+// with a week ago), the events of the last sixty (all the page loads) and the Forecast Lab's open and latest checked
+// forecasts, so the export stops growing every day.
+// It is written a part at a time and a slice at a time: the page reads one part of its archive (the last scan, the
+// series, the events...), the server asks for it a few hundred records at a time and compresses them as they
+// arrive, and the page lets that part go before reading the next. Built as one string it sat in memory several times
+// over (every part at once in the page, the string, its copy in transit and here), which on a full server was
+// enough to run the container out of memory.
+const SLICE = 400;
+const PARTS = ["stats", "frame", "lastScan", "ml", "signals", "finance", "keyed", "history", "population", "combat", "tracks",
+  "series", "frameKeys", "frames", "events", "visits", "predictions"];
 async function exportArchive(page) {
-  const archive = await page.evaluate(() => idbDo(["meta", "series", "frames", "events", "visits", "predictions"], "readonly", async tx => {
+  const gz = path.join(DATA, "archive.json.gz"), tmp = gz + ".tmp";
+  const out = zlib.createGzip({ level:6 }), file = fs.createWriteStream(tmp);
+  const finished = new Promise((res, rej) => { file.on("finish", res); file.on("error", rej); out.on("error", rej); });
+  out.pipe(file);
+  const put = s => out.write(s) ? null : new Promise(r => out.once("drain", r));
+  // read one part into the page and say how to fetch it: long arrays in slices, an object's fields one by one
+  // (a map with many keys, such as names to last logins, is small per key and goes whole)
+  const load = k => page.evaluate(k => idbDo(["meta", "series", "frames", "events", "visits", "predictions"], "readonly", async tx => {
     const m = tx.objectStore("meta"), recent = IDBKeyRange.lowerBound(new Date(Date.now() - 10 * 864e5).toISOString().slice(0, 10));
-    return JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now(),
-      stats:await reqP(m.get("stats")), frame:await reqP(m.get("frame")), lastScan:await reqP(m.get("lastScan")), ml:await reqP(m.get("ml")),
-      signals:await reqP(m.get("signals")), finance:await reqP(m.get("finance")), keyed:await reqP(m.get("keyed")), history:await reqP(m.get("history")),
-      population:await reqP(m.get("population")), combat:await reqP(m.get("combat")), tracks:await reqP(m.get("tracks")),
-      series:await reqP(tx.objectStore("series").getAll()),
-      frameKeys:await reqP(tx.objectStore("frames").getAllKeys(recent)), frames:await reqP(tx.objectStore("frames").getAll(recent)),
-      events:await reqP(tx.objectStore("events").index("at").getAll(IDBKeyRange.lowerBound(Date.now() - 60 * 864e5))), visits:await reqP(tx.objectStore("visits").getAll()),
-      predictions:await reqP(tx.objectStore("predictions").getAll()) });
-  }));
-  // compressed off the main thread, so the site keeps answering while it works
-  const gz = path.join(DATA, "archive.json.gz");
-  fs.writeFileSync(gz + ".tmp", await gzip(archive, { level:6 })); fs.renameSync(gz + ".tmp", gz);
+    // the Forecast Lab's open forecasts and its latest checked ones (visitors' pages show thirty), not every forecast
+    // it has ever made, which grows by hundreds a day; what the checked ones taught the models is in its state ("ml")
+    const forecasts = async () => { const ix = tx.objectStore("predictions").index("status"), done = [];
+      await new Promise((res, rej) => { const c = ix.openCursor(IDBKeyRange.only("done"), "prev");
+        c.onsuccess = e => { const r = e.target.result; if (r && done.length < 200) { done.push(r.value); r.continue(); } else res(); }; c.onerror = () => rej(c.error); });
+      return [...done, ...await reqP(ix.getAll("open"))].sort((a, b) => a.id - b.id); };
+    const v = k === "predictions" ? await forecasts() : await reqP(k === "series" ? tx.objectStore("series").getAll() : k === "frameKeys" ? tx.objectStore("frames").getAllKeys(recent)
+      : k === "frames" ? tx.objectStore("frames").getAll(recent) : k === "events" ? tx.objectStore("events").index("at").getAll(IDBKeyRange.lowerBound(Date.now() - 60 * 864e5))
+      : k === "visits" ? tx.objectStore("visits").getAll() : m.get(k));
+    window.__exp = { [k]:v };
+    if (v === undefined) return null;
+    const len = x => Array.isArray(x) ? x.length : -1, obj = x => x && typeof x === "object" && !Array.isArray(x) && Object.keys(x).length <= 64;
+    return [len(v), obj(v) ? Object.keys(v).filter(j => v[j] !== undefined).map(j => [j, len(v[j])]) : null];
+  }), k);
+  const piece = p => page.evaluate(p => JSON.stringify(p.reduce((o, k) => o[k], window.__exp)), p);
+  const slices = async (p, n) => { await put("["); for (let i = 0; i < n; i += SLICE)
+    await put((i ? "," : "") + await page.evaluate(([p, i, s]) => JSON.stringify(p.reduce((o, k) => o[k], window.__exp).slice(i, i + s)).slice(1, -1), [p, i, SLICE])); await put("]"); };
+  const value = (p, n) => n > SLICE ? slices(p, n) : piece(p).then(put);
+  try {
+    await put(JSON.stringify({ kind:"bleeding-heart-archive", v:1, server:true, exported:Date.now() }).slice(0, -1));
+    for (const k of PARTS) {
+      const shape = await load(k);
+      if (shape) {
+        const [n, sub] = shape;
+        await put("," + JSON.stringify(k) + ":");
+        if (!sub) await value([k], n);
+        else { await put("{"); for (const [j, [s, m]] of sub.entries()) { await put((j ? "," : "") + JSON.stringify(s) + ":"); await value([k, s], m); } await put("}"); }
+      }
+      await page.evaluate(() => { delete window.__exp; });
+    }
+    await put("}"); out.end(); await finished;
+    fs.renameSync(tmp, gz);
+  } catch (e) { out.destroy(); file.destroy(); finished.catch(() => {}); throw e; }
+  finally { await page.evaluate(() => { delete window.__exp; }).catch(() => {}); }
   S.archiveVersion = String(Date.now()); save();
 }
 // banks come from the page's own scan (no extra requests); finance.js adds players, flows and property
@@ -189,6 +226,9 @@ async function pushPeople(page) {
 async function runOnce() {
   if (S.running) return;
   S.running = true; S.lastRun = Date.now(); save();
+  // never on top of the finance scan (forty-five thousand players): a scan retried after a failure can fall due at
+  // any minute, and the two together need more memory than either alone. S.running stops a new one starting meanwhile
+  for (let i = 0; finance.status().running && i < 60; i++) await new Promise(r => setTimeout(r, 30e3));
   const t0 = Date.now(), oom0 = memory()?.oomKills || 0;
   // the most memory the scan needed, sampled every few seconds, so the limit can be set from experience
   let peak = 0; const sample = setInterval(() => { peak = Math.max(peak, memory()?.usedMB || 0); }, 5e3);
@@ -235,34 +275,41 @@ async function runOnce() {
 
     await exportArchive(page);
 
-    // the reports: the daily summary (two releases), the leading threats, and our allies' support assessments
+    // the reports: the daily summary (two releases), the leading threats, and our allies' support assessments.
+    // The page lists them first, then writes them one at a time, so each report and its PDF can be let go before the next
     const docs = await page.evaluate(() => {
-      const b64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
       const home = findNation($("myNation").value);
       const live = n => n.towns.some(t => !t.ruined);
       const threats = nations.filter(n => n !== home && live(n) && !["home", "ally"].includes(assess(n, home?.name)?.stance))
         .sort((a, b) => (assess(b, home?.name)?.hostility || 0) * (assess(b).strength + 50) - (assess(a, home?.name)?.hostility || 0) * (assess(a).strength + 50) || b.active30 - a.active30).slice(0, 5);
       const allies = home ? nations.filter(n => n !== home && live(n) && assess(n, home.name)?.stance === "ally").sort((a, b) => assess(b).risk - assess(a).risk).slice(0, 3) : [];
-      const list = [
-        ["intsum", "Daily Intelligence Summary", "", intsum(false)],
-        ["intsum-allies", "Daily Intelligence Summary (releasable)", "", intsum(true)],
-        ...threats.map(n => ["assessment-" + n.name, "Intelligence Assessment", n.name, nationAssessment(n, home, false)]),
-        ...allies.map(n => ["support-" + n.name, "Support Assessment", n.name, supportAssessment(n, true)]),
+      window.__docs = [
+        ["intsum", "Daily Intelligence Summary", "", () => intsum(false)],
+        ["intsum-allies", "Daily Intelligence Summary (releasable)", "", () => intsum(true)],
+        ...threats.map(n => ["assessment-" + n.name, "Intelligence Assessment", n.name, () => nationAssessment(n, home, false)]),
+        ...allies.map(n => ["support-" + n.name, "Support Assessment", n.name, () => supportAssessment(n, true)]),
       ];
       return { home:home?.name || null, towns:towns.length, nations:nations.length, scans:ARCHIVE.scans,
-        events24h:ARCHIVE.events.filter(e => e.at > Date.now() - 864e5).length,
-        docs:list.map(([key, kind, subject, d]) => ({ key, kind, subject, title:d.docTitle, id:d.id, classification:d.classification,
-          lead:(d.sections.find(s => s.type === "p")?.text || "").slice(0, 900), text:docText(d), pdf:b64(briefingPdf(d)) })) };
+        events24h:ARCHIVE.events.filter(e => e.at > Date.now() - 864e5).length, count:window.__docs.length };
     });
 
     const at = new Date(), run = stamp(at), dir = path.join(RUNS, run);
     fs.mkdirSync(dir, { recursive:true });
-    const reports = docs.docs.map(d => {
-      const base = slug(d.key);
-      fs.writeFileSync(path.join(dir, base + ".pdf"), Buffer.from(d.pdf, "base64"));
-      fs.writeFileSync(path.join(dir, base + ".txt"), d.text);
-      return { pdf:base + ".pdf", txt:base + ".txt", kind:d.kind, subject:d.subject, title:d.title, id:d.id, classification:d.classification, lead:d.lead };
-    });
+    const reports = [];
+    try {
+      for (let i = 0; i < docs.count; i++) {
+        const d = await page.evaluate(i => {
+          const b64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
+          const [key, kind, subject, make] = window.__docs[i], d = make();
+          return { key, kind, subject, title:d.docTitle, id:d.id, classification:d.classification,
+            lead:(d.sections.find(s => s.type === "p")?.text || "").slice(0, 900), text:docText(d), pdf:b64(briefingPdf(d)) };
+        }, i);
+        const base = slug(d.key);
+        fs.writeFileSync(path.join(dir, base + ".pdf"), Buffer.from(d.pdf, "base64"));
+        fs.writeFileSync(path.join(dir, base + ".txt"), d.text);
+        reports.push({ pdf:base + ".pdf", txt:base + ".txt", kind:d.kind, subject:d.subject, title:d.title, id:d.id, classification:d.classification, lead:d.lead });
+      }
+    } finally { await page.evaluate(() => { delete window.__docs; }).catch(() => {}); }
     const manifest = { run, at:at.getTime(), home:docs.home, towns:docs.towns, nations:docs.nations, scans:docs.scans, events24h:docs.events24h, seconds:Math.round((Date.now() - t0) / 1000), reports };
     writeJSON(path.join(dir, "manifest.json"), manifest);
     prune();
