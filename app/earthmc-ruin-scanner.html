@@ -231,6 +231,15 @@
   .h-mem i { position:absolute; top:-9px; left:50%; transform:translateX(-50%); font-style:normal; font-size:11px; color:var(--gold); }
   .h-more, .h-empty { font-size:12px; color:rgba(232,251,255,.55); align-self:center; }
   .h-foot { font:10px var(--mono); color:rgba(127,233,255,.45); margin-top:16px; letter-spacing:.06em; }
+  /* the player's stored movement: a span to choose, a sketch of the path among the towns around it, and a few facts */
+  .h-mvk { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .h-per { display:flex; gap:2px; }
+  .h-per button { background:none; border:0; padding:2px 6px; font:10px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:rgba(127,233,255,.45); cursor:pointer; }
+  .h-per button.on, .h-per button:hover { color:var(--holo); }
+  .h-trail { margin-top:8px; }
+  .h-path { display:block; width:100%; height:150px; border:1px solid rgba(127,233,255,.14); background:rgba(127,233,255,.03); }
+  .h-trail .h-rows { margin-top:6px; }
+  .h-trail .h-link { margin-top:10px; font-size:12px; }
   @media (max-width:680px) { #holoCard { grid-template-columns:1fr; gap:8px; } .h-skin { min-height:260px; } .h-body { width:150px; } }
   @keyframes holoIn { 0% { opacity:0; transform:scaleY(.02) scaleX(.6); filter:brightness(3); } 45% { opacity:1; transform:scaleY(.02) scaleX(1); } 100% { transform:none; filter:none; } }
   @keyframes holoFade { from { opacity:0; } to { opacity:1; } }
@@ -2839,6 +2848,7 @@ function holoDate(ts) { return ts ? new Date(ts).toLocaleDateString(undefined, {
 let holoToken = 0;
 async function openHolo(name, town) {
   const token = ++holoToken, root = $("holo");
+  holoName = name; if (window.BH_SERVER) loadHoloTrail(name, holoDays, token);
   root.hidden = false; root.classList.remove("out");
   document.body.classList.add("holo-open");
   renderHolo(name, town, true);
@@ -2878,7 +2888,7 @@ function renderHolo(name, town, loading) {
     (st.isKing || nations.find(n => n.king === name)) && `<span class="hb">Leader of ${esc(nation)}</span>`,
     isPremium(p) && `<span class="hb gold">Premium</span>`,
     st.isNPC && `<span class="hb dim">NPC</span>`,
-    hqTown()?.name === (t?.name || p.town?.name) && `<span class="hb hq">♥ Bleeding Heart</span>`,
+    (t?.name || p.town?.name) && hqTown()?.name === (t?.name || p.town?.name) && `<span class="hb hq">♥ Bleeding Heart</span>`,
   ].filter(Boolean).join("");
   const ranks = [...(p.ranks?.townRanks || []), ...(p.ranks?.nationRanks || [])];
   const row = (k, v) => `<div class="hr"><span>${k}</span><b>${v}</b></div>`;
@@ -2905,11 +2915,97 @@ function renderHolo(name, town, loading) {
         ${stats.numFriends != null ? row("Friends", stats.numFriends) : ""}
       </div>
       ${p.about && p.about !== "/res set about [msg]" ? `<p class="h-about">“${esc(p.about)}”</p>` : ""}
+      ${window.BH_SERVER ? `<div class="h-kick h-mvk" style="margin-top:18px">Movement<span class="h-per">${HIST_SPANS.map(([d, l]) => `<button data-hist-days="${d}" class="${d === holoDays ? "on" : ""}">${l}</button>`).join("")}</span></div>
+      <div class="h-trail" id="holoTrail">${trailHtml(name)}</div>` : ""}
       <div class="h-kick" style="margin-top:18px">${t ? esc(t.name) + " · " : ""}members</div>
       <div class="h-members" id="holoMembers">${t ? membersHtml(name, t.name) : `<div class="h-empty">No town.</div>`}</div>
       <div class="h-foot">Skin from mc-heads.net · profile from the EarthMC API</div>
     </div>`;
 }
+/* ---------- Movement history ----------
+   The Ministry server keeps where every player on the live map has been (server/trails.js): a point when they have
+   moved a fair distance, after a jump, and every ten minutes while they stand still, for a year. A player's card reads
+   their record for the span chosen; it can then be drawn on the Movement Watch map. Players can hide from the map, so
+   a gap is not evidence. Named players' movements are the Kingdom's own, never part of a releasable report. */
+const HIST_SPANS = [[1, "Day"], [7, "Week"], [30, "Month"], [365, "Year"]];
+const HIST_LABEL = { 1:"the last day", 7:"the last week", 30:"the last month", 365:"the last year" };
+let holoName = "", holoDays = 7, HIST = null; // HIST: the path drawn on the Movement Watch map
+const HOLO_TRAIL = { key:"", data:null, err:"" };
+async function loadHoloTrail(name, days, token) {
+  const key = name + "|" + days;
+  Object.assign(HOLO_TRAIL, { key, data:null, err:"" });
+  try {
+    const r = await fetch(`/api/trail?player=${encodeURIComponent(name)}&days=${days}`, { cache:"no-store" });
+    if (!r.ok) throw new Error(`the server answered ${r.status}`);
+    const j = await r.json(); if (HOLO_TRAIL.key === key) HOLO_TRAIL.data = j;
+  } catch (e) { if (HOLO_TRAIL.key === key) HOLO_TRAIL.err = e.message; }
+  if (token === holoToken && HOLO_TRAIL.key === key && $("holoTrail")) $("holoTrail").innerHTML = trailHtml(name);
+}
+// a stored path in stretches, broken where the player was off the map (over eleven minutes unseen) or jumped
+function trailSegments(pts) {
+  const out = []; let cur = [];
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], q = pts[i - 1], d = q ? Math.hypot(p[1] - q[1], p[2] - q[2]) : 0;
+    if (q && (p[0] - q[0] > 11 * 6e4 || d >= 500 || d / Math.max(1, (p[0] - q[0]) / 1000) > 60)) { if (cur.length) out.push(cur); cur = []; }
+    cur.push(p);
+  }
+  if (cur.length) out.push(cur);
+  return out;
+}
+// where the time went: each stretch between two points counts for the land under the first, nations first, towns
+// outside a nation by name; the wilderness is left out
+function trailPlaces(segs) {
+  const idx = moveIndex(), by = new Map();
+  for (const seg of segs) for (let i = 1; i < seg.length; i++) {
+    const [t0, x, z] = seg[i - 1], tn = idx.get(Math.floor(x / 16) + "," + Math.floor(z / 16)), k = tn ? tn.nation || tn.name : null;
+    if (k) by.set(k, (by.get(k) || 0) + Math.min(seg[i][0] - t0, 11 * 6e4));
+  }
+  return [...by].sort((a, b) => b[1] - a[1]);
+}
+const hoursOf = ms => ms >= 36e5 ? `${Math.round(ms / 36e5 * 10) / 10} h` : `${Math.max(1, Math.round(ms / 6e4))} min`;
+function trailHtml(name) {
+  const key = name + "|" + holoDays, D = HOLO_TRAIL.key === key ? HOLO_TRAIL.data : null;
+  if (HOLO_TRAIL.key === key && HOLO_TRAIL.err) return `<div class="h-empty">Couldn't read the record (${esc(HOLO_TRAIL.err)}).</div>`;
+  if (!D) return `<div class="h-empty">Reading the record…</div>`;
+  const pts = D.points || [];
+  if (!pts.length) return `<div class="h-empty">Not seen on the live map in ${HIST_LABEL[holoDays]}. Players can hide from the map, so this is not proof of absence.</div>`;
+  const segs = trailSegments(pts), places = trailPlaces(segs).slice(0, 3), l = pts[pts.length - 1];
+  const lt = moveIndex().get(Math.floor(l[1] / 16) + "," + Math.floor(l[2] / 16));
+  const daysSeen = new Set(pts.map(p => new Date(p[0]).toISOString().slice(0, 10))).size;
+  // the sketch: north up, the towns around the path for bearings
+  let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+  for (const [, x, z] of pts) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z; }
+  const span = Math.max(256, x1 - x0, (z1 - z0) * 2.2), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2, w = span * 1.12, h = w / 2.2;
+  const vb = [cx - w / 2, cz - h / 2, w, h].map(Math.round), sw = w / 320;
+  const near = towns.filter(t => t.c && !t.ruined && t.c.x > vb[0] && t.c.x < vb[0] + w && t.c.z > vb[1] && t.c.z < vb[1] + h).slice(0, 500);
+  const svg = `<svg class="h-path" viewBox="${vb.join(" ")}" preserveAspectRatio="xMidYMid meet" aria-label="${esc(name)}'s path">
+    ${near.map(t => `<circle cx="${t.c.x}" cy="${t.c.z}" r="${(1.6 * sw).toFixed(1)}" fill="rgba(127,233,255,.22)"><title>${esc(t.name)}${t.nation ? ", " + esc(t.nation) : ""}</title></circle>`).join("")}
+    ${segs.map(s => s.length > 1 ? `<polyline points="${s.map(p => p[1] + "," + p[2]).join(" ")}" fill="none" stroke="#7fe9ff" stroke-opacity=".85" stroke-width="${(1.3 * sw).toFixed(1)}" stroke-linejoin="round" stroke-linecap="round"/>` : `<circle cx="${s[0][1]}" cy="${s[0][2]}" r="${(1.4 * sw).toFixed(1)}" fill="#7fe9ff" fill-opacity=".7"/>`).join("")}
+    <circle cx="${pts[0][1]}" cy="${pts[0][2]}" r="${(2.6 * sw).toFixed(1)}" fill="none" stroke="#7fe9ff" stroke-width="${sw.toFixed(1)}"><title>First seen ${esc(holoDate(pts[0][0]))}</title></circle>
+    <circle cx="${l[1]}" cy="${l[2]}" r="${(3 * sw).toFixed(1)}" fill="#fff"><title>Last seen ${esc(holoDate(l[0]))}</title></circle></svg>`;
+  const row = (k, v) => `<div class="hr"><span>${k}</span><b>${v}</b></div>`;
+  const when = new Date(l[0]).toLocaleString(undefined, { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" });
+  return `${svg}<div class="h-rows">
+    ${row("Seen", `on ${plural(daysSeen, "day")} · ${D.total.toLocaleString()} positions${D.thinned > 1 ? ` <small>every ${ordinal(D.thinned)} drawn</small>` : ""}`)}
+    ${places.length ? row("Most time in", esc(places.map(([k, ms]) => `${k} ${hoursOf(ms)}`).join(" · "))) : ""}
+    ${row("Last seen", `${esc(when)} <small>${lt ? esc(lt.name + (lt.nation ? ", " + lt.nation : "")) : `X ${nf(l[1])}, Z ${nf(l[2])}`}</small>`)}
+  </div><button class="h-link" data-hist-map>Show the path on the map</button>`;
+}
+document.addEventListener("click", e => {
+  const sp = e.target.closest("[data-hist-days]");
+  if (sp) { holoDays = +sp.dataset.histDays; document.querySelectorAll("[data-hist-days]").forEach(b => b.classList.toggle("on", b === sp));
+    $("holoTrail").innerHTML = trailHtml(holoName); loadHoloTrail(holoName, holoDays, holoToken); return; }
+  if (e.target.closest("[data-hist-map]")) {
+    const D = HOLO_TRAIL.data; if (!D?.points?.length) return;
+    HIST = { name:holoName, pts:D.points, days:holoDays }; closeHolo();
+    const l = D.points[D.points.length - 1];
+    if (location.hash !== "#moves") location.hash = "#moves"; else render();
+    setTimeout(() => flyTo({ c:{ x:l[1], z:l[2] } }), 80);
+    return;
+  }
+  if (e.target.closest("[data-hist-clear]")) { e.preventDefault(); HIST = null; renderMoves(); }
+});
+
 // a small "view mayor" chip used in the target panel
 const mayorChip = t => t?.mayor && t.mayor !== "—" ? `<button class="pl-chip" data-player="${esc(t.mayor)}" data-town="${esc(t.name)}"><img src="${SKIN.head(t.mayor)}" alt="" onerror="this.style.visibility='hidden'">Mayor <b>${esc(t.mayor)}</b><span>· view profile and members</span></button>` : "";
 
@@ -4886,6 +4982,7 @@ function renderMoves() {
   $("mvState").innerHTML = !MOVES.on ? `Off. Switch on to start reading live positions${MOVES.visits.length ? ` · ${MOVES.visits.length.toLocaleString()} visits on record` : ""}.`
     : MOVES.err ? `<span style="color:var(--orange)">${esc(MOVES.err)}</span>`
     : MOVES.lastOk ? `<span class="tip-l" data-tip="Updated ${Math.round((now - MOVES.lastOk) / 1000)}s ago${MOVES.liveOnly ? "" : ` · ${moveHoursIn(7)} hours collected this week`}"><i class="live-dot"></i>${MOVES.online} on the map</span>` : "Connecting…";
+  if (HIST) $("mvState").innerHTML += ` · <span>${esc(HIST.name)}'s path over ${HIST_LABEL[HIST.days] || "the period"}, in white</span> <a href="#" data-hist-clear>hide</a>`;
   $("mvRelay").hidden = !!window.BH_SERVER || (!(MOVES.err && /relay/i.test(MOVES.err)) && !MOVES.src);
   // what stands out: who is on the map and inside our land, today's crossings hour by hour, and the busiest crossing this week
   const recon = today.filter(v => v.purpose === RECON).length, busiest = movePairs(week)[0];
@@ -4964,6 +5061,17 @@ function drawMovesLayer(placed, zoomR, dot) {
     const [x, y, d] = townScreen({ c:{ x:s.x, z:s.z } }); if (d <= 0) continue;
     ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, (inOurs ? 3.2 : s.foreign ? 2.4 : 1.8) * dpr, 0, 7); ctx.fill();
     if (inOurs) { const ping = (now % 1400) / 1400; ctx.strokeStyle = alpha(c, 1 - ping); ctx.lineWidth = dpr; ctx.beginPath(); ctx.arc(x, y, (5 + ping * 14) * dpr, 0, 7); ctx.stroke(); labels.push([x, y, s.name, c]); }
+  }
+  // a player's stored path, opened from their card: white, so it stands apart from the live trails
+  if (HIST?.pts.length) {
+    ctx.lineWidth = 1.6 * dpr; ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineJoin = "round";
+    for (const seg of trailSegments(HIST.pts)) {
+      ctx.beginPath(); let on = false;
+      for (const [, x, z] of seg) { const [sx, sy, d] = townScreen({ c:{ x, z } }); if (d <= 0) { on = false; continue; } on ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy); on = true; }
+      ctx.stroke();
+    }
+    const l = HIST.pts[HIST.pts.length - 1], [lx, ly, ld] = townScreen({ c:{ x:l[1], z:l[2] } });
+    if (ld > 0) { ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(lx, ly, 3.5 * dpr, 0, 7); ctx.fill(); labels.unshift([lx, ly, HIST.name, "#fff"]); }
   }
   ctx.font = `600 ${11 * dpr}px Inter Tight, sans-serif`;
   for (const [x, y, name, c] of labels.slice(0, 24)) { const w = ctx.measureText(name).width; ctx.fillStyle = "rgba(0,0,0,.65)"; ctx.fillRect(x + 8 * dpr, y - 8 * dpr, w + 8 * dpr, 16 * dpr); ctx.fillStyle = c; ctx.fillText(name, x + 12 * dpr, y + 4 * dpr); }

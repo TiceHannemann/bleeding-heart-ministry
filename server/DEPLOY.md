@@ -130,6 +130,14 @@ It also lists the killers (a **hunter** has many victims across many nations; **
 
 Fighters are followed by the server's browser: every sighting of a ranked fighter or leading killer is kept for a week, and rival players meeting within 8 blocks are noted as clashes. Both reach visitors with the hourly archive. Nations are each player's nation at the latest player scan, so old kills may be credited to a nation the player has since left. Data is kept in `/data/combat`.
 
+## Movement history
+
+The server keeps where every player on the live map has been, for a year: a position when they have moved 64 blocks (at most every 30 seconds), where they were just before and just after a teleport, where they were last seen before leaving the map, and one every ten minutes while they stand still. It records from the same live-map feed Movement Watch reads, and reads the feed itself whenever no page asks for it, so recording carries on while the browser restarts.
+
+Click any player to open their card: **Movement** draws their path over the last day, week, month or year among the towns around it, with the nations where they spent the most time and where they were last seen. **Show the path on the map** draws it in white on the Movement Watch map. Players can hide from the live map, so a gap is not proof of absence. A player's movements are the Kingdom's own; they are never part of a releasable report.
+
+Positions are kept on disk in `/data/trails`, one file per player per month, and read only when a card asks for them, so they cost almost no memory. Expect a few megabytes a day while the month is open, and about a third of that once a month ends and is compressed; a year comes to roughly half a gigabyte. To keep less, add `TRAILS_KEEP_DAYS=90` to `/root/bh.env`. `/api/status` reports how many players are on the map, how many positions were kept today and the space used.
+
 ## War Room
 
 The War Room (Attack) is the live map with drawing tools: waypoints, routes, targets, danger marks, rally points and notes.

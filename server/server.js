@@ -99,20 +99,34 @@ app.get(["/", "/index.html", "/gov", "/earthmc-ruin-scanner.html"], (req, res, n
 /* ---------- Intelligence API (signed-in only) ---------- */
 // The live map's player feed, relayed: browsers can't read it directly (CORS). Shared by everyone for a few seconds,
 // so any number of open pages makes at most one request to the map every three seconds.
+// Every fresh reading also goes to the movement history (trails.js), which reads the feed itself when no page asks.
 const PLAYERS_SRC = process.env.PLAYERS_FEED || "https://map.earthmc.net/tiles/players.json";
+const TRAILS = require("./trails");
 let playersCache = { at:0, body:null, p:null };
+async function playersFeed() {
+  if (Date.now() - playersCache.at > 3000) {
+    playersCache.p ||= fetch(PLAYERS_SRC, { headers:{ "User-Agent":"BleedingHeart-Ministry" }, signal:AbortSignal.timeout(10000) })
+      .then(async r => { if (!r.ok) throw new Error("map answered " + r.status); playersCache = { at:Date.now(), body:await r.text(), p:null }; TRAILS.record(playersCache.body, playersCache.at); })
+      .finally(() => { playersCache.p = null; });
+    await playersCache.p;
+  }
+  return playersCache.body;
+}
 app.get("/api/players", needLogin, async (req, res) => {
-  try {
-    if (Date.now() - playersCache.at > 3000) {
-      playersCache.p ||= fetch(PLAYERS_SRC, { headers:{ "User-Agent":"BleedingHeart-Ministry" }, signal:AbortSignal.timeout(10000) })
-        .then(async r => { if (!r.ok) throw new Error("map answered " + r.status); playersCache = { at:Date.now(), body:await r.text(), p:null }; })
-        .finally(() => { playersCache.p = null; });
-      await playersCache.p;
-    }
-    res.setHeader("Cache-Control", "no-store"); res.type("json").send(playersCache.body);
-  } catch (e) { res.status(502).json({ error:String(e.message || e) }); }
+  try { const body = await playersFeed(); res.setHeader("Cache-Control", "no-store"); res.type("json").send(body); }
+  catch (e) { res.status(502).json({ error:String(e.message || e) }); }
 });
-app.get("/api/status", needLogin, (req, res) => res.json({ ...collector.status(), open:OPEN }));
+TRAILS.start(playersFeed);
+for (const sig of ["SIGTERM", "SIGINT"]) process.once(sig, () => { TRAILS.flushSync(); process.exit(0); });
+// a player's movement history: ?player=Name&days=7 (or from and to, in ms); at most 400 days at a time
+app.get("/api/trail", needLogin, (req, res) => {
+  const name = String(req.query.player || ""), to = +req.query.to || Date.now();
+  const from = +req.query.from || to - Math.min(400, Math.max(1, +req.query.days || 7)) * 864e5;
+  if (!name || name.length > 32) return res.status(400).json({ error:"Which player? Add ?player=Name." });
+  res.setHeader("Cache-Control", "no-store"); res.json({ ...TRAILS.history(name, Math.max(from, to - 400 * 864e5), to), status:TRAILS.status() });
+});
+app.get("/api/trail/names", needLogin, (req, res) => res.json(TRAILS.names(String(req.query.q || "").slice(0, 32))));
+app.get("/api/status", needLogin, (req, res) => res.json({ ...collector.status(), trails:TRAILS.status(), open:OPEN }));
 // the browser checks this first, and only downloads the archive when it has changed
 app.get("/api/archive/version", needLogin, (req, res) => res.json({ version:collector.status().archiveVersion || null }));
 app.get("/api/archive", needLogin, (req, res) => {

@@ -29,6 +29,8 @@ services:
       # Raise them in /root/bh.env if the VPS is being throttled.
       SCAN_EVERY_MINUTES: ${SCAN_EVERY_MINUTES:-60}
       FINANCE_EVERY_HOURS: ${FINANCE_EVERY_HOURS:-3}
+      # how many days of every player's movement to keep (about 1.5 MB a day once compressed)
+      TRAILS_KEEP_DAYS: ${TRAILS_KEEP_DAYS:-365}
     volumes:
       - bh_data:/data
     # the most memory the site may use. The hourly reports page shows what scans need; if it says the server ran
