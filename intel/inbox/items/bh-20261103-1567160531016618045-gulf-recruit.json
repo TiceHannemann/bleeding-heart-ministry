@@ -1,0 +1,31 @@
+{
+  "item_id": "bh-20261103-1567160531016618045-gulf-recruit",
+  "captured_at": "2026-11-03T13:05:00Z",
+  "type": "recruitment",
+  "nations": ["Gulf_Union"],
+  "summary": "Gulf_Union declared itself open to joining any other empire or meganation, offering its leader as the point of contact.",
+  "confidence": "high",
+  "status": "announced_officially",
+  "importance": 2,
+  "at": "2026-11-03T12:56:27.029Z",
+  "tags_from_source": ["alliance"],
+  "sources": [
+    {
+      "message_id": "1567160531016618045",
+      "url": "https://discord.com/channels/1567139487673487441/1567139488801759415/1567160531016618045",
+      "origin": "The Nostra Times News #nostra-times",
+      "origin_guild_id": "1464009020963557542",
+      "relayed_via": "#chat-a",
+      "posted_at": "2026-11-03T12:56:27.029Z",
+      "attachment": "intel/attachments/1567160531016618045-Screenshot_2026-11-03_075320.png",
+      "extraction": "vision-ocr"
+    }
+  ],
+  "evidence": {
+    "key_text": "We are also open to joining any other empires/meganations. Just dm me or msg me in game [Hoffywin9999] to talk about that.",
+    "contact": "Manfaceman152 (Discord) / Hoffywin9999 (in-game)"
+  },
+  "analyst_notes": "Recorded separately from the departure because it is an actionable diplomatic opening rather than a loss to the Ostafrikan meganation: a nation with a named, reachable decision-maker is advertising that it will accept a new patron. Note the contact name is given in-game, so it can be resolved against the EarthMC API to identify the account and its town.",
+  "why_it_matters": "A free agent nation actively seeking a patron. This is the one item in the batch that a ministry can act on directly.",
+  "links_to_scan_data": ["Gulf_Union", "Hoffywin9999"]
+}

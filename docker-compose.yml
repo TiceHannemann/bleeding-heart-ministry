@@ -8,6 +8,8 @@ services:
     pull_policy: build
     container_name: bh-ministry
     restart: unless-stopped
+    # a small init process clears away the browser's finished processes, as Playwright advises inside Docker
+    init: true
     ports:
       - "8080:8080"   # change the first number if Hermes already uses 8080
     environment:
@@ -23,8 +25,16 @@ services:
       EMC_PLAYER: ${EMC_PLAYER:-}
       # the key officers enter to change the War Room's plan (falls back to CHAT_UPLOAD_TOKEN)
       WARROOM_KEY: ${WARROOM_KEY:-}
+      # how hard the server works: minutes between scans (minimum 15), and hours between the full player and property scans.
+      # Raise them in /root/bh.env if the VPS is being throttled.
+      SCAN_EVERY_MINUTES: ${SCAN_EVERY_MINUTES:-60}
+      FINANCE_EVERY_HOURS: ${FINANCE_EVERY_HOURS:-3}
+      # how many days of every player's movement to keep (about 1.5 MB a day once compressed)
+      TRAILS_KEEP_DAYS: ${TRAILS_KEEP_DAYS:-365}
     volumes:
       - bh_data:/data
-    mem_limit: 1500m
+    # the most memory the site may use. The hourly reports page shows what scans need; if it says the server ran
+    # out of memory, raise it in /root/bh.env (BH_MEMORY=2500m), leaving room for Hermes on the same VPS
+    mem_limit: ${BH_MEMORY:-1500m}
 volumes:
   bh_data:

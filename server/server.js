@@ -99,20 +99,34 @@ app.get(["/", "/index.html", "/gov", "/earthmc-ruin-scanner.html"], (req, res, n
 /* ---------- Intelligence API (signed-in only) ---------- */
 // The live map's player feed, relayed: browsers can't read it directly (CORS). Shared by everyone for a few seconds,
 // so any number of open pages makes at most one request to the map every three seconds.
+// Every fresh reading also goes to the movement history (trails.js), which reads the feed itself when no page asks.
 const PLAYERS_SRC = process.env.PLAYERS_FEED || "https://map.earthmc.net/tiles/players.json";
+const TRAILS = require("./trails");
 let playersCache = { at:0, body:null, p:null };
+async function playersFeed() {
+  if (Date.now() - playersCache.at > 3000) {
+    playersCache.p ||= fetch(PLAYERS_SRC, { headers:{ "User-Agent":"BleedingHeart-Ministry" }, signal:AbortSignal.timeout(10000) })
+      .then(async r => { if (!r.ok) throw new Error("map answered " + r.status); playersCache = { at:Date.now(), body:await r.text(), p:null }; TRAILS.record(playersCache.body, playersCache.at); })
+      .finally(() => { playersCache.p = null; });
+    await playersCache.p;
+  }
+  return playersCache.body;
+}
 app.get("/api/players", needLogin, async (req, res) => {
-  try {
-    if (Date.now() - playersCache.at > 3000) {
-      playersCache.p ||= fetch(PLAYERS_SRC, { headers:{ "User-Agent":"BleedingHeart-Ministry" }, signal:AbortSignal.timeout(10000) })
-        .then(async r => { if (!r.ok) throw new Error("map answered " + r.status); playersCache = { at:Date.now(), body:await r.text(), p:null }; })
-        .finally(() => { playersCache.p = null; });
-      await playersCache.p;
-    }
-    res.setHeader("Cache-Control", "no-store"); res.type("json").send(playersCache.body);
-  } catch (e) { res.status(502).json({ error:String(e.message || e) }); }
+  try { const body = await playersFeed(); res.setHeader("Cache-Control", "no-store"); res.type("json").send(body); }
+  catch (e) { res.status(502).json({ error:String(e.message || e) }); }
 });
-app.get("/api/status", needLogin, (req, res) => res.json({ ...collector.status(), open:OPEN }));
+TRAILS.start(playersFeed);
+for (const sig of ["SIGTERM", "SIGINT"]) process.once(sig, () => { TRAILS.flushSync(); process.exit(0); });
+// a player's movement history: ?player=Name&days=7 (or from and to, in ms); at most 400 days at a time
+app.get("/api/trail", needLogin, (req, res) => {
+  const name = String(req.query.player || ""), to = +req.query.to || Date.now();
+  const from = +req.query.from || to - Math.min(400, Math.max(1, +req.query.days || 7)) * 864e5;
+  if (!name || name.length > 32) return res.status(400).json({ error:"Which player? Add ?player=Name." });
+  res.setHeader("Cache-Control", "no-store"); res.json({ ...TRAILS.history(name, Math.max(from, to - 400 * 864e5), to), status:TRAILS.status() });
+});
+app.get("/api/trail/names", needLogin, (req, res) => res.json(TRAILS.names(String(req.query.q || "").slice(0, 32))));
+app.get("/api/status", needLogin, (req, res) => res.json({ ...collector.status(), trails:TRAILS.status(), open:OPEN }));
 // the browser checks this first, and only downloads the archive when it has changed
 app.get("/api/archive/version", needLogin, (req, res) => res.json({ version:collector.status().archiveVersion || null }));
 app.get("/api/archive", needLogin, (req, res) => {
@@ -138,10 +152,15 @@ app.post("/api/import", needLogin, express.text({ type:"*/*", limit:"200mb" }), 
 const SIG = require("./signals");
 const chatTokenOk = req => !!process.env.CHAT_UPLOAD_TOKEN && typeof req.headers["x-chat-token"] === "string" &&
   req.headers["x-chat-token"].length === process.env.CHAT_UPLOAD_TOKEN.length && crypto.timingSafeEqual(Buffer.from(req.headers["x-chat-token"]), Buffer.from(process.env.CHAT_UPLOAD_TOKEN));
+// an open site with no CHAT_UPLOAD_TOKEN set takes uploads from anyone (the owner's choice); setting the token locks them again
+const uploadOk = req => chatTokenOk(req) || (OPEN ? !process.env.CHAT_UPLOAD_TOKEN : signedIn(req));
 const COMBAT = require("./combat");
 app.post("/api/chat-import", express.text({ type:"*/*", limit:"100mb" }), (req, res) => {
-  if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"Chat uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
+  if (!uploadOk(req)) return res.status(403).json({ error:"Chat uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
   try {
+    // a batch of relay items ({ items:[...] }, see intel/RELAY-CONTRACT.md) is already analysed and joins the briefings now
+    let j = null; try { j = JSON.parse(req.body); } catch {}
+    if (SIG.isItems(j)) { const r = SIG.receiveItems(j); collector.refresh(); return res.json({ ok:true, ...r, message:`Received ${r.items} items (${r.added} new events). They reach the briefings within a few minutes.` }); }
     const messages = SIG.receive(req.body);
     // an export of the in-game chat bridge also carries the server's kills
     const k = COMBAT.add(COMBAT.fromExport(JSON.parse(req.body)));
@@ -152,7 +171,7 @@ app.post("/api/chat-import", express.text({ type:"*/*", limit:"100mb" }), (req, 
 });
 // kills read from Discord exports on your own computer (tools/discord-kills.js); same rule as chat uploads
 app.post("/api/kills-import", express.text({ type:"*/*", limit:"50mb" }), (req, res) => {
-  if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"Kill uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
+  if (!uploadOk(req)) return res.status(403).json({ error:"Kill uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
   let j; try { j = JSON.parse(req.body); } catch { return res.status(400).json({ error:"That isn't JSON." }); }
   if (j?.kind !== "kills" || !Array.isArray(j.kills)) return res.status(400).json({ error:"That isn't a kills file." });
   const r = COMBAT.add(j.kills); collector.refresh();
@@ -162,7 +181,7 @@ app.get("/api/signals", needLogin, (req, res) => res.json({ status:SIG.status(),
 // the history of Terra Nostra written from the Discord archives (tools/send-history.ps1); same rule as chat uploads
 const HISTORY = require("./history");
 app.post("/api/history-import", express.text({ type:"*/*", limit:"20mb" }), (req, res) => {
-  if (!chatTokenOk(req) && (OPEN || !signedIn(req))) return res.status(403).json({ error:"History uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
+  if (!uploadOk(req)) return res.status(403).json({ error:"History uploads need the x-chat-token header matching CHAT_UPLOAD_TOKEN on the server." });
   try { const r = HISTORY.save(req.body); collector.refresh(); res.json({ ok:true, ...r, message:"Received. It reaches the Briefing Room within a few minutes." }); }
   catch (e) { res.status(400).json({ error:e.message }); }
 });

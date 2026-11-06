@@ -1,0 +1,33 @@
+{
+  "item_id": "bh-20261103-1567160531016618045-gulf",
+  "captured_at": "2026-11-03T13:05:00Z",
+  "type": "alliance",
+  "nations": ["Gulf_Union", "Ostafrikan"],
+  "summary": "Gulf_Union left the Ostafrikan meganation, citing a long period of inactivity and lack of support from the meganation.",
+  "confidence": "high",
+  "status": "announced_officially",
+  "importance": 3,
+  "at": "2026-11-03T12:56:27.029Z",
+  "tags_from_source": ["alliance"],
+  "sources": [
+    {
+      "message_id": "1567160531016618045",
+      "url": "https://discord.com/channels/1567139487673487441/1567139488801759415/1567160531016618045",
+      "origin": "The Nostra Times News #nostra-times",
+      "origin_guild_id": "1464009020963557542",
+      "relayed_via": "#chat-a",
+      "posted_at": "2026-11-03T12:56:27.029Z",
+      "attachment": "intel/attachments/1567160531016618045-Screenshot_2026-11-03_075320.png",
+      "extraction": "vision-ocr"
+    }
+  ],
+  "evidence": {
+    "document_type": "Announcement posted by Manfaceman152 in a nation announcements channel, with an @here ping",
+    "key_text": "@here Gulf_Union officially leaves the Ostafrikan Meganation. Due to inactivity and no support for a long period of time, we are leaving. We are also open to joining any other empires/meganations. Just dm me or msg me in game [Hoffywin9999] to talk about that.",
+    "timing": "Posted 11:59 PM, rationale added 12:00 AM, and the offer to join another empire at 12:15 AM — the three parts are consecutive messages, roughly sixteen minutes apart.",
+    "reactions": "One fire reaction."
+  },
+  "analyst_notes": "A meganation losing a member on the stated ground of inactivity is a decline indicator for the Ostafrikan meganation, and the sixteen-minute gap before advertising availability suggests the exit was decided in advance. The @here ping means this was pushed to every active member of the source server, so the departure is widely known — there is no chance this is quiet. The same player is the source of the recruitment signal captured separately.",
+  "why_it_matters": "Fracture of a meganation, announced publicly and immediately advertised for re-recruitment. Inactivity-driven exits tend to come in clusters.",
+  "links_to_scan_data": ["Gulf_Union", "Ostafrikan"]
+}

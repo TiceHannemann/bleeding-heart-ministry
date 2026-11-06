@@ -1,0 +1,36 @@
+{
+  "item_id": "bh-20261103-1567159686325870656-sumer-persia",
+  "captured_at": "2026-11-03T13:05:00Z",
+  "type": "war_or_hostility",
+  "nations": ["Sumer", "Persia"],
+  "summary": "Sumer formally denounced Persia and terminated diplomatic relations, closing the Persian embassy in Agrabah, after Persia placed a claimblock town on the railway linking Sumer to its western province.",
+  "confidence": "high",
+  "status": "announced_officially",
+  "importance": 4,
+  "at": "2026-11-03T12:53:05.639Z",
+  "tags_from_source": ["conflict"],
+  "sources": [
+    {
+      "message_id": "1567159686325870656",
+      "url": "https://discord.com/channels/1567139487673487441/1567139488801759415/1567159686325870656",
+      "origin": "The Nostra Times News #nostra-times",
+      "origin_guild_id": "1464009020963557542",
+      "origin_message_id": "1567159511402283090",
+      "relayed_via": "#chat-a",
+      "posted_at": "2026-11-03T12:53:05.639Z",
+      "attachment": "intel/attachments/1567159686325870656-Screenshot_2026-11-03_075053.png",
+      "extraction": "vision-ocr"
+    }
+  ],
+  "evidence": {
+    "document_type": "Formal denouncement issued by the Government of Sumer, signed off \"For Sumer\"",
+    "issuing_authority": "Government of Sumer (posted by Mine_bee | Babylon)",
+    "key_text": "IV. Declaration — the termination of its alliance with Persia; the formal denouncement of the Persian government; the withdrawal of diplomatic goodwill previously extended to Persia; closing of the Persian embassy in Agrabah.",
+    "trigger": "Nachoman (Persia) established a claimblock town directly upon the railway connecting Sumer to its western province, while Sumerian leadership was offline. Sumer characterises this as a violation of server regulations, and separately alleges a racial slur was used in Nubian voice chat.",
+    "ocr_notes": "Roles addressed: @Sumerian, @Allies, @Foreigner. Place names Agrabah and Nubia appear; neither is confirmed as a nation from the scan data.",
+    "full_transcription": "Mine_bee | Babylon 🔥 EGY 5:17 AM\n✴️ FORMAL DENOUNCEMENT OF PERSIA ✴️\nIssued by the Government of Sumer\nTo all @Sumerian, @Allies, and @Foreigners.\nThe Government of Sumer hereby formally announces its denouncement of Persia and the termination of diplomatic relations between our nations.\nI. Background — Despite Persia's historically aggressive conduct, Sumer has maintained friendly relations and regarded Persia as an ally. Recent events, however, have made this relationship increasingly untenable.\nII. Recent Events — Yesterday night, while Sumerian leadership was offline, Nachoman established a claimblock town directly upon the scenic railway connecting Sumer to its western province. This followed @bubbleisblue | Parthia's decision to leave Persia and join Sumer due to dissatisfaction with Persian inactivity. To clarify, Sumer neither purchased nor seized any Persian territory. The mayor of Parthia voluntarily approached Sumer seeking to join our nation. Rather than addressing the matter diplomatically, Nachoman resorted to establishing a claimblock in violation of server regulations. Furthermore, he used a racial slur in Nubian voice chat.\nIII. Sumer's Position — Such conduct is unacceptable from a national leader. Territorial disputes and disagreements between nations should be resolved through communication and established diplomatic procedures, not obstruction and inflammatory behaviour.\nIV. Declaration — Consequently, Sumer hereby declares: the termination of its alliance with Persia; the formal denouncement of the Persian government; the withdrawal of diplomatic goodwill previously extended to Persia; closing of the Persian embassy in Agrabah. This decision has not been made lightly. Nevertheless, Sumer will not tolerate conduct that undermines its sovereignty, infrastructure, or diplomatic standards.\nFor Sumer."
+  },
+  "analyst_notes": "A public, formal severance rather than an act of war: no raids or declarations of hostility are claimed. The material facts are (a) an alliance is now void, (b) a border town was planted on Sumer's railway, and (c) Persia is publicly accused of a conduct breach. Worth watching for a Persian reply and for whether Nachoman's claimblock is enforced by an overclaim. Sumer presents itself as the aggrieved party and is signalling legitimacy to third parties — this is a document written to be read by allies, not only by Persia.",
+  "why_it_matters": "A new hostile dyad in the region, announced officially. Sumer is actively soliciting third-party sympathy, which is a precursor to seeking allies against Persia.",
+  "links_to_scan_data": ["Sumer", "Persia", "Parthia"]
+}

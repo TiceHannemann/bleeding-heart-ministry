@@ -119,8 +119,14 @@ function merge(store, found, msgs) {
     if (!src.length || !e.nations.length) continue;
     const ev = { type:e.type, nations:e.nations, summary:e.summary, confidence:e.confidence, status:e.status, importance:e.importance,
       at:Math.min(...src.map(s => s.at)), last:Math.max(...src.map(s => s.at)), sources:src };
+    // relay items may say what the event does to a relationship, and who to approach (intel/RELAY-CONTRACT.md)
+    if (["formed", "ended", "hostile", "pact", "peace"].includes(e.relation)) ev.relation = e.relation;
+    const contact = typeof e.contact === "string" ? e.contact : e.evidence?.contact;
+    if (typeof contact === "string" && contact.trim()) ev.contact = contact.trim().slice(0, 120);
     const old = store.events.find(o => evKey(o) === evKey(ev));
     if (!old) { store.events.push(ev); continue; }
+    if (ev.relation && !old.relation) old.relation = ev.relation;
+    if (ev.contact && !old.contact) old.contact = ev.contact;
     const have = new Set(old.sources.map(s => s.id));
     old.sources.push(...src.filter(s => !have.has(s.id)));
     old.last = Math.max(old.last, ev.last); old.importance = Math.max(old.importance, ev.importance);
@@ -128,6 +134,26 @@ function merge(store, found, msgs) {
     if (ev.status === "announced_officially" || ev.status === "denied") old.status = ev.status;
   }
   for (const e of store.events) e.servers = new Set(e.sources.map(s => s.guild)).size;
+}
+
+// items already analysed by the Agent Heart relay (intel/RELAY-CONTRACT.md) need no model: they join the store as events
+const isItems = j => Array.isArray(j?.items) && j.items.every(i => i?.item_id);
+function receiveItems(j) {
+  const store = load(), msgs = {}, found = [];
+  for (const i of j.items) {
+    if (!TYPES.includes(i.type) || !Array.isArray(i.nations) || !i.summary) continue;
+    const ids = (i.sources || []).map(s => {
+      const id = "ah-" + (s.message_id || i.item_id), at = Date.parse(s.posted_at || i.at);
+      const [g, c] = String(s.origin || "Agent Heart relay").split(/ #/);
+      msgs[id] = { at, g, c:c || "", a:"Agent Heart", r:[] };
+      return id;
+    });
+    found.push({ ...i, importance:Math.min(5, Math.max(1, i.importance | 0 || 1)), source_ids:ids });
+  }
+  const before = store.events.length;
+  merge(store, found, msgs);
+  writeJSON(STORE, store);
+  return { items:found.length, added:store.events.length - before };
 }
 
 /* ---------- the hourly run ---------- */
@@ -175,4 +201,4 @@ async function run(nationNames) {
 const status = () => lastRun;
 const events = () => load().events;
 
-module.exports = { run, receive, status, events, ingest, INBOX };
+module.exports = { run, receive, receiveItems, isItems, status, events, ingest, INBOX };

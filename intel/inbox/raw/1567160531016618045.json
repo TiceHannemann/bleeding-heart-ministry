@@ -1,0 +1,35 @@
+{
+ "message_id": "1567160531016618045",
+ "kind": "content",
+ "channel": {
+  "id": "1567139488801759415",
+  "name": "chat-a",
+  "type": 0
+ },
+ "captured_at": "2026-11-03T13:09:33.577Z",
+ "posted_at": "2026-11-03T12:56:27.029000+00:00",
+ "forwarded": true,
+ "source": {
+  "guild_id": "1433001747277676635",
+  "channel_id": "1464009020963557542",
+  "label": "The Nostra Times News",
+  "channel": "nostra-times"
+ },
+ "author": {
+  "id": "1567141058763034675",
+  "name": "The Nostra Times News #nostra-times",
+  "bot": true,
+  "webhook": true
+ },
+ "text": ":emoji: **Gulf Union leaves the Ostafrikan meganation**\n\nTags: `alliance`\nReported by: @yergemite",
+ "url": "https://discord.com/channels/1567139487673487441/1567139488801759415/1567160531016618045",
+ "attachments": [
+  {
+   "filename": "Screenshot_2026-11-03_075320.png",
+   "size": 46042,
+   "url": "https://cdn.discordapp.com/attachments/1464009020963557542/1567160353656152175/Screenshot_2026-11-03_075320.png?ex=6aeb2b50&is=6ae9d9d0&hm=cb3a1b34a3ab638ea6739b974e62804bd89c280189e41a58f9ab8d0bba046285&",
+   "saved": "intel/attachments/1567160531016618045-Screenshot_2026-11-03_075320.png"
+  }
+ ],
+ "reactions": 0
+}

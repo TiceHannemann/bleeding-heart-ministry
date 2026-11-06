@@ -41,6 +41,8 @@ The server in this folder hosts both websites and scans EarthMC every hour on it
 
 Plan on about 1 GB of memory (Chromium runs for a few minutes each hour) and a 1 GB volume to start. Keep **one replica**: two would scan twice.
 
+With Docker Compose the site may use at most 1,500 MB. The Briefing Room, under Earlier editions, says how much the server is using, the most the last scan needed, and whether it has run out of memory; when it has, the error under "Last scan failed" says so too. To allow more, add `BH_MEMORY=2500m` to `/root/bh.env` and rebuild, leaving enough for anything else on the VPS. A failed scan is tried again after ten minutes, then twenty, then forty, then hourly, never back to back.
+
 ## Run it on your own computer
 
 ```bash
@@ -137,6 +139,14 @@ From the kills, the Combat page (Intelligence) shows each pair of nations that f
 It also lists the killers (a **hunter** has many victims across many nations; **same opponent** is the same victim over and over) with the hours they fight, kills and deaths by nation, and the leaderboards. **On the move** lists ranked fighters and leading killers seen on the live map in the last day, with where they are, which way they are heading and which nations they have been in.
 
 Fighters are followed by the server's browser: every sighting of a ranked fighter or leading killer is kept for a week, and rival players meeting within 8 blocks are noted as clashes. Both reach visitors with the hourly archive. Nations are each player's nation at the latest player scan, so old kills may be credited to a nation the player has since left. Data is kept in `/data/combat`.
+
+## Movement history
+
+The server keeps where every player on the live map has been, for a year: a position when they have moved 64 blocks (at most every 30 seconds), where they were just before and just after a teleport, where they were last seen before leaving the map, and one every ten minutes while they stand still. It records from the same live-map feed Movement Watch reads, and reads the feed itself whenever no page asks for it, so recording carries on while the browser restarts.
+
+Click any player to open their card: **Movement** draws their path over the last day, week, month or year among the towns around it, with the nations where they spent the most time and where they were last seen. **Show the path on the map** draws it in white on the Movement Watch map. Players can hide from the live map, so a gap is not proof of absence. A player's movements are the Kingdom's own; they are never part of a releasable report.
+
+Positions are kept on disk in `/data/trails`, one file per player per month, and read only when a card asks for them, so they cost almost no memory. Expect a few megabytes a day while the month is open, and about a third of that once a month ends and is compressed; a year comes to roughly half a gigabyte. To keep less, add `TRAILS_KEEP_DAYS=90` to `/root/bh.env`. `/api/status` reports how many players are on the map, how many positions were kept today and the space used.
 
 ## War Room
 

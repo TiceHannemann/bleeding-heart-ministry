@@ -1,0 +1,32 @@
+{
+  "item_id": "bh-20261103-1567158377765802046-canada",
+  "captured_at": "2026-11-03T13:05:00Z",
+  "type": "leadership_or_internal",
+  "nations": ["Canada"],
+  "summary": "The Imperium Party returned to power in Canada and named its cabinet, with George as Prime Minister and limao_mao as Minister of War.",
+  "confidence": "high",
+  "status": "announced_officially",
+  "importance": 3,
+  "at": "2026-11-03T12:47:53.654Z",
+  "tags_from_source": ["governance"],
+  "sources": [
+    {
+      "message_id": "1567158377765802046",
+      "url": "https://discord.com/channels/1567139487673487441/1567139488801759415/1567158377765802046",
+      "origin": "The Nostra Times News #nostra-times",
+      "origin_guild_id": "1464009020963557542",
+      "relayed_via": "#chat-a",
+      "posted_at": "2026-11-03T12:47:53.654Z",
+      "attachment": "intel/attachments/1567158377765802046-image.png",
+      "extraction": "vision-ocr"
+    }
+  ],
+  "evidence": {
+    "document_type": "Cabinet announcement posted by George | Calgary",
+    "key_text": "A NEW GOVERNMENT IS FORMED. The @Imperium Party is back in Canada, the @Cabinet for the term is: Prime Minister @George | Calgary; Deputy Prime Minister @Vicky151 | Western_Canada; Minister of Treasury @Nautical77 | Seattle; Minister of Foreign Affairs @Poopypoop112 | Ungava; Minister of Growth and Internal Development @TOSd | Ahousat; Minister of War @limao_mao | Wilhelmina; Speaker is @Bon_Kranch | Abbotsford. Glory to Canada. God Bless the Imperium.",
+    "ocr_notes": "Slogan reads \"God Bless the Imperium\" — the party, not the nation. Role badge on the author reads SEAF. Town affiliations are given for every minister, which makes each one resolvable in the scan archive."
+  },
+  "analyst_notes": "Two things lift this above a routine reshuffle. First, the wording is \"back in Canada\" — a party returning to office, which implies a prior term and a contested or at least alternating politics rather than a permanent ruler. Second, a distinct Minister of War portfolio is named in the same breath as Treasury and Foreign Affairs, so the post is standing rather than created for a crisis. Every minister is tagged with a town, so the whole cabinet can be located on the map and checked for rank and activity. The jingoistic slogan is a party signature and should not be read as a statement of hostile intent toward any particular nation.",
+  "why_it_matters": "Canada has a returning government with a standing war portfolio. Mapping the cabinet against town strength is a cheap, concrete next step.",
+  "links_to_scan_data": ["Canada", "George", "Vicky151", "Nautical77", "Poopypoop112", "TOSd", "limao_mao", "Bon_Kranch"]
+}
