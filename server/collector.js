@@ -209,10 +209,8 @@ async function runOnce() {
     const docs = await page.evaluate(() => {
       const b64 = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s); };
       const home = findNation($("myNation").value);
-      const live = n => n.towns.some(t => !t.ruined);
-      const threats = nations.filter(n => n !== home && live(n) && !["home", "ally"].includes(assess(n, home?.name)?.stance))
-        .sort((a, b) => (assess(b, home?.name)?.hostility || 0) * (assess(b).strength + 50) - (assess(a, home?.name)?.hostility || 0) * (assess(a).strength + 50) || b.active30 - a.active30).slice(0, 5);
-      const allies = home ? nations.filter(n => n !== home && live(n) && assess(n, home.name)?.stance === "ally").sort((a, b) => assess(b).risk - assess(a).risk).slice(0, 3) : [];
+      // the same set the Briefing Room shows as "Today's briefing"
+      const { threats, allies } = todaysBriefs(home);
       const list = [
         ["intsum", "Daily Intelligence Summary", "", intsum(false)],
         ["intsum-allies", "Daily Intelligence Summary (releasable)", "", intsum(true)],

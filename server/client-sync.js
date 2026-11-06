@@ -10,12 +10,6 @@
 
   // with a password set, Lock signs out on the server too; without one it just returns to the ministry picker
   const lock = document.getElementById("lockBtn");
-  // the hourly reports, as one more icon beside the Intelligence pages
-  const nav = document.querySelector('nav.pages [data-m="intel"]') || document.querySelector("nav.pages");
-  if (nav && !nav.querySelector("[data-hourly]")) {
-    const a = document.createElement("a"); a.href = "/gov/reports"; a.dataset.hourly = "1"; a.dataset.tip = "Hourly reports"; a.setAttribute("aria-label", "Hourly reports");
-    a.innerHTML = typeof ico === "function" ? ico("reports") : "Reports"; nav.appendChild(a);
-  }
   // how fresh the server's data is: a dot in the corner, the details on hover
   const css = document.createElement("style");
   css.textContent = `.bh-srv{position:fixed;right:14px;bottom:14px;z-index:50;font:11px/1.4 var(--mono,monospace);color:#9aa;background:rgba(10,10,12,.88);border:1px solid #2a2a30;padding:7px 9px;max-width:calc(100vw - 28px)}
@@ -51,6 +45,8 @@
     let st;
     try { st = await (await fetch("/api/status", { cache:"no-store" })).json(); } catch { return say("Server unreachable", true); }
     if (st.error) { location.href = "/login?next=/gov"; return; }
+    // the Briefing Room offers "Send to server" only when the site has a password (uploads are off on an open site)
+    if (window.BH_OPEN !== !!st.open) { window.BH_OPEN = !!st.open; if (typeof renderArchiveStatus === "function") renderArchiveStatus(); }
     // with no password there is nothing to lock: the crest returns to the ministry picker
     if (lock && !lock.dataset.srv) {
       lock.dataset.srv = "1";

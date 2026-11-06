@@ -100,7 +100,7 @@ const { chromium } = require('playwright');
   console.log('nation report movement paras:', mv.map(x => x.replace(/\n/g, ' ')).join(' // ').slice(0, 900));
   console.log('annex D:', await p.locator('.d-annex', { hasText:'Annex D' }).count());
   const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#brPdf')]); await dl.saveAs(__dirname + '/mv-nation.pdf');
-  await p.click('#brKinds [data-kind="intsum"]'); await p.waitForTimeout(400);
+  await p.click('#brToday [data-today="intsum"]'); await p.waitForTimeout(400);
   console.log('intsum movement:', (await p.locator('.paper p.np', { hasText:/movement collection|hostile or wary nations/ }).allInnerTexts()).map(x => x.replace(/\n/g, ' ')).join(' // ').slice(0, 700));
   const [dl2] = await Promise.all([p.waitForEvent('download'), p.click('#brPdf')]); await dl2.saveAs(__dirname + '/mv-intsum.pdf');
   await p.evaluate(() => { location.hash = '#forecasts'; }); await p.waitForTimeout(1200);

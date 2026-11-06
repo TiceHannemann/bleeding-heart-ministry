@@ -167,14 +167,14 @@ app.post("/api/history-import", express.text({ type:"*/*", limit:"20mb" }), (req
   catch (e) { res.status(400).json({ error:e.message }); }
 });
 
-// the War Room: marks on the map shared live. Anyone who can open the ministries sees them; changing them needs a
+// the War Room: marks on the map, the raid board and written plans, shared live. Anyone who can open the ministries sees them; changing them needs a
 // signed-in officer (when the site has a password) or the war room key in the x-war-key header
 const WAR = require("./warroom");
 app.get("/api/warroom", needLogin, (req, res) => res.json({ ...WAR.read(req.query.rev), canKey:WAR.hasKey(), open:OPEN }));
 app.post("/api/warroom", needLogin, express.json({ limit:"200kb" }), (req, res) => {
   if (OPEN ? !WAR.keyOk(req.headers["x-war-key"]) : !signedIn(req) && !WAR.keyOk(req.headers["x-war-key"]))
     return res.status(403).json({ error:WAR.hasKey() ? "The war room key is needed to change the plan." : "Set WARROOM_KEY on the server to let officers change the plan.", needKey:true });
-  try { res.json({ ok:true, rev:WAR.change(req.body?.op, req.body?.item, req.body?.by) }); }
+  try { res.json({ ok:true, rev:WAR.change(req.body?.op, req.body?.item, req.body?.by, req.body?.coll) }); }
   catch (e) { res.status(400).json({ error:e.message }); }
 });
 
@@ -199,7 +199,8 @@ app.get("/reports/:run/:file", needLogin, (req, res) => {
   res.setHeader("Cache-Control", "private, max-age=300");
   res.sendFile(f);
 });
-app.get("/gov/reports", needLogin, (req, res) => res.type("html").send(require("./reports-page")(runList().slice(0, 72).map(r => readJSON(path.join(RUNS, r, "manifest.json"))).filter(Boolean), collector.status(), { open:OPEN })));
+// the hourly reports live in the Briefing Room now ("Today's briefing" and "Earlier editions")
+app.get("/gov/reports", needLogin, (req, res) => res.redirect("/gov#briefings"));
 
 app.use((req, res) => res.status(404).type("text").send("Not found."));
 

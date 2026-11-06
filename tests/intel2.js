@@ -47,8 +47,5 @@ const { chromium } = require('playwright');
   await p.locator('[data-copybrief]').click(); await p.waitForTimeout(200);
   console.log('copied brief:', JSON.stringify((await p.evaluate(() => navigator.clipboard.readText())).slice(0, 220)));
   await p.locator('.assess').scrollIntoViewIfNeeded(); await p.screenshot({ path:'intel-dossier2.png' });
-  const [popup] = await Promise.all([ctx.waitForEvent('page', { timeout:5000 }).catch(() => null), p.evaluate(() => sendToWarRoom())]);
-  const pkg = JSON.parse(await p.evaluate(() => navigator.clipboard.readText()));
-  console.log('package nation fields:', Object.keys(pkg.nations.find(n => n.n === 'Carthage')).join(','), '| sm chars', pkg.nations.find(n => n.n === 'Carthage').sm.length);
   console.log(errs.join('\n') || 'no errors'); await b.close();
 })();

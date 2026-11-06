@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="b" data-name="Warstwa 2" xmlns="http://www.w3.org/2000/svg" width="28.095" height="28.095" viewBox="0 0 28.095 28.095">
+  <g id="c" data-name="Warstwa 1">
+    <g id="d" data-name="C_03">
+      <line x1="28.095" y1="14.047" x2="19.083" y2="14.047" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.071"/>
+      <line x1="9.012" y1="14.047" x2="0" y2="14.047" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.071"/>
+      <line x1="14.047" y1="0" x2="14.047" y2="9.012" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.071"/>
+      <line x1="14.047" y1="19.083" x2="14.047" y2="28.095" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.071"/>
+    </g>
+  </g>
+</svg>

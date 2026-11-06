@@ -258,6 +258,22 @@
   .br-kinds button:hover, .br-kinds button.on { color:var(--fg); }
   .br-kinds button.on::before { transform:scaleY(1); }
   .br-field { display:grid; gap:8px; }
+  .br-today button { display:flex; align-items:baseline; gap:8px; font-size:13px; padding-top:10px; padding-bottom:10px; }
+  .br-today button::before { top:10px; bottom:10px; }
+  .br-today button b { font-weight:600; color:inherit; }
+  .br-today button span { color:var(--dim); font-weight:400; font-size:11px; font-family:var(--mono); letter-spacing:.06em; text-transform:uppercase; min-width:58px; }
+  .br-today button em { margin-left:auto; font:11px var(--mono); font-style:normal; }
+  .br-persp { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--mut); }
+  .br-persp select { flex:1; min-width:0; }
+  .br-persp[hidden], .br-editions[hidden] { display:none; }
+  .br-editions { font-size:12px; color:var(--mut); border-top:1px solid var(--line); padding-top:14px; display:grid; gap:2px; }
+  .br-editions > b { font:10px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--mut); font-weight:400; margin-bottom:6px; }
+  .br-editions details summary { cursor:pointer; padding:5px 0; color:var(--fg); list-style:none; display:flex; gap:8px; }
+  .br-editions details summary::-webkit-details-marker { display:none; }
+  .br-editions details summary i { margin-left:auto; color:var(--dim); font-style:normal; font-family:var(--mono); font-size:11px; }
+  .br-editions a { display:flex; gap:8px; padding:3px 0 3px 10px; color:var(--mut); text-decoration:none; }
+  .br-editions a:hover { color:var(--fg); }
+  .br-editions a em { margin-left:auto; font-style:normal; font:10px var(--mono); }
   .br-field label { font:10px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--mut); }
   .br-field select, .br-field input { background:transparent; color:var(--fg); border:0; border-bottom:1px solid var(--line2); padding:6px 2px; font:14px var(--display); }
   .br-field select option { background:#111; }
@@ -724,11 +740,67 @@
   body[data-page="warroom"] :is(.only-ruins,.only-over,.only-dossier,.not-dossier,.only-brief,.only-fore) { display:none !important; }
   body:not([data-page="warroom"]) .only-warroom { display:none !important; }
   body[data-page="warroom"] .mapstage { height:clamp(520px,78vh,920px); }
+  section.only-warroom > .panel { margin-bottom:28px; }
+  .rb-sug { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px; }
+  .rb-sug button { display:flex; gap:8px; align-items:baseline; background:none; border:1px solid var(--line2); color:var(--fg); padding:7px 10px; font:13px var(--display); cursor:pointer; }
+  .rb-sug button:hover { border-color:var(--c, var(--mut)); }
+  .rb-sug button span { color:var(--mut); font:11px var(--mono); }
+  .rb-sug button b { color:var(--c); font:600 15px var(--mono); line-height:1; }
+  .rb-cols { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; }
+  @media (max-width:860px) { .rb-cols { grid-template-columns:1fr; } }
+  .rb-col h3 { font:10px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--mut); margin:0 0 8px; font-weight:400; }
+  .rb-col h3 b { color:var(--fg); margin-left:6px; }
+  .rb-card { border-left:2px solid var(--c); background:rgba(255,255,255,.025); padding:10px 12px; margin-bottom:8px; cursor:pointer; }
+  .rb-card.on { background:rgba(255,255,255,.06); }
+  .rb-card .t { display:flex; gap:8px; align-items:baseline; }
+  .rb-card .t b { font:600 15px var(--display); }
+  .rb-card .t .kind { margin-left:auto; }
+  .rb-card .m { font-size:12px; color:var(--mut); margin-top:4px; display:flex; gap:10px; flex-wrap:wrap; }
+  .rb-card .m code { cursor:copy; }
+  .rb-card .n { font-size:12px; margin-top:6px; color:var(--fg); }
+  .rb-card .a { display:flex; gap:12px; margin-top:8px; flex-wrap:wrap; }
+  .rb-card .a button, .rb-add summary { background:none; border:0; color:var(--mut); font:12px var(--display); cursor:pointer; padding:0; }
+  .rb-card .a button:hover { color:var(--fg); } .rb-card .a button.go { color:var(--hq); }
+  .rb-card form, .rb-add form { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .rb-card input, .rb-add input, .rb-add select, .pl-ed input, .pl-ed select, .pl-ed textarea { background:transparent; color:var(--fg); border:0; border-bottom:1px solid var(--line2); padding:6px 2px; font:13px var(--display); min-width:0; }
+  .rb-card form input { flex:1; }
+  .rb-empty { color:var(--dim); font-size:13px; padding:8px 0; }
+  .rb-foot { display:flex; gap:18px; align-items:baseline; flex-wrap:wrap; margin-top:12px; font-size:12px; color:var(--mut); }
+  .rb-add summary:hover { color:var(--fg); }
+  .rb-add form > * { flex:1 1 120px; }
+  .pl { display:grid; grid-template-columns:minmax(200px, 260px) minmax(0, 1fr); gap:20px; }
+  @media (max-width:860px) { .pl { grid-template-columns:1fr; } }
+  .pl-new { display:flex; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+  .pl-new button, .pl-meta button { background:none; border:0; color:var(--mut); font:12px var(--display); cursor:pointer; padding:0; }
+  .pl-new button:hover, .pl-meta button:hover { color:var(--fg); }
+  .pl-list { display:grid; max-height:420px; overflow:auto; }
+  .pl-list button { text-align:left; background:none; border:0; border-top:1px solid var(--line); color:var(--mut); padding:9px 2px 9px 10px; cursor:pointer; box-shadow:inset 2px 0 0 var(--c); }
+  .pl-list button.on, .pl-list button:hover { color:var(--fg); background:rgba(255,255,255,.03); }
+  .pl-list b { display:block; font:600 13px var(--display); color:inherit; }
+  .pl-list span { font-size:11px; color:var(--dim); }
+  .pl-ed { display:grid; gap:10px; align-content:start; }
+  .pl-ed .k { font:10px var(--mono); letter-spacing:.14em; text-transform:uppercase; color:var(--c); }
+  .pl-ed #plTitle { font:600 20px var(--display); }
+  .pl-ed textarea { min-height:220px; resize:vertical; line-height:1.6; font-size:14px; border:1px solid var(--line2); padding:10px; }
+  .pl-row { display:flex; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--mut); align-items:center; }
+  .pl-row label { display:flex; gap:8px; align-items:center; } .pl-row label.grow { flex:1; } .pl-row label.grow input { flex:1; }
+  .pl-tot { display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:var(--mut); }
+  .pl-tot b { display:block; font:600 18px var(--mono); color:var(--fg); }
+  .pl-meta { display:flex; gap:14px; font-size:12px; color:var(--dim); flex-wrap:wrap; }
+  .pl-meta .grow { flex:1; }
   body.wr-draw canvas#map { cursor:crosshair !important; }
   .wr-panel { position:absolute; right:max(var(--gut), calc(50vw - 660px + var(--gut))); top:20px; width:min(340px, calc(100% - 40px)); max-height:calc(100% - 60px); overflow:auto; background:rgba(8,8,8,.86); backdrop-filter:blur(12px); border:1px solid var(--line); padding:14px 16px; z-index:4; font-size:13px; }
   .wr-tools { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:10px 0; }
   .wr-tools button { background:none; border:1px solid var(--line2); color:var(--mut); font:500 11.5px var(--display); padding:6px 4px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; }
-  .wr-tools button i { width:10px; height:10px; border-radius:2px; background:var(--c); display:block; }
+  .wr-tools button i { width:16px; height:16px; background:var(--c); display:block; -webkit-mask:var(--ic, none) center/contain no-repeat; mask:var(--ic, none) center/contain no-repeat; }
+  .wr-tools button i:not([style*="--ic"]) { width:10px; height:10px; border-radius:2px; margin:3px; }
+  .wr-tools button.on i { background:#000; }
+  /* Raido HUD marks: white SVGs used as masks, coloured by what they mark */
+  .rd-ic { display:inline-block; width:14px; height:14px; background:var(--c, currentColor); -webkit-mask:var(--ic) center/contain no-repeat; mask:var(--ic) center/contain no-repeat; vertical-align:-2px; flex:0 0 auto; }
+  .mapstage::before, .mapstage::after { content:""; position:absolute; z-index:3; width:26px; height:26px; pointer-events:none; opacity:.45; background:url(assets/raido/CR_01.svg) center/contain no-repeat; }
+  .mapstage::before { left:14px; bottom:14px; } .mapstage::after { right:14px; bottom:14px; transform:scaleX(-1); }
+  .br-today button.on span { color:var(--intel); }
+  .pl-list b .rd-ic { margin-right:6px; }
   .wr-tools button:hover { color:var(--fg); } .wr-tools button.on { color:#000; background:var(--fg); border-color:var(--fg); }
   .wr-panel input, .wr-panel textarea { width:100%; background:#000; border:1px solid var(--line2); color:var(--fg); font:13px var(--display); padding:6px 8px; margin:4px 0; }
   .wr-panel textarea { min-height:64px; resize:vertical; }
@@ -817,7 +889,6 @@
     <div class="ministry" data-m="population"><a href="#recruits" data-tip="Recruits" aria-label="Recruits" data-ico="userplus"></a><a href="#migration" data-tip="Migration" aria-label="Migration" data-ico="move"></a></div>
     <div class="hmeta">
       <button class="scan-btn" id="scan">SCAN ALL TOWNS</button>
-      <button class="send-btn icon-btn not-finance" id="sendWR" data-tip="Send to War Room" aria-label="Send to War Room" data-ico="send"></button>
       <span class="watch" id="watchDot" data-tip=""><i></i><span id="watchState" class="sr"></span></span>
     </div>
   </nav>
@@ -867,7 +938,7 @@
       <div class="seg"><button data-mode="flat" class="on">Flat</button><button data-mode="globe">Globe</button></div>
       <button data-act="in" title="Zoom in">+</button><button data-act="out" title="Zoom out">−</button>
       <button data-act="fit" title="Show all towns">Fit</button><button data-act="hq" title="Go to Bleeding Heart">♥ HQ</button>
-      <div class="seg only-dossier" id="lensSeg"><button data-lens="stance">Stance</button><button data-lens="risk">Risk</button><button data-lens="activity">Activity</button></div>
+      <div class="seg only-dossier" id="lensSeg"><button data-lens="stance">Stance</button><button data-lens="risk" data-tip="How likely each nation is to lose towns or land">Collapse risk</button><button data-lens="activity">Activity</button></div>
       <label class="lenschk only-dossier"><input type="checkbox" id="lensFront" checked> Front lines</label>
       <label class="lenschk only-dossier"><input type="checkbox" id="lensLabels" checked> Labels</label>
     </div>
@@ -897,10 +968,12 @@
     <div class="wr-xy only-warroom" id="wrXY"></div>
   </section>
 
-  <!-- War Room: the shared plan, below the map -->
+  <!-- War Room: the raid board, plans and alliances, and the marks on the map, below the map -->
   <section class="only-warroom">
+    <div class="panel"><h2 data-tip="Towns to hit. One officer claims each raid and logs it when done">Raid board <small id="wrRaidCount"></small></h2><div id="wrRaids"></div></div>
+    <div class="panel"><h2 data-tip="Written plans, named alliances and notes, saved as you type">Plans and alliances <small id="wrPlanCount"></small></h2><div id="wrPlans"></div></div>
     <div class="fin-cols">
-      <div class="panel"><h2>The plan <small id="wrCount"></small></h2><div class="fin-wrap" id="wrList"></div></div>
+      <div class="panel"><h2>On the map <small id="wrCount"></small></h2><div class="fin-wrap" id="wrList"></div></div>
       <div class="panel"><h2>Changes</h2><div class="fin-wrap" id="wrLog"></div></div>
     </div>
   </section>
@@ -915,7 +988,7 @@
         <option value="chunks">Land (chunks)</option>
         <option value="gold">Gold</option>
         <option value="takeable">Most overclaimable land</option>
-        <option value="risk">Highest risk</option>
+        <option value="risk">Nearest collapse</option>
         <option value="hostility">Most hostile to us</option>
         <option value="friendliness">Most friendly to us</option>
         <option value="strength">Strongest</option>
@@ -1025,17 +1098,15 @@
 
   <section class="only-brief briefroom">
     <aside class="br-side">
-      <div class="br-kinds" id="brKinds">
-        <button data-kind="intsum" data-tip="The whole server, last 24 hours">Daily Summary</button>
-        <button data-kind="nation">Assessment</button>
-        <button data-kind="support" data-tip="For an ally">Support</button>
-        <button data-kind="history" id="brHistBtn" data-tip="Terra Nostra from the Discord archives, with the sources' biases" hidden>History</button>
-      </div>
-      <div class="br-field" id="brPerspField"><label for="brPersp">Perspective</label><select id="brPersp"></select></div>
-      <div class="br-field" id="brNationField"><label for="brSearch">Nation</label><input id="brSearch" placeholder="Find a nation"><div id="brNations" class="br-nations"></div></div>
+      <div class="br-field"><label>Today's briefing</label><div class="br-kinds br-today" id="brToday"></div></div>
+      <div class="br-field" id="brNationField"><label for="brSearch">Any nation</label>
+        <div class="br-class" id="brKinds"><button data-kind="nation" data-tip="What the nation is and what it will do next">Assessment</button><button data-kind="support" data-tip="Written for the nation's own government: the risks it faces">Support</button></div>
+        <div class="br-persp" id="brPerspField"><span>Seen from</span><select id="brPersp" aria-label="Seen from"></select></div>
+        <input id="brSearch" placeholder="Find a nation"><div id="brNations" class="br-nations"></div></div>
       <div class="br-field"><label>Classification</label><div class="br-class"><button data-rel="0">Kingdom eyes only</button><button data-rel="1">Releasable to allies</button></div>
         <p class="br-relnote" id="brRelNote"></p></div>
       <div class="br-acts"><button class="br-pdf" id="brPdf">PDF</button><button class="icon-btn" id="brCopy" data-tip="Copy as text" aria-label="Copy as text" data-ico="copy"></button></div>
+      <div class="br-editions" id="brEditions" hidden></div>
       <div class="br-archive" id="brArchive"></div>
     </aside>
     <div class="br-doc" id="brDoc"></div>
@@ -1558,7 +1629,7 @@ function renderNations() {
   if (!selNation && rows.length) selNation = rows[0].name;
   // active members as a bar, risk as a bar in its level's colour, so the big and the endangered stand out down the list
   const amax = Math.max(1, ...nations.map(n => n.active30));
-  $("natTable").innerHTML = nations.length ? `<tr><th>#</th><th>Nation</th><th>Active</th><th>Risk</th><th class="num">Chunks</th></tr>` +
+  $("natTable").innerHTML = nations.length ? `<tr><th>#</th><th>Nation</th><th>Active</th><th title="How likely the nation is to lose towns or land: ruins, overclaimable land, inactive members">Collapse risk</th><th class="num">Chunks</th></tr>` +
     rows.slice(0, 300).map(n => { const a = assess(n);
       return `<tr data-nation="${esc(n.name)}" class="${n.name === selNation ? "sel" : ""} ${n === mine ? "mine" : ""}" title="${n.towns.length} towns · ${n.residents} residents · ${n.active30} active in 30 days">
       <td>${ranked.indexOf(n) + 1}</td><td><span class="sdot" style="--c:${STANCE[a.stance].c}" title="${STANCE[a.stance].label}"></span>${n === mine ? "★ " : ""}${esc(n.name)}</td>
@@ -1578,9 +1649,9 @@ function renderNatLead(home) {
   const prize = nations.filter(n => n !== home && !["ally", "friendly", "home"].includes(map.get(n.name).stance)).map(n => ({ n, t:takeableOf(n) })).sort((a, b) => b.t - a.t)[0];
   const ra = risky && map.get(risky.name);
   el.innerHTML = leadRow([
-    threat && { k:"Greatest threat to us", v:threat.n.name, c:"var(--red)", go:"nation:" + threat.n.name, t:`${STANCE[threat.a.stance].label} · ${threat.n.active30} active${threat.a.contact ? ` · ${plural(threat.a.contact, "town")} near ours` : ""}`, viz:meter("Hostility", threat.a.hostility, "var(--red)", "") },
+    threat && { k:"Greatest threat to us", v:threat.n.name, c:"var(--red)", go:"nation:" + threat.n.name, t:`${STANCE[threat.a.stance].label} · ${threat.n.active30} active${threat.a.contact ? ` · ${plural(threat.a.contact, "town")} near ours` : ""}`, viz:meter("Hostility to us", threat.a.hostility, "var(--red)", "") },
     grow && { k:"Growing fastest", v:`${grow.n.name} +${grow.d}`, c:"var(--green)", go:"nation:" + grow.n.name, t:`active members over the week · now ${grow.n.active30}`, viz:sparkSvg(seriesPts(grow.n.name, "a30")) },
-    risky && { k:"Nearest collapse", v:risky.name, c:riskLevel(ra.risk).c, go:"nation:" + risky.name, t:`${[ra.falling && `${plural(ra.falling, "town")} falling`, ra.take && `${ra.take.toLocaleString()} chunks open`, ra.leaderGone && "leader gone"].filter(Boolean).join(" · ") || `${risky.active30} active`}`, viz:meter("Risk", ra.risk, riskLevel(ra.risk).c, "") },
+    risky && { k:"Nearest collapse", v:risky.name, c:riskLevel(ra.risk).c, go:"nation:" + risky.name, t:`${[ra.falling && `${plural(ra.falling, "town")} falling`, ra.take && `${ra.take.toLocaleString()} chunks open`, ra.leaderGone && "leader gone"].filter(Boolean).join(" · ") || `${risky.active30} active`}`, viz:meter("Collapse risk", ra.risk, riskLevel(ra.risk).c, "") },
     prize?.t > 0 && { k:"Biggest prize", v:`${prize.n.name}`, c:"var(--purple)", go:"nation:" + prize.n.name, t:`${prize.t.toLocaleString()} chunks can be overclaimed now from ${plural(prize.n.towns.filter(isOverclaimable).length, "town")}`, viz:vBar(prize.t, prize.n.chunks, "var(--purple)", 200) },
   ]);
 }
@@ -1647,12 +1718,12 @@ function renderDossier(n) {
       <div class="meta" style="color:var(--mut);font-size:13px;margin-top:4px">${leaderNote}${n.capital ? ` · capital 👑 ${esc(n.capital)}` : ""}${n.registered ? ` · founded ${new Date(n.registered).toLocaleDateString()}` : ""}</div>
     </div><div class="flags">${flag(n.isPublic, "public", "var(--blue)")}${flag(n.isOpen, "open", "var(--green)")}${flag(n.isNeutral, "neutral", "var(--gold)")}</div></div>
     <div class="assess">
-      <div class="a-tags"><span class="tag-st" style="--c:${STANCE[A.stance].c}">${STANCE[A.stance].label}</span><span class="tag-st" style="--c:${riskLevel(A.risk).c}">Risk ${riskLevel(A.risk).label.toLowerCase()}</span>${A.flags.map(f => `<span class="tag-st flag">${esc(f)}</span>`).join("")}</div>
+      <div class="a-tags"><span class="tag-st" style="--c:${STANCE[A.stance].c}">${STANCE[A.stance].label}</span><span class="tag-st" style="--c:${riskLevel(A.risk).c}">Collapse risk ${riskLevel(A.risk).label.toLowerCase()}</span>${A.flags.map(f => `<span class="tag-st flag">${esc(f)}</span>`).join("")}</div>
       <p class="brief">${dossierLine(n, A)}</p>
       <div class="meters">
-        ${meter("Risk", A.risk, riskLevel(A.risk).c, "Towns about to ruin, overclaimable land, inactive members, leader inactivity, decline and bank depth")}
-        ${meter("Hostility", A.hostility, "var(--red)", "Enmity with us, alliances with our enemies, hostility to our allies, towns near ours")}
-        ${meter("Friendliness", A.friendliness, "var(--blue)", "Alliance with us, shared allies and shared enemies")}
+        ${meter("Collapse risk", A.risk, riskLevel(A.risk).c, "How likely this nation is to lose towns or land: towns about to ruin, overclaimable land, inactive members, leader inactivity, decline and bank depth")}
+        ${meter("Hostility to us", A.hostility, "var(--red)", "How much this nation is set against us: enmity with us, alliances with our enemies, hostility to our allies, towns near ours")}
+        ${meter("Friendliness to us", A.friendliness, "var(--blue)", "Alliance with us, shared allies and shared enemies")}
         ${meter("Strength", A.strength, "var(--fg)", "Active members, land, gold and allies, ranked against every nation")}
       </div>
       <div class="a-acts"><button class="deep" data-copybrief="${esc(n.name)}">Copy brief</button><button class="deep" data-frame="${esc(n.name)}">Show on map</button>${A.dA != null ? `<span class="a-mom">Since last scan: ${A.dA >= 0 ? "+" : ""}${A.dA} active · ${A.dC >= 0 ? "+" : ""}${A.dC} chunks</span>` : ""}</div>
@@ -2139,6 +2210,35 @@ function hqTown() {
 
 // ---- view state ----
 const cv = $("map"), ctx = cv.getContext("2d");
+// Raido HUD marks (assets/raido, white SVGs). On the map each is drawn as a tinted copy; until one has loaded,
+// the hand-drawn mark stands in. In the page they are CSS masks (rdIc), so they take their element's colour.
+const RAIDO_BASE = window.BH_SERVER ? "/assets/raido/" : "../assets/raido/";
+const rdIc = (name, c) => `<i class="rd-ic" style="--ic:url(${RAIDO_BASE}${name}.svg)${c ? `;--c:${c}` : ""}"></i>`;
+const RAIDO = new Map(), RAIDO_TINT = new Map();
+function raidoImg(name) {
+  let i = RAIDO.get(name); if (!i) { i = new Image(); i.decoding = "async"; i.src = RAIDO_BASE + name + ".svg"; RAIDO.set(name, i); }
+  return i.complete && i.naturalWidth ? i : null;
+}
+// the mark in a colour, `px` device pixels across (cached per name, colour and size)
+function raidoTint(name, color, px) {
+  const img = raidoImg(name); if (!img) return null;
+  px = Math.max(4, Math.round(px)); const key = name + "|" + color + "|" + px;
+  let c = RAIDO_TINT.get(key); if (c) return c;
+  const h = Math.max(1, Math.round(px * img.naturalHeight / img.naturalWidth));
+  c = document.createElement("canvas"); c.width = px; c.height = h; const g = c.getContext("2d");
+  g.drawImage(img, 0, 0, px, h); g.globalCompositeOperation = "source-in"; g.fillStyle = color; g.fillRect(0, 0, px, h);
+  if (RAIDO_TINT.size > 300) RAIDO_TINT.clear();
+  RAIDO_TINT.set(key, c); return c;
+}
+// the scope ring (CIR_HUD) with its circle, not its image, centred on (x, y) at radius r: the circle sits right of the
+// image's centre (centre 180.7, 121.4 and radius 92.8 in a 280.4 × 242.8 drawing), with its tick marks to the left
+function raidoRing(g, color, x, y, r) {
+  const k = r / 92.777, c = raidoTint("CIR_HUD", color, Math.round(280.418 * k / 4) * 4); if (!c) return false;
+  const s = c.width / 280.418; g.drawImage(c, x - 180.679 * s, y - 121.383 * s); return true;
+}
+// draw a mark centred on (x, y); false when it hasn't loaded yet
+function raidoDraw(name, color, x, y, px) { const c = raidoTint(name, color, px); if (!c) return false; ctx.drawImage(c, x - c.width / 2, y - c.height / 2); return true; }
+for (const n of ["C_01", "C_02", "C_03", "C_04", "CIR_HUD", "MEM_01"]) raidoImg(n);
 // the globe is the default view (a choice made before the globe became the default is not carried over)
 const M = { mode:"globe", cx:0, cz:0, scale:0.02, lon0:10, lat0:25, gz:1, W:1, H:1, dpr:1, hits:[], drag:null, idleAt:0, fly:null };
 try { M.mode = localStorage.getItem("rh_mapView") || "globe"; } catch {}
@@ -2148,6 +2248,8 @@ function sizeMap() {
   if (cv.width !== M.W || cv.height !== M.H) { cv.width = M.W; cv.height = M.H; landLayer.key = ""; clampFlat(); }
 }
 addEventListener("resize", sizeMap);
+// pages give the map different heights (the War Room's is taller), so follow the box itself, not just the window
+if (window.ResizeObserver) new ResizeObserver(() => sizeMap()).observe(cv);
 // the flat map never shows past the world border: zoomed out it fills the frame, and panning stops at the edges
 function clampFlat() {
   if (M.W < 50 || M.H < 50) return;
@@ -2575,7 +2677,7 @@ cv.addEventListener("pointermove", ev => {
   if (!t) { tip.style.display = "none"; return; }
   const r = $("mapWrap").getBoundingClientRect(), isHQ = t === hqTown();
   const ta = tab === "dossier" && t.nation ? assess(findNation(t.nation)) : null;
-  tip.innerHTML = ta ? `<b>${esc(t.name)}</b> · ${esc(t.nation)} · ${STANCE[ta.stance].label} · risk ${ta.risk}` : `<b>${isHQ ? "♥ " : ""}${esc(t.name)}</b> · ${isHQ ? "Bleeding Heart headquarters" : tab === "over" ? (isOverTarget(t) ? ocState(t).text : `${t.blocks ?? "?"} / ${overclaim(t)?.limit ?? "?"} chunks`) : stateOf(t).text}`;
+  tip.innerHTML = ta ? `<b>${esc(t.name)}</b> · ${esc(t.nation)} · ${STANCE[ta.stance].label} · collapse risk ${ta.risk}` : `<b>${isHQ ? "♥ " : ""}${esc(t.name)}</b> · ${isHQ ? "Bleeding Heart headquarters" : tab === "over" ? (isOverTarget(t) ? ocState(t).text : `${t.blocks ?? "?"} / ${overclaim(t)?.limit ?? "?"} chunks`) : stateOf(t).text}`;
   tip.style.display = "block";
   tip.style.left = Math.min(ev.clientX - r.left + 14, r.width - tip.offsetWidth - 8) + "px";
   tip.style.top = (ev.clientY - r.top + 14) + "px";
@@ -2627,12 +2729,10 @@ let lastFlown = null;
 setInterval(() => { if (selected !== lastFlown) { lastFlown = selected; if (selected) flyTo(selected); } }, 100);
 
 
-/* ---------- Intel over time + war room bridge ----------
+/* ---------- Intel over time ----------
    Each finished scan saves a compact snapshot of every nation (active members, residents, towns,
    chunks, gold, allies, enemies) in this browser. The dossier draws trend lines from them and
-   marks what changed since the previous scan. "Send to war room" copies the scan's best targets and
-   the same nation snapshot so it can be pasted into the department's shared War Room. */
-const WAR_ROOM = "https://claude.ai/artifact/DrxXKg6uDf1GANPMDZcdWH";
+   marks what changed since the previous scan. */
 const HISTORY_MAX = 90;
 let scanHistory = [];
 try { scanHistory = JSON.parse(localStorage.getItem("rh_history") || "[]"); } catch {}
@@ -2753,32 +2853,7 @@ function drawWeb(n, mine) {
   }
 }
 
-// ---- war room package ----
-function warRoomPackage() {
-  const now = Date.now();
-  const ruins = towns.filter(t => t.c && ((t.ruined && t.ruinedAt && now - t.ruinedAt < 2 * 864e5) || isSoon(t)))
-    .map(t => ({ t, eta:t.ruined ? t.ruinedAt : now + etaOf(t) })).sort((a, b) => a.eta - b.eta).slice(0, 60)
-    .map(({ t, eta }) => ({ town:t.name, kind:"ruin", nation:t.nation || "", x:t.c.x, z:t.c.z, eta:Math.round(eta), gold:t.balance ?? null, warp:t.near?.name || "" }));
-  const over = towns.filter(isOverTarget).map(t => ({ t, o:overclaim(t) })).sort((a, b) => b.o.takeable - a.o.takeable || b.o.soonExcess - a.o.soonExcess).slice(0, 60)
-    .map(({ t, o }) => ({ town:t.name, kind:"overclaim", nation:t.nation || "", x:t.c?.x ?? null, z:t.c?.z ?? null, chunks:o.takeable || o.soonExcess, warp:t.near?.name || "" }));
-  return { kind:"bleeding-heart-intel", v:1, at:now, hq:hqTown()?.name || "", towns:towns.length, ruined:towns.filter(t => t.ruined).length,
-    purgeMin:learned.purgeMin, candidates:[...ruins, ...over],
-    nations:nationSnap().map(x => { const n = findNation(x.n), a = assess(n); return a ? { ...x, rk:a.risk, st:a.stance, hs:a.hostility, fr:a.friendliness, sg:a.strength, fl:a.flags, sm:nationBrief(n, true).slice(0, 600) } : x; }) };
-}
 function showToast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("on"), 2600); }
-async function sendToWarRoom() {
-  if (!towns.length) return status("Run a scan first, then send it to the war room.");
-  const text = JSON.stringify(warRoomPackage());
-  let copied = false;
-  try { await navigator.clipboard.writeText(text); copied = true; } catch {}
-  if (!copied) { // older browsers / file pages: fall back to a selected textarea
-    const ta = document.createElement("textarea"); ta.value = text; ta.style.cssText = "position:fixed;opacity:0"; document.body.appendChild(ta); ta.select();
-    try { copied = document.execCommand("copy"); } catch {} ta.remove();
-  }
-  showToast(copied ? "Scan copied. Paste it into the war room's Import tab." : "Couldn't copy automatically. Try again from Chrome or Edge.");
-  if (copied) window.open(WAR_ROOM + "#import", "_blank", "noopener");
-}
-
 // remember which dossier folds are open across redraws
 const openFolds = new Set();
 document.addEventListener("toggle", e => { const k = e.target.dataset?.fold; if (k) e.target.open ? openFolds.add(k) : openFolds.delete(k); }, true);
@@ -2990,7 +3065,7 @@ function nationBrief(n, plain) {
   const rel = a.stance === "home" ? "This is Bleeding Heart's own nation." :
     `Stance toward Bleeding Heart: ${STANCE[a.stance].label.toLowerCase()}${a.reasons.length ? ` (${a.reasons.slice(0, 3).join(", ")})` : ""}.${a.contact ? ` ${townsN(a.contact)} within ${CONTACT_RANGE.toLocaleString()} blocks of ours.` : ""}`;
   const why = [a.falling && `${townsN(a.falling)} could ruin within 3 days`, a.take && `${chunks(a.take)} can be overclaimed now`, a.activeRate < 0.4 && `only ${Math.round(a.activeRate * 100)}% of members are active`, a.leaderGone && "the leader is inactive"].filter(Boolean);
-  const s3 = `Risk is ${riskLevel(a.risk).label.toLowerCase()} (${a.risk}/100)${why.length ? `: ${why.join(", ")}` : ""}.`;
+  const s3 = `Its risk of collapse is ${riskLevel(a.risk).label.toLowerCase()} (${a.risk}/100)${why.length ? `: ${why.join(", ")}` : ""}.`;
   const s4 = a.flags.length ? `Assessment: ${a.flags.join(", ")}.` : "";
   const text = [s1, rel, s3, s4].filter(Boolean).join(" ");
   return plain ? text : esc(text);
@@ -3004,8 +3079,8 @@ function dossierLine(n, a) {
 }
 function briefForSharing(n) {
   const a = assess(n);
-  return [`**${n.name}** · ${STANCE[a.stance].label} · Risk ${a.risk}/100 (${riskLevel(a.risk).label})`,
-    `Strength ${a.strength} · Hostility ${a.hostility} · Friendliness ${a.friendliness}${a.dA != null ? ` · Active ${a.dA >= 0 ? "+" : ""}${a.dA} since last scan` : ""}`,
+  return [`**${n.name}** · ${STANCE[a.stance].label} · Collapse risk ${a.risk}/100 (${riskLevel(a.risk).label})`,
+    `Strength ${a.strength} · Hostility to us ${a.hostility} · Friendliness to us ${a.friendliness}${a.dA != null ? ` · Active ${a.dA >= 0 ? "+" : ""}${a.dA} since last scan` : ""}`,
     nationBrief(n, true), `— Bleeding Heart · Ministry of Intelligence, ${new Date().toLocaleDateString()}`].join("\n");
 }
 const meter = (label, v, c, tip) => `<div class="meter" title="${esc(tip)}"><div class="m-top"><span>${label}</span><b>${v}</b></div><div class="m-bar"><div style="width:${v}%;background:${c}"></div></div></div>`;
@@ -4118,7 +4193,7 @@ function supportAssessment(n, releasable) {
   Head(doc, "Purpose");
   Para(doc, `The Kingdom of The Bleeding Heart prepares this assessment for the Government of ${n.name} as a friend. It sets out, from the data the Kingdom's Ministry of Intelligence collects across Terra Nostra, the risks ${n.name} currently faces, the nations that threaten it, the towns that need attention, and the steps the Ministry recommends.${releasable ? "" : ` It draws on ${basisLine(n.name).replace(/\.$/, "")}.`}`);
   Head(doc, "Summary");
-  Para(doc, `The Ministry assesses ${n.name}'s overall risk as ${riskLevel(a.risk).label.toLowerCase()}, with a score of ${a.risk} out of 100. ${threats.length ? `The principal external threat${threats.length > 1 ? "s are" : " is"} ${andList(threats.slice(0, 2).map(t => t.n.name))}.` : "No nation currently shows hostile intent toward it."} ${X.ruin7.length + over.length ? `${plural(X.ruin7.length + over.length, "town")} need${X.ruin7.length + over.length === 1 ? "s" : ""} attention within the next seven days.` : "None of its towns is in immediate danger."} ${X.leaderLeft != null && X.leaderLeft < 14 ? `Leadership continuity is also at risk: ${n.king} must log in within ${plural(Math.max(0, Math.ceil(X.leaderLeft)), "day")} to retain the leadership.` : ""} Over the period under review its active membership has ${moved(anyDelta(X.tA))}, which the Ministry reads as ${X.gA > 0.04 ? "a nation gaining strength" : X.gA < -0.04 ? "a nation losing strength" : "broad stability"}.`);
+  Para(doc, `The Ministry assesses ${n.name}'s risk of collapse as ${riskLevel(a.risk).label.toLowerCase()}, with a score of ${a.risk} out of 100. ${threats.length ? `The principal external threat${threats.length > 1 ? "s are" : " is"} ${andList(threats.slice(0, 2).map(t => t.n.name))}.` : "No nation currently shows hostile intent toward it."} ${X.ruin7.length + over.length ? `${plural(X.ruin7.length + over.length, "town")} need${X.ruin7.length + over.length === 1 ? "s" : ""} attention within the next seven days.` : "None of its towns is in immediate danger."} ${X.leaderLeft != null && X.leaderLeft < 14 ? `Leadership continuity is also at risk: ${n.king} must log in within ${plural(Math.max(0, Math.ceil(X.leaderLeft)), "day")} to retain the leadership.` : ""} Over the period under review its active membership has ${moved(anyDelta(X.tA))}, which the Ministry reads as ${X.gA > 0.04 ? "a nation gaining strength" : X.gA < -0.04 ? "a nation losing strength" : "broad stability"}.`);
   Head(doc, "Assessment of Risk");
   Para(doc, `The most immediate risk to any nation on Terra Nostra is the loss of towns to inactivity: a town falls to ruin once none of its residents has logged in for ${days()} days, and its contents can then be taken by anyone. ${X.ruin7.length ? `${plural(X.ruin7.length, "of the nation's towns")} will cross that threshold within seven days if nothing changes.` : `None of ${n.name}'s towns will cross that threshold within seven days on current activity.`}`);
   Para(doc, `The second risk is overclaim. A town may hold land in proportion to its active residents; any surplus can be taken by a neighbouring town. ${over.length ? `${plural(over.length, "town")} already hold${over.length === 1 ? "s" : ""} more land than ${over.length === 1 ? "its" : "their"} residents support, exposing ${plural(take, "chunk")}.` : "No town currently holds more land than its residents support."} ${soonOver.length ? `${plural(soonOver.length, "more town")} will reach that position within ${ocWindow()} days as inactive residents stop counting.` : ""}`);
@@ -4165,7 +4240,7 @@ function intsum(releasable) {
   const rising = movers.filter(x => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 5), falling = movers.filter(x => x.d < 0).sort((a, b) => a.d - b.d).slice(0, 5);
   const by = t => ev24.filter(e => e.type === t);
   Head(doc, "Summary");
-  Para(doc, `${threats[0] ? `${threats[0].n.name} remains the principal threat to the Kingdom${releasable ? " and its allies" : `, with a hostility score of ${threats[0].a.hostility} and a strength of ${threats[0].a.strength}`}. ` : "No nation currently shows hostile intent toward the Kingdom. "}${by("town_ruin").length ? `${plural(by("town_ruin").length, "town")} fell to ruin in the last twenty-four hours, ` : "No towns fell to ruin in the last twenty-four hours, "}and ${ruin72.length ? `${plural(ruin72.length, "more", "more")} ${ruin72.length === 1 ? "is" : "are"} forecast to fall within seventy-two hours` : "none is forecast to fall within seventy-two hours"}. ${ev7.filter(e => /^(ally|enemy)_add/.test(e.type)).length ? `The week brought ${plural(ev7.filter(e => /^(ally|enemy)_add/.test(e.type)).length, "new alliance or enmity", "new alliances or enmities")}, a sign of diplomatic movement.` : "The diplomatic map has been quiet this week."} ${critical.length ? `${plural(critical.length, "nation")} ${critical.length === 1 ? "is" : "are"} at critical risk: ${andList(critical.slice(0, 4).map(n => n.name))}.` : ""}`);
+  Para(doc, `${threats[0] ? `${threats[0].n.name} remains the principal threat to the Kingdom${releasable ? " and its allies" : `, with a hostility score of ${threats[0].a.hostility} and a strength of ${threats[0].a.strength}`}. ` : "No nation currently shows hostile intent toward the Kingdom. "}${by("town_ruin").length ? `${plural(by("town_ruin").length, "town")} fell to ruin in the last twenty-four hours, ` : "No towns fell to ruin in the last twenty-four hours, "}and ${ruin72.length ? `${plural(ruin72.length, "more", "more")} ${ruin72.length === 1 ? "is" : "are"} forecast to fall within seventy-two hours` : "none is forecast to fall within seventy-two hours"}. ${ev7.filter(e => /^(ally|enemy)_add/.test(e.type)).length ? `The week brought ${plural(ev7.filter(e => /^(ally|enemy)_add/.test(e.type)).length, "new alliance or enmity", "new alliances or enmities")}, a sign of diplomatic movement.` : "The diplomatic map has been quiet this week."} ${critical.length ? `${plural(critical.length, "nation")} ${critical.length === 1 ? "is" : "are"} at critical risk of collapse: ${andList(critical.slice(0, 4).map(n => n.name))}.` : ""}`);
   Head(doc, "Significant Activity in the Last Twenty-Four Hours");
   if (!ev24.length) Para(doc, ARCHIVE.scans > 1 ? "No significant changes were recorded in the last twenty-four hours." : "This is the first collection in the archive; activity will be recorded from the next scan.");
   else {
@@ -4209,7 +4284,7 @@ function intsum(releasable) {
   movementIntsum(doc, releasable);
   Head(doc, "Forecast for the Next Seventy-Two Hours");
   const vac = nations.filter(n => n.kingLast != null && days() - (Date.now() - n.kingLast) / DAY < 3);
-  Para(doc, `${ruin72.length ? `${plural(ruin72.length, "town")} ${ruin72.length === 1 ? "is" : "are"} forecast to fall to ruin, the first being ${andList(ruin72.slice(0, 6).map(t => `${t.name}${t.nation ? ` of ${t.nation}` : ""} around ${fmtDay(Date.now() + Math.max(0, etaOf(t)))}`))}. ` : "No towns are forecast to fall to ruin. "}${vac.length ? `Leadership is expected to change in ${andList(vac.map(n => n.name))}. ` : ""}${critical.length ? `The nations at critical risk, ${andList(critical.slice(0, 5).map(n => `${n.name} (${map.get(n.name).risk})`))}, should be watched for collapse.` : ""}`);
+  Para(doc, `${ruin72.length ? `${plural(ruin72.length, "town")} ${ruin72.length === 1 ? "is" : "are"} forecast to fall to ruin, the first being ${andList(ruin72.slice(0, 6).map(t => `${t.name}${t.nation ? ` of ${t.nation}` : ""} around ${fmtDay(Date.now() + Math.max(0, etaOf(t)))}`))}. ` : "No towns are forecast to fall to ruin. "}${vac.length ? `Leadership is expected to change in ${andList(vac.map(n => n.name))}. ` : ""}${critical.length ? `The nations at critical risk of collapse, ${andList(critical.slice(0, 5).map(n => `${n.name} (${map.get(n.name).risk})`))}, should be watched for collapse.` : ""}`);
   for (const line of mlHeadlines()) Para(doc, line);
   // allies are told the risks facing each of them, so they can act on them; the Kingdom's own weak points stay at home
   if (home && releasable) {
@@ -4218,13 +4293,13 @@ function intsum(releasable) {
     if (!allies.length) Para(doc, "The Kingdom has no formal allies on the server's records.");
     for (const al of allies.slice(0, 8)) {
       const ax = map.get(al.name), r7 = ruinsWithin(al, 7), oc = al.towns.filter(isOverclaimable), th = threatsTo(al)[0];
-      Para(doc, `${al.name}: risk ${riskLevel(ax.risk).label.toLowerCase()} (${ax.risk} of 100). ${r7.length ? `${plural(r7.length, "town")} will fall within seven days unless a resident logs in: ${andList(r7.slice(0, 5).map(t => t.name))}. ` : "No town is at risk of ruin this week. "}${oc.length ? `${plural(oc.reduce((s, t) => s + overclaim(t).takeable, 0), "chunk")} can be overclaimed from ${andList(oc.slice(0, 3).map(t => t.name))}. ` : ""}${th ? `Its principal threat is ${th.n.name}.` : ""}`);
+      Para(doc, `${al.name}: risk of collapse ${riskLevel(ax.risk).label.toLowerCase()} (${ax.risk} of 100). ${r7.length ? `${plural(r7.length, "town")} will fall within seven days unless a resident logs in: ${andList(r7.slice(0, 5).map(t => t.name))}. ` : "No town is at risk of ruin this week. "}${oc.length ? `${plural(oc.reduce((s, t) => s + overclaim(t).takeable, 0), "chunk")} can be overclaimed from ${andList(oc.slice(0, 3).map(t => t.name))}. ` : ""}${th ? `Its principal threat is ${th.n.name}.` : ""}`);
     }
   }
   if (home && !releasable) {
     Head(doc, "The Kingdom");
     const ha = map.get(home.name);
-    Para(doc, `${home.name} holds ${plural(home.towns.filter(t => !t.ruined).length, "town")} with ${nf(home.active30)} active members and ${plural(home.chunks, "chunk")}. Its strength score is ${ha.strength} and its risk score ${ha.risk} (${riskLevel(ha.risk).label.toLowerCase()}). ${plural(threats.filter(t => t.a.contact).length, "hostile nation")} border${threats.filter(t => t.a.contact).length === 1 ? "s" : ""} Kingdom towns. ${ruinsWithin(home, 7).length ? `${plural(ruinsWithin(home, 7).length, "Kingdom town")} will fall within seven days unless residents log in: ${andList(ruinsWithin(home, 7).slice(0, 5).map(t => t.name))}.` : "No Kingdom town is at risk of ruin this week."}`);
+    Para(doc, `${home.name} holds ${plural(home.towns.filter(t => !t.ruined).length, "town")} with ${nf(home.active30)} active members and ${plural(home.chunks, "chunk")}. Its strength score is ${ha.strength} and its risk of collapse ${ha.risk} (${riskLevel(ha.risk).label.toLowerCase()}). ${plural(threats.filter(t => t.a.contact).length, "hostile nation")} border${threats.filter(t => t.a.contact).length === 1 ? "s" : ""} Kingdom towns. ${ruinsWithin(home, 7).length ? `${plural(ruinsWithin(home, 7).length, "Kingdom town")} will fall within seven days unless residents log in: ${andList(ruinsWithin(home, 7).slice(0, 5).map(t => t.name))}.` : "No Kingdom town is at risk of ruin this week."}`);
   }
   Para(doc, ESTIMATIVE_NOTE, false);
   Annex(doc, "Annex A — Threat Board");
@@ -4235,7 +4310,7 @@ function intsum(releasable) {
   else Para(doc, "No nation currently shows hostile indicators.", false);
   Annex(doc, "Annex B — Nations by Risk");
   // allies see each nation's risk and strength, not how the Kingdom regards it
-  doc.sections.push({ type:"table", cols:[{ h:"Nation", w:2.4 }, ...(releasable ? [] : [{ h:"Stance", w:1.2 }]), { h:"Risk", w:.8, align:"right" }, { h:"Strength", w:1, align:"right" }, { h:"Active", w:1, align:"right" }, { h:"Active ±", w:1, align:"right" }, { h:"Towns", w:.9, align:"right" }],
+  doc.sections.push({ type:"table", cols:[{ h:"Nation", w:2.4 }, ...(releasable ? [] : [{ h:"Stance", w:1.2 }]), { h:"Collapse risk", w:1.1, align:"right" }, { h:"Strength", w:1, align:"right" }, { h:"Active", w:1, align:"right" }, { h:"Active ±", w:1, align:"right" }, { h:"Towns", w:.9, align:"right" }],
     rows:[...nations].sort((a, b) => map.get(b.name).risk - map.get(a.name).risk).slice(0, 40).map(n => { const x = map.get(n.name); return [n.name, ...(releasable ? [] : [STANCE[x.stance].label]), x.risk, x.strength, n.active30, signed(anyDelta(trend(n.name, "a30"))), n.towns.filter(t => !t.ruined).length]; }) });
   if (ruin72.length) { Annex(doc, "Annex C — Towns Forecast to Fall Within 72 Hours");
     doc.sections.push({ type:"table", cols:[{ h:"Town", w:2.2 }, { h:"Nation", w:1.8 }, { h:"Mayor", w:1.6 }, { h:"Expected", w:1.2 }, { h:"Bank", w:1, align:"right" }], rows:ruin72.slice(0, 50).map(t => [t.name, t.nation || "—", t.mayor, fmtDay(Date.now() + Math.max(0, etaOf(t))), t.balance != null ? gold(t.balance) : "—"]) }); }
@@ -4327,13 +4402,13 @@ function downloadPdf(doc) {
    would have said, so Brier scores show honestly whether the model is getting smarter. */
 const ML_MODELS = {
   ruin72:{ label:"Town falls to ruin", horizon:3, unit:"town",
-    names:["Baseline", "Days until the inactivity limit", "Already past the limit", "Survived a purge past the limit", "Premium mayor", "Share of residents active", "Residents", "Town size", "Bank", "In a nation", "Nation's risk score", "All residents checked"],
+    names:["Baseline", "Days until the inactivity limit", "Already past the limit", "Survived a purge past the limit", "Premium mayor", "Share of residents active", "Residents", "Town size", "Bank", "In a nation", "Nation's collapse risk", "All residents checked"],
     prior:[1.0, -3.6, 1.6, -4.0, -3.0, -1.2, -0.3, 0, 0, 0, 0.5, 0.3] },
   loss7:{ label:"Nation loses a town", horizon:7, unit:"nation",
     names:["Baseline", "Share of towns ruining within 7 days", "Share of towns falling within 3 days", "Share of members active", "Change in active members", "Change in land", "Leader past the limit", "Number of towns", "Share of land overclaimable", "Lost towns last week"],
     prior:[-1.6, 6.0, 4.0, -1.5, -1.0, -0.6, 0.8, 0.9, 1.5, 1.0] },
   gain7:{ label:"Nation gains land", horizon:7, unit:"nation",
-    names:["Baseline", "Change in land", "Change in active members", "Change in residents", "Gained land last week", "Number of towns", "Share of members active", "Gold per town", "Risk score"],
+    names:["Baseline", "Change in land", "Change in active members", "Change in residents", "Gained land last week", "Number of towns", "Share of members active", "Gold per town", "Collapse risk"],
     prior:[-1.2, 8.0, 3.0, 2.0, 1.4, 0.6, 0.8, 0.2, -0.8] },
   diplo7:{ label:"Alliance or enmity changes", horizon:7, unit:"nation",
     names:["Baseline", "Diplomatic changes last 2 weeks", "Natural partners not yet allied", "Enemies declared last 2 weeks", "Number of allies", "Number of enemies", "Change in active members", "Hostility toward us"],
@@ -4343,7 +4418,7 @@ const ML_MODELS = {
     prior:[-2.4, -1.9, -1.0, -0.3, 0.1] },
   // Movement Watch: a day of visits from one nation into another, then whether a hostile move follows
   probe7:{ label:"Hostile move after incursions", horizon:7, unit:"pair",
-    names:["Baseline", "Visits in the last day", "Different visitors", "Average reconnaissance score", "Share judged reconnaissance", "Visitors' nation on the opposing side", "Already enemies", "Allies", "Near each other", "Visitors' nation strength", "Host's risk score", "Days with visits this week"],
+    names:["Baseline", "Visits in the last day", "Different visitors", "Average reconnaissance score", "Share judged reconnaissance", "Visitors' nation on the opposing side", "Already enemies", "Allies", "Near each other", "Visitors' nation strength", "Host's collapse risk", "Days with visits this week"],
     prior:[-2.6, 0.5, 0.4, 1.2, 1.0, 1.5, 0.6, -1.5, 0.5, 0.4, 0.6, 0.8] },
   // Movement Watch: is a visit reconnaissance? Learns from the labels you give visits, not from the event log
   scout:{ label:"Visit is reconnaissance", horizon:0, unit:"visit",
@@ -4813,7 +4888,6 @@ $("scan").onclick = scan;
 $("scanBig").onclick = scan;
 // keep the big landing button's label in step with the header button (Stop / Resume / Scan)
 new MutationObserver(() => { $("scanBig").textContent = $("scan").textContent; }).observe($("scan"), { childList:true, characterData:true, subtree:true });
-$("sendWR").onclick = sendToWarRoom;
 if (Object.values(cache.players).concat(Object.values(cache.towns)).some(v => Date.now() - v.at < CACHE_MS)) {
   $("scan").textContent = "RESUME SCAN";
   $("status").innerHTML = $("landStatus").innerHTML = 'A recent scan was interrupted. Press <b>Resume</b> to carry on, or <a href="#" data-fresh style="color:var(--gold)">start over</a>.';
@@ -4859,26 +4933,46 @@ const BR = { kind:"intsum", nation:null, persp:null, releasable:false, q:"" };
 try { Object.assign(BR, JSON.parse(localStorage.getItem("rh_br") || "{}"), { q:"" }); } catch {}
 const saveBR = () => { try { localStorage.setItem("rh_br", JSON.stringify({ kind:BR.kind, nation:BR.nation, persp:BR.persp, releasable:BR.releasable })); } catch {} };
 let brDoc = null;
+// today's briefing: the daily summary, the leading threats to the Kingdom and the allies most at risk of collapse.
+// The hourly reports the server saves are this same set.
+function todaysBriefs(home) {
+  const live = n => n.towns.some(t => !t.ruined);
+  // a threat shows some hostility to us; a nation that shows none isn't one, however big
+  const threats = nations.filter(n => n !== home && live(n) && !["home", "ally"].includes(assess(n, home?.name)?.stance) && assess(n, home?.name)?.hostility > 0)
+    .sort((a, b) => (assess(b, home?.name)?.hostility || 0) * (assess(b).strength + 50) - (assess(a, home?.name)?.hostility || 0) * (assess(a).strength + 50) || b.active30 - a.active30).slice(0, 5);
+  const allies = home ? nations.filter(n => n !== home && live(n) && assess(n, home.name)?.stance === "ally").sort((a, b) => assess(b).risk - assess(a).risk).slice(0, 3) : [];
+  return { threats, allies };
+}
 async function renderBriefingRoom() {
+  const home = findNation($("myNation").value);
+  if (BR.kind === "history" && !HISTORY) BR.kind = "intsum";
+  const persp = (BR.kind === "nation" && findNation(BR.persp)) || home, atHome = !persp || persp === home;
   document.querySelectorAll("#brKinds button").forEach(b => b.classList.toggle("on", b.dataset.kind === BR.kind));
-  document.querySelectorAll(".br-class button").forEach(b => b.classList.toggle("on", (b.dataset.rel === "1") === BR.releasable));
+  document.querySelectorAll(".br-class [data-rel]").forEach(b => b.classList.toggle("on", (b.dataset.rel === "1") === BR.releasable));
   $("brRelNote").textContent = BR.releasable
     ? "For allies: leaves out our sources and how we collect, the Kingdom's own weak points and plans, and how we rate each nation. Adds the risks facing each ally."
     : "Everything, including sources, collection, the Kingdom's weak points, plans and ratings.";
-  $("brHistBtn").hidden = !HISTORY; if (BR.kind === "history" && !HISTORY) BR.kind = "intsum";
-  $("brNationField").hidden = BR.kind === "intsum" || BR.kind === "history"; $("brPerspField").hidden = BR.kind !== "nation";
-  const home = findNation($("myNation").value);
-  renderArchiveStatus();
-  if (!nations.length) { $("brDoc").innerHTML = `<div class="br-empty">No scan yet.</div>`; brDoc = null; return; }
-  // nation list: by threat for assessments, by risk (allies first) for support assessments
-  const persp = findNation(BR.persp) || home;
-  const q = BR.q.toLowerCase();
+  $("brPerspField").hidden = BR.kind !== "nation";
+  renderArchiveStatus(); renderEditions();
+  if (!nations.length) { $("brToday").innerHTML = ""; $("brDoc").innerHTML = `<div class="br-empty">No scan yet.</div>`; brDoc = null; return; }
+  // today's set, each with the number that put it there: hostility to us for threats, collapse risk for allies
+  const T = todaysBriefs(home), on = (k, n) => BR.kind === k && (!n || (BR.nation === n.name && atHome));
+  $("brToday").innerHTML = [
+    `<button data-today="intsum" class="${on("intsum") ? "on" : ""}"><span>Summary</span><b>Daily Intelligence Summary</b></button>`,
+    ...T.threats.map(n => `<button data-today="nation" data-brn="${esc(n.name)}" class="${on("nation", n) ? "on" : ""}" title="Assessment of a leading threat. The number is its hostility to us."><span>Threat</span>${esc(n.name)}<em style="color:var(--red)">${assess(n, home?.name).hostility}</em></button>`),
+    ...T.allies.map(n => `<button data-today="support" data-brn="${esc(n.name)}" class="${on("support", n) ? "on" : ""}" title="Support assessment for an ally. The number is its risk of collapse."><span>Ally</span>${esc(n.name)}<em style="color:${riskLevel(assess(n).risk).c}">${assess(n).risk}</em></button>`),
+    T.threats.length ? "" : `<button disabled style="cursor:default" title="No nation shows hostility toward the Kingdom"><span>Threat</span><i style="font-style:normal;color:var(--dim)">None hostile to us</i></button>`,
+    HISTORY ? `<button data-today="history" id="brHistBtn" class="${on("history") ? "on" : ""}" title="Terra Nostra from the Discord archives, with the sources' biases"><span>History</span>Terra Nostra</button>` : "",
+  ].join("");
+  // any nation: assessments ranked by hostility to the chosen perspective, support assessments by collapse risk (allies first)
+  const q = BR.q.toLowerCase(), sup = BR.kind === "support";
   let list = nations.filter(n => !q || n.name.toLowerCase().includes(q));
-  if (BR.kind === "support") { const order = { home:0, ally:1, friendly:2 }; list.sort((a, b) => (order[assess(a).stance] ?? 3) - (order[assess(b).stance] ?? 3) || assess(b).risk - assess(a).risk); }
+  if (sup) { const order = { home:0, ally:1, friendly:2 }; list.sort((a, b) => (order[assess(a).stance] ?? 3) - (order[assess(b).stance] ?? 3) || assess(b).risk - assess(a).risk); }
   else list.sort((a, b) => (assess(b, persp?.name)?.hostility || 0) * (assess(b).strength + 50) - (assess(a, persp?.name)?.hostility || 0) * (assess(a).strength + 50) || b.active30 - a.active30);
   if (!BR.nation || !findNation(BR.nation)) BR.nation = list.find(n => n !== home)?.name || list[0]?.name;
-  $("brNations").innerHTML = list.slice(0, 200).map(n => { const a = assess(n, persp?.name);
-    return `<button class="${n.name === BR.nation ? "on" : ""}" data-brn="${esc(n.name)}"><span class="sdot" style="--c:${STANCE[a.stance].c}"></span>${esc(n.name)}<em style="color:${riskLevel(assess(n).risk).c}">${assess(n).risk}</em></button>`; }).join("");
+  const pick = ["nation", "support"].includes(BR.kind);
+  $("brNations").innerHTML = list.slice(0, 200).map(n => { const a = assess(n, persp?.name), v = sup ? assess(n).risk : a.hostility;
+    return `<button class="${pick && n.name === BR.nation ? "on" : ""}" data-brn="${esc(n.name)}" title="${STANCE[a.stance].label} · ${sup ? `collapse risk ${v}` : `hostility to ${esc(persp?.name || "us")} ${v}`}"><span class="sdot" style="--c:${STANCE[a.stance].c}"></span>${esc(n.name)}<em style="color:${sup ? riskLevel(v).c : v ? "var(--red)" : "var(--dim)"}">${v}</em></button>`; }).join("");
   const sel = $("brPersp"), opts = [home, ...nations.filter(n => n !== home).sort((a, b) => a.name.localeCompare(b.name))].filter(Boolean);
   if (sel.options.length !== opts.length) sel.innerHTML = opts.map(n => `<option value="${esc(n.name)}">${n === home ? "♥ " : ""}${esc(n.name)}</option>`).join("");
   sel.value = persp?.name || "";
@@ -4886,17 +4980,30 @@ async function renderBriefingRoom() {
   brDoc = BR.kind === "history" ? historyDoc(BR.releasable) : BR.kind === "intsum" ? intsum(BR.releasable) : BR.kind === "support" ? supportAssessment(n, BR.releasable) : nationAssessment(n, persp, BR.releasable);
   $("brDoc").innerHTML = docHtml(brDoc);
 }
+// earlier editions: the briefings the server saved, one a day for two weeks (the day's latest run)
+let editions = null;
+async function renderEditions() {
+  const el = $("brEditions"); if (!el || !window.BH_SERVER || window.BH_COLLECTOR) return;
+  if (!editions) { editions = []; try { editions = await (await fetch("/api/reports?limit=200", { cache:"no-store" })).json(); } catch {} if (!Array.isArray(editions)) editions = []; }
+  const days = new Map(); for (const r of editions) { const d = new Date(r.at).toISOString().slice(0, 10); if (!days.has(d)) days.set(d, r); }
+  const list = [...days.values()].slice(0, 14);
+  el.hidden = !list.length; if (!list.length) return;
+  const cls = d => /KINGDOM EYES/.test(d.classification) ? `<em style="color:var(--hq)">eyes only</em>` : `<em style="color:#5b9be0">releasable</em>`;
+  el.innerHTML = `<b>Earlier editions</b>` + list.map(r => `<details><summary>${new Date(r.at).toLocaleDateString(undefined, { weekday:"short", day:"numeric", month:"short" })}<i>${new Date(r.at).toISOString().slice(11, 16)} UTC</i></summary>
+    ${r.reports.map(d => `<a href="/reports/${r.run}/${esc(d.pdf)}" target="_blank" rel="noopener">${esc(d.subject || d.kind.replace("Daily Intelligence Summary", "Daily Summary"))}${d.subject ? ` <span style="color:var(--dim)">${d.kind === "Support Assessment" ? "support" : "assessment"}</span>` : ""}${cls(d)}</a>`).join("")}</details>`).join("");
+}
 async function renderArchiveStatus() {
   const el = $("brArchive"); if (!el) return;
   const size = await archiveSize();
   el.innerHTML = ARCHIVE.scans ? `<span class="tip-l" data-tip="Since ${new Date(ARCHIVE.first).toLocaleDateString()} · ${ARCHIVE.events.length.toLocaleString()} events in 60 days${size ? ` · ${(size / 1048576).toFixed(1)} MB` : ""}"><b>${ARCHIVE.scans.toLocaleString()}</b> scans archived</span>
-    <div class="br-arch-acts"><button class="deep" id="archExport">Export archive</button><label class="deep">Import archive<input type="file" id="archImport" accept=".json,application/json" hidden></label></div>`
+    <div class="br-arch-acts"><button class="deep" id="archExport">Export archive</button><label class="deep">Import archive<input type="file" id="archImport" accept=".json,application/json" hidden></label>${window.BH_SERVER && window.BH_OPEN === false ? `<label class="deep" title="An archive exported from another browser; the server merges it at the next scan">Send to server<input type="file" id="archSend" accept=".json,application/json" hidden></label>` : ""}</div>`
     : `<b>Archive</b> empty. Each scan you run is stored here; trends, forecasts and anticipated moves need at least two.`;
 }
 document.addEventListener("click", async e => {
-  const k = e.target.closest("#brKinds [data-kind]"); if (k) { BR.kind = k.dataset.kind; if (BR.kind === "support") { const h = findNation($("myNation").value); const al = nations.filter(n => assess(n).stance === "ally").sort((a, b) => assess(b).risk - assess(a).risk)[0]; BR.nation = (al || h)?.name; } saveBR(); renderBriefingRoom(); return; }
+  const td = e.target.closest("#brToday [data-today]"); if (td) { BR.kind = td.dataset.today; if (td.dataset.brn) BR.nation = td.dataset.brn; BR.persp = null; saveBR(); renderBriefingRoom(); return; }
+  const k = e.target.closest("#brKinds [data-kind]"); if (k) { BR.kind = k.dataset.kind; saveBR(); renderBriefingRoom(); return; }
   const r = e.target.closest(".br-class [data-rel]"); if (r) { BR.releasable = r.dataset.rel === "1"; saveBR(); renderBriefingRoom(); return; }
-  const nb = e.target.closest("[data-brn]"); if (nb) { BR.nation = nb.dataset.brn; saveBR(); renderBriefingRoom(); return; }
+  const nb = e.target.closest("#brNations [data-brn]"); if (nb) { BR.nation = nb.dataset.brn; if (!["nation", "support"].includes(BR.kind)) BR.kind = "nation"; saveBR(); renderBriefingRoom(); return; }
   if (e.target.id === "brPdf" && brDoc) { downloadPdf(brDoc); showToast(`Exported ${brDoc.id}.pdf`); return; }
   if (e.target.id === "brCopy" && brDoc) { navigator.clipboard?.writeText(docText(brDoc)).then(() => showToast("Briefing copied as text."), () => showToast("Couldn't copy.")); return; }
   if (e.target.id === "archExport") { exportArchive(); return; }
@@ -4904,6 +5011,7 @@ document.addEventListener("click", async e => {
 });
 document.addEventListener("change", async e => {
   if (e.target.id === "brPersp") { BR.persp = e.target.value; saveBR(); renderBriefingRoom(); }
+  if (e.target.id === "archSend" && e.target.files[0]) { try { const r = await fetch("/api/import", { method:"POST", body:await e.target.files[0].text(), headers:{ "Content-Type":"application/json" } }); const j = await r.json(); showToast(j.message || j.error || "Sent."); } catch (err) { showToast("Couldn't send: " + err.message); } e.target.value = ""; }
   if (e.target.id === "archImport" && e.target.files[0]) { try { await importArchive(e.target.files[0]); showToast("Archive merged."); renderBriefingRoom(); } catch (err) { showToast(err.message || "Couldn't import that file."); } }
 });
 document.addEventListener("input", e => { if (e.target.id === "brSearch") { BR.q = e.target.value; renderBriefingRoom(); } });
@@ -5555,33 +5663,35 @@ const WR_KIND = { target:{ label:"Target", c:"var(--red)" }, danger:{ label:"Dan
   route:{ label:"Route", c:"var(--hq)" }, waypoint:{ label:"Waypoint", c:"var(--fg)" }, note:{ label:"Note", c:"var(--intel)" } };
 const WR_ORDER = Object.keys(WR_KIND);
 const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k) || ""; localStorage.setItem(k, v); } catch { return ""; } };
-const WR = { items:[], log:[], rev:-1, tool:"select", draft:null, sel:null, form:null, editing:null, hover:null, err:"", timer:null, needKey:false, pulled:0,
+const WR = { items:[], raids:[], plans:[], log:[], rev:-1, raidSel:null, raidDone:null, planSel:null, planDirty:false, planSaving:false, tool:"select", draft:null, sel:null, form:null, editing:null, hover:null, err:"", timer:null, needKey:false, pulled:0,
   me:ls("bh_callsign"), key:ls("bh_warkey") };
 const wrLocal = () => !window.BH_SERVER;
 const wrCol = k => COL[{ target:"red", danger:"orange", rally:"green", route:"hq", waypoint:"fg", note:"intel" }[k]] || COL.fg;
 async function wrPull() {
   clearTimeout(WR.timer); WR.pulled = Date.now();
   if (wrLocal()) {
-    if (WR.rev < 0) { try { const s = JSON.parse(ls("bh_warroom") || "{}"); WR.items = s.items || []; WR.log = s.log || []; } catch {} WR.rev = 0; if (tab === "warroom") renderWarRoom(); }
+    if (WR.rev < 0) { try { const s = JSON.parse(ls("bh_warroom") || "{}"); WR.items = s.items || []; WR.raids = s.raids || []; WR.plans = s.plans || []; WR.log = s.log || []; } catch {} WR.rev = 0; if (tab === "warroom") renderWarRoom(); }
     return;
   }
   try {
     const j = await (await fetch(`/api/warroom?rev=${WR.rev}`, { cache:"no-store" })).json();
-    if (!j.same && j.items) { WR.items = j.items; WR.log = j.log || []; if (WR.sel && !WR.items.some(x => x.id === WR.sel)) WR.sel = null; WR.rev = j.rev; if (tab === "warroom") renderWarRoom(); }
+    if (!j.same && j.items) { WR.items = j.items; WR.raids = j.raids || []; WR.plans = j.plans || []; WR.log = j.log || []; if (WR.sel && !WR.items.some(x => x.id === WR.sel)) WR.sel = null; WR.rev = j.rev; if (tab === "warroom") renderWarRoom(); }
     WR.rev = j.rev; if (WR.err === "Can't reach the server.") WR.err = "";
   } catch { WR.err = "Can't reach the server."; }
   WR.timer = setTimeout(wrPull, tab === "warroom" && !document.hidden ? 4000 : 30000);
 }
-async function wrSend(op, item) {
+// coll: "marks" on the map, "raids" on the raid board, or "plans"
+async function wrSend(op, item, coll = "marks") {
   const by = WR.me || "Officer";
   if (wrLocal()) {
-    const now = Date.now();
-    if (op === "add") WR.items.push({ ...item, id:Math.random().toString(36).slice(2, 10), by, at:now, upd:now });
-    else { const i = WR.items.findIndex(x => x.id === item.id); if (i >= 0) { if (op === "delete") WR.items.splice(i, 1); else Object.assign(WR.items[i], item, { upd:now }); } }
-    WR.log = [...WR.log, [now, by, op === "add" ? "added" : op === "delete" ? "removed" : "changed", item.name]].slice(-60);
-    ls("bh_warroom", JSON.stringify({ items:WR.items, log:WR.log })); renderWarRoom(); return true;
+    const now = Date.now(), list = { marks:WR.items, raids:WR.raids, plans:WR.plans }[coll], name = item.name || item.town || item.title || "";
+    if (op === "add") list.push({ ...item, id:Math.random().toString(36).slice(2, 10), by, at:now, upd:now, ...(coll === "raids" ? { status:"open", claimedBy:null } : {}) });
+    else { const i = list.findIndex(x => x.id === item.id); if (i >= 0) { if (op === "delete") list.splice(i, 1);
+      else Object.assign(list[i], item, { upd:now, updBy:by }, op === "claim" ? { status:"claimed", claimedBy:by } : op === "release" || op === "reopen" ? { status:"open", claimedBy:null } : op === "done" ? { status:"done", claimedBy:list[i].claimedBy || by, doneAt:now } : {}); } }
+    WR.log = [...WR.log, [now, by, op === "add" ? "added" : op === "delete" ? "removed" : op === "update" ? "changed" : op === "done" ? "raided" : op + "ed", name || list.find(x => x.id === item.id)?.town || ""]].slice(-60);
+    ls("bh_warroom", JSON.stringify({ items:WR.items, raids:WR.raids, plans:WR.plans, log:WR.log })); renderWarRoom(); return true;
   }
-  const r = await fetch("/api/warroom", { method:"POST", headers:{ "Content-Type":"application/json", ...(WR.key ? { "x-war-key":WR.key } : {}) }, body:JSON.stringify({ op, item, by }) });
+  const r = await fetch("/api/warroom", { method:"POST", headers:{ "Content-Type":"application/json", ...(WR.key ? { "x-war-key":WR.key } : {}) }, body:JSON.stringify({ op, item, by, coll }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { WR.err = j.error || "The server refused the change."; WR.needKey = !!j.needKey; renderWarRoom(); return false; }
   WR.needKey = false; WR.err = ""; WR.rev = -1; await wrPull(); return true;
@@ -5652,7 +5762,8 @@ function renderWarRoom() {
   WR.panelKey = null;
   $("wrPanel").innerHTML = `
     <div class="wr-me"><label for="wrMe">Your name</label><input id="wrMe" value="${esc(WR.me)}" placeholder="callsign" maxlength="32"></div>
-    <div class="wr-tools">${[["select", "Select", "var(--mut)"], ...WR_ORDER.map(k => [k, WR_KIND[k].label, WR_KIND[k].c])].map(([k, l, c]) => `<button data-wrtool="${k}" class="${WR.tool === k ? "on" : ""}" style="--c:${c}"><i></i>${l}</button>`).join("")}</div>
+    <div class="wr-tools">${[["select", "Select", "var(--mut)"], ...WR_ORDER.map(k => [k, WR_KIND[k].label, WR_KIND[k].c])].map(([k, l, c]) => { const ic = { target:"C_03", danger:"C_02", rally:"C_01", waypoint:"C_04", note:"MEM_01", route:"LIN_02" }[k];
+      return `<button data-wrtool="${k}" class="${WR.tool === k ? "on" : ""}" style="--c:${c}"><i${ic ? ` style="--ic:url(${RAIDO_BASE}${ic}.svg)"` : ""}></i>${l}</button>`; }).join("")}</div>
     <div class="wr-hint">${hint}</div>
     ${WR.err ? `<div class="wr-hint wr-err">${esc(WR.err)}</div>` : ""}
     ${WR.needKey ? `<div class="wr-hint">Enter the war room key to change the plan.</div><input id="wrKey" type="password" placeholder="War room key" value="${esc(WR.key)}">` : ""}
@@ -5674,7 +5785,181 @@ function renderWarRoom() {
       <td>${it.kind === "route" ? `${Math.round(routeLen(it.pts)).toLocaleString()} blocks<span class="sub2">${esc(travel(routeLen(it.pts))[1])}</span>` : esc(wrPlace(it.pts[0]))}</td><td>${esc(it.by)}</td><td class="num fin-dim">${agoT(it.upd)}</td></tr>`),
     wrLocal() ? "Nothing planned yet. Choose a tool on the map to start; without the Ministry server the plan stays in this browser." : "Nothing planned yet. Choose a tool on the map to start.");
   $("wrLog").innerHTML = finTable([["When"], [""]], [...WR.log].reverse().slice(0, 40).map(l => `<tr><td class="fin-dim">${timeShort(l[0])}</td><td><b>${esc(l[1])}</b> ${esc(l[2])} ${esc(l[3])}</td></tr>`), "No changes yet.");
+  renderRaids(); renderPlans();
 }
+
+/* ---- the raid board ----
+   Towns to hit: ruins about to fall, land that can be overclaimed, towns to scout. One officer claims a raid at a time
+   (the server decides, so two can't take the same town); when it's done they log what they took. */
+const RAID_KIND = { ruin:{ label:"Ruin raid", c:"var(--red)" }, overclaim:{ label:"Overclaim", c:"var(--purple)" }, scout:{ label:"Scout", c:"var(--intel)" }, other:{ label:"Operation", c:"var(--fg)" } };
+const raidOpen = r => r.status === "open" || r.status === "claimed";
+const onBoard = name => WR.raids.some(r => raidOpen(r) && r.town.toLowerCase() === String(name).toLowerCase());
+// when a town falls: at the purge after its last resident passes the inactivity limit (as on the Ruin Hunter)
+const fallsAt = t => { const e = etaOf(t); if (e == null) return null; return purgeTime(purgeOf(t)) ?? Date.now() + Math.max(0, e); };
+// what the latest scan suggests: towns falling at the next two purges (soonest first), then the most land to overclaim
+function raidSuggestions() {
+  const now = Date.now(), map = assessAll(), ours = t => ["home", "ally", "friendly"].includes(map.get(t.nation)?.stance);
+  const ruins = towns.filter(t => t.c && !t.ruined && t.last && !isProtected(t) && purgeOf(t) <= 1 && !onBoard(t.name) && !ours(t)).map(t => ({ t, eta:fallsAt(t) })).filter(x => x.eta).sort((a, b) => a.eta - b.eta || (b.t.balance || 0) - (a.t.balance || 0)).slice(0, 6)
+    .map(({ t, eta }) => ({ kind:"ruin", town:t.name, nation:t.nation || "", x:t.c.x, z:t.c.z, eta:Math.round(eta), gold:t.balance ?? null, warp:t.near?.name || "" }));
+  const over = towns.filter(t => isOverTarget(t) && !onBoard(t.name) && !ours(t)).map(t => ({ t, o:overclaim(t) })).filter(x => x.o.takeable > 0).sort((a, b) => b.o.takeable - a.o.takeable).slice(0, 4)
+    .map(({ t, o }) => ({ kind:"overclaim", town:t.name, nation:t.nation || "", x:t.c?.x ?? null, z:t.c?.z ?? null, chunks:o.takeable, warp:t.near?.name || "" }));
+  return [...ruins, ...over];
+}
+// a raid's town from the latest scan, for its live state
+const raidTown = r => towns.find(t => t.name.toLowerCase() === r.town.toLowerCase());
+function raidWhen(r) {
+  if (r.status === "done") return `Done ${agoT(r.doneAt)}`;
+  const t = raidTown(r);
+  if (r.kind === "ruin") { if (t?.ruined) return "Ruined now · open to loot"; const e = (t && fallsAt(t)) || r.eta; return e ? (e > Date.now() ? `Falls in ${fmtDur(e - Date.now()).replace(/ \d+s$/, "")}` : "Due at this purge") : "Added " + agoT(r.at); }
+  if (r.kind === "overclaim") { const o = t && overclaim(t); return `${(o?.takeable ?? r.chunks ?? 0).toLocaleString()} chunks open`; }
+  return "Added " + agoT(r.at);
+}
+function raidCard(r) {
+  const k = RAID_KIND[r.kind] || RAID_KIND.other, mine = r.claimedBy && r.claimedBy === (WR.me || "Officer"), id = esc(r.id);
+  const acts = r.status === "open" ? `<button class="go" data-raid="claim" data-id="${id}">Claim</button><button data-raid="delete" data-id="${id}">Delete</button>`
+    : r.status === "claimed" ? `<button class="go" data-raid="dofinish" data-id="${id}">Done</button><button data-raid="release" data-id="${id}">${mine ? "Release" : "Release their claim"}</button>`
+    : `<button data-raid="reopen" data-id="${id}">Reopen</button><button data-raid="delete" data-id="${id}">Delete</button>`;
+  const form = WR.raidDone === r.id ? `<form data-raidform="${id}"><input name="loot" maxlength="200" placeholder="What was taken (optional)">${r.kind === "overclaim" ? `<input name="taken" type="number" min="0" max="9999" placeholder="Chunks" style="flex:0 0 80px">` : ""}<button class="go" style="background:none;border:0;color:var(--hq);cursor:pointer">Log raid</button></form>` : "";
+  return `<div class="rb-card${r.id === WR.raidSel ? " on" : ""}" style="--c:${k.c}" data-raidsel="${id}">
+    <div class="t">${rdIc("C_03", k.c)}<b>${esc(r.town)}</b><span class="kind" style="--c:${k.c}">${k.label}</span></div>
+    <div class="m"><span data-raidwhen="${id}">${esc(raidWhen(r))}</span>${r.nation ? `<span>${esc(r.nation)}</span>` : ""}${r.x != null ? `<code data-copy="${r.x} ${r.z}">${r.x}, ${r.z}</code>` : ""}${r.warp ? `<code data-copy="/t spawn ${esc(r.warp)}">/t spawn ${esc(r.warp)}</code>` : ""}${r.gold ? `<span>${gold(r.gold)}</span>` : ""}</div>
+    ${r.note ? `<div class="n">${esc(r.note)}</div>` : ""}${r.status === "done" && (r.loot || r.taken) ? `<div class="n">Took ${esc([r.loot, r.taken && `${r.taken} chunks`].filter(Boolean).join(", "))}</div>` : ""}
+    ${r.claimedBy ? `<div class="m">${r.status === "done" ? "Raided by" : "Claimed by"} <b style="color:var(--fg)">${esc(r.claimedBy)}</b> · ${agoT(r.upd)}</div>` : `<div class="m">Added by ${esc(r.by)}</div>`}
+    <div class="a">${acts}</div>${form}</div>`;
+}
+function renderRaids() {
+  const el = $("wrRaids"); if (!el) return;
+  if (el.contains(document.activeElement) && document.activeElement.closest("form")) return; // don't wipe a raid being logged
+  const by = st => WR.raids.filter(r => r.status === st);
+  const open = by("open").sort((a, b) => (a.kind === "ruin" ? a.eta || 9e15 : 9e15) - (b.kind === "ruin" ? b.eta || 9e15 : 9e15) || b.at - a.at);
+  const claimed = by("claimed").sort((a, b) => b.upd - a.upd), done = by("done").filter(r => Date.now() - r.doneAt < 7 * DAY).sort((a, b) => b.doneAt - a.doneAt);
+  const sug = towns.length ? raidSuggestions() : [];
+  const tally = {}; for (const r of done) { const t = tally[r.claimedBy] ||= { n:0, c:0 }; t.n++; t.c += r.taken || 0; }
+  const top = Object.entries(tally).sort((a, b) => b[1].n - a[1].n || b[1].c - a[1].c).slice(0, 5);
+  $("wrRaidCount").textContent = open.length + claimed.length ? `${open.length} open · ${claimed.length} under way` : "";
+  const col = (title, list, empty) => `<div class="rb-col"><h3>${title}<b>${list.length}</b></h3>${list.map(raidCard).join("") || `<div class="rb-empty">${empty}</div>`}</div>`;
+  el.innerHTML = (sug.length ? `<div class="rb-sug">${sug.map((c, i) => `<button data-raidsug="${i}" style="--c:${RAID_KIND[c.kind].c}" title="Add to the raid board"><b>+</b>${esc(c.town)}<span>${c.kind === "ruin" ? `falls in ${fmtDur(c.eta - Date.now()).replace(/ \d+s$/, "")}` : `${c.chunks.toLocaleString()} chunks`}${c.nation ? ` · ${esc(c.nation)}` : ""}</span></button>`).join("")}</div>` : "")
+    + `<div class="rb-cols">${col("Open", open, sug.length ? "Nothing open. Add one of the towns above." : "Nothing open.")}${col("Under way", claimed, "No one is on a raid.")}${col("Done this week", done, "No raids logged this week.")}</div>`
+    + `<div class="rb-foot">${top.length ? `<span>Raids this week: ${top.map(([who, t]) => `<b style="color:var(--fg)">${esc(who)}</b> ${t.n}${t.c ? ` (${t.c} chunks)` : ""}`).join(" · ")}</span>` : ""}
+      <details class="rb-add"><summary>Add a town by hand</summary><form data-raidadd="1"><input name="town" list="rbTowns" maxlength="60" placeholder="Town" required><select name="kind">${Object.entries(RAID_KIND).map(([k, v]) => `<option value="${k}">${v.label}</option>`).join("")}</select><input name="note" maxlength="300" placeholder="Note"><button style="background:none;border:0;color:var(--hq);cursor:pointer;flex:0 0 auto">Add</button></form>
+      <datalist id="rbTowns">${towns.filter(t => !t.ruined || Date.now() - (t.ruinedAt || 0) < 2 * DAY).slice(0, 3000).map(t => `<option value="${esc(t.name)}">`).join("")}</datalist></details></div>`;
+}
+// the raids that are still open, on the War Room map
+function drawRaids(P, dpr) {
+  for (const r of WR.raids) {
+    if (!raidOpen(r) || r.x == null) continue;
+    const s = P(r.x, r.z); if (s[2] <= 0) continue;
+    const c = r.kind === "overclaim" ? COL.purple : r.kind === "scout" ? COL.intel : COL.red, R = (r.id === WR.raidSel ? 9 : 7) * dpr;
+    // the Raido scope on the town, or a hand-drawn crosshair until it loads
+    if (!raidoRing(ctx, c, s[0], s[1], R * 1.15)) {
+      ctx.strokeStyle = c; ctx.lineWidth = 1.5 * dpr; ctx.beginPath(); ctx.arc(s[0], s[1], R, 0, 7); ctx.stroke();
+      ctx.beginPath(); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { ctx.moveTo(s[0] + dx * R * .55, s[1] + dy * R * .55); ctx.lineTo(s[0] + dx * R * 1.5, s[1] + dy * R * 1.5); } ctx.stroke();
+    }
+    if (r.status === "claimed") { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(s[0], s[1], 2.5 * dpr, 0, 7); ctx.fill(); }
+    ctx.font = `600 ${11 * dpr}px Inter Tight, sans-serif`; const text = r.town + (r.status === "claimed" ? ` · ${r.claimedBy}` : ""), w = ctx.measureText(text).width;
+    ctx.fillStyle = "rgba(0,0,0,.7)"; ctx.fillRect(s[0] + 12 * dpr, s[1] - 9 * dpr, w + 10 * dpr, 18 * dpr); ctx.fillStyle = c; ctx.fillText(text, s[0] + 17 * dpr, s[1] + 4 * dpr);
+  }
+}
+document.addEventListener("click", async e => {
+  const sg = e.target.closest("[data-raidsug]"); if (sg) { const c = raidSuggestions()[+sg.dataset.raidsug]; if (c) { sg.disabled = true; await wrSend("add", c, "raids"); } return; }
+  const b = e.target.closest("[data-raid]");
+  if (b) { const r = WR.raids.find(x => x.id === b.dataset.id); if (!r) return; const op = b.dataset.raid;
+    if (op === "dofinish") { WR.raidDone = r.id; renderRaids(); setTimeout(() => document.querySelector(`[data-raidform="${r.id}"] input`)?.focus(), 20); return; }
+    if (op === "delete" && !confirm(`Delete the raid on ${r.town} for everyone?`)) return;
+    await wrSend(op, { id:r.id }, "raids"); return; }
+  if (e.target.closest("code[data-copy]")) return;
+  const card = e.target.closest("[data-raidsel]");
+  if (card) { WR.raidSel = card.dataset.raidsel; const r = WR.raids.find(x => x.id === WR.raidSel); if (r?.x != null) { flyTo({ c:{ x:r.x, z:r.z } }); scrollTo({ top:0, behavior:"smooth" }); } renderRaids(); }
+});
+document.addEventListener("submit", async e => {
+  const f = e.target;
+  if (f.dataset.raidform) { e.preventDefault(); const fd = new FormData(f); WR.raidDone = null; document.activeElement?.blur(); await wrSend("done", { id:f.dataset.raidform, loot:fd.get("loot") || "", taken:fd.get("taken") || null }, "raids"); }
+  if (f.dataset.raidadd) { e.preventDefault(); const fd = new FormData(f), name = String(fd.get("town") || "").trim(); if (!name) return;
+    const t = towns.find(x => x.name.toLowerCase() === name.toLowerCase()), kind = fd.get("kind");
+    const item = { kind, town:t?.name || name, nation:t?.nation || "", x:t?.c?.x ?? null, z:t?.c?.z ?? null, note:fd.get("note") || "", warp:t?.near?.name || "",
+      eta:kind === "ruin" && t ? fallsAt(t) : null, chunks:kind === "overclaim" && t ? overclaim(t)?.takeable ?? null : null, gold:t?.balance ?? null };
+    document.activeElement?.blur(); if (await wrSend("add", item, "raids")) f.reset(); }
+});
+
+/* ---- plans and alliances ----
+   Written plans (with a status, a date and the nations involved), named alliances (with their combined strength from
+   the latest scan) and notes. Anyone can edit; changes save a moment after typing stops. If two officers edit the same
+   plan at once the second save is refused and the newer version shown, so nobody's words are overwritten silently. */
+const PLAN_KIND = { plan:{ label:"Plan", c:"var(--hq)", ic:"LIN_02" }, alliance:{ label:"Alliance", c:"var(--blue)", ic:"SQ_01" }, note:{ label:"Note", c:"var(--intel)", ic:"MEM_01" } };
+const PLAN_STATUS = [["idea", "Idea"], ["planned", "Planned"], ["active", "Under way"], ["done", "Done"], ["dropped", "Dropped"]];
+const planOf = id => WR.plans.find(x => x.id === id);
+const planNations = v => [...new Set(String(v || "").split(",").map(x => x.trim()).filter(Boolean))].slice(0, 40);
+function allianceTotals(names) {
+  const rows = names.map(name => findNation(name)), got = rows.filter(Boolean);
+  return { a:got.reduce((s, n) => s + n.active30, 0), c:got.reduce((s, n) => s + n.chunks, 0), g:got.reduce((s, n) => s + goldOf(n), 0), t:got.reduce((s, n) => s + n.towns.length, 0), missing:names.filter((_, i) => !rows[i]) };
+}
+function allianceHtml(names) {
+  if (!names.length) return `<div class="pl-tot"><span>Add the member nations to see their combined strength.</span></div>`;
+  const t = allianceTotals(names);
+  return `<div class="pl-tot"><span><b>${t.a.toLocaleString()}</b>active members</span><span><b>${t.t.toLocaleString()}</b>towns</span><span><b>${t.c.toLocaleString()}</b>chunks</span><span><b>${gold(Math.round(t.g))}</b>gold</span>${t.missing.length ? `<span style="color:var(--orange)">Not in the latest scan: ${esc(t.missing.join(", "))}</span>` : ""}</div>`;
+}
+function planListHtml() {
+  const list = [...WR.plans].sort((a, b) => b.pinned - a.pinned || (a.status === "done" || a.status === "dropped") - (b.status === "done" || b.status === "dropped") || b.upd - a.upd);
+  return list.map(n => { const k = PLAN_KIND[n.kind] || PLAN_KIND.note;
+    const sub = n.kind === "alliance" ? plural(n.nations.length, "nation") : n.kind === "plan" ? PLAN_STATUS.find(x => x[0] === n.status)?.[1] + (n.due ? ` · ${new Date(n.due + "T00:00").toLocaleDateString()}` : "") : (n.body || "").slice(0, 40) || "Empty";
+    return `<button data-plan="${esc(n.id)}" class="${n.id === WR.planSel ? "on" : ""}" style="--c:${k.c}"><b>${rdIc(k.ic, k.c)}${n.pinned ? "★ " : ""}${esc(n.title || "Untitled " + k.label.toLowerCase())}</b><span>${k.label} · ${esc(sub)} · ${agoT(n.upd)} by ${esc(n.updBy || n.by)}</span></button>`; }).join("")
+    || `<div class="rb-empty">No plans yet. Start one above.</div>`;
+}
+function planMetaHtml(n) {
+  return `<span>${WR.planSaving ? "Saving…" : WR.planDirty ? "Unsaved" : `Saved · ${agoT(n.upd)} by ${esc(n.updBy || n.by)}`}</span><span class="grow"></span><button data-planact="pin">${n.pinned ? "Unpin" : "Pin to top"}</button><button data-planact="delete">Delete</button>`;
+}
+function renderPlans() {
+  const el = $("wrPlans"); if (!el) return;
+  if (WR.planSel && !planOf(WR.planSel)) WR.planSel = null;
+  if (!WR.planSel && WR.plans.length) WR.planSel = [...WR.plans].sort((a, b) => b.pinned - a.pinned || b.upd - a.upd)[0].id;
+  $("wrPlanCount").textContent = WR.plans.length ? `${WR.plans.filter(x => x.kind === "plan" && x.status === "active").length} under way` : "";
+  const n = planOf(WR.planSel), ed = $("plEditor");
+  // while a plan is being written, live updates refresh the list and the status line but never the text being typed
+  if (ed && n && ed.dataset.id === n.id && (WR.planDirty || WR.planSaving || ed.contains(document.activeElement))) {
+    $("plList").innerHTML = planListHtml(); $("plMeta").innerHTML = planMetaHtml(n); return;
+  }
+  const k = n && (PLAN_KIND[n.kind] || PLAN_KIND.note), dl = `<datalist id="plNationList">${nations.map(x => `<option value="${esc(x.name)}">`).join("")}</datalist>`;
+  el.innerHTML = `<div class="pl"><div><div class="pl-new">${Object.entries(PLAN_KIND).map(([k, v]) => `<button data-plannew="${k}">${rdIc(v.ic, v.c)} New ${v.label.toLowerCase()}</button>`).join("")}</div><div class="pl-list" id="plList">${planListHtml()}</div></div>
+    ${n ? `<div class="pl-ed" id="plEditor" data-id="${esc(n.id)}" data-ver="${n.upd}" style="--c:${k.c}"><div class="k">${k.label}</div>
+      <input id="plTitle" maxlength="120" value="${esc(n.title)}" placeholder="${n.kind === "alliance" ? "Name the alliance" : n.kind === "plan" ? "Name the plan" : "Title"}">
+      ${n.kind === "plan" ? `<div class="pl-row"><label>Status <select id="plStatus">${PLAN_STATUS.map(([v, l]) => `<option value="${v}"${n.status === v ? " selected" : ""}>${l}</option>`).join("")}</select></label><label>Date <input id="plDue" type="date" value="${esc(n.due)}"></label><label class="grow">Nations <input id="plNations" list="plNationList" value="${esc(n.nations.join(", "))}" placeholder="Carthage, Rome"></label></div>` : ""}
+      ${n.kind === "alliance" ? `<div class="pl-row"><label class="grow">Members <input id="plNations" list="plNationList" value="${esc(n.nations.join(", "))}" placeholder="Bleeding_Heart, Rome, Gaul"></label></div><div id="plTot">${allianceHtml(n.nations)}</div>` : ""}
+      <textarea id="plBody" maxlength="20000" placeholder="${n.kind === "alliance" ? "Terms, who to contact, what each side brings…" : n.kind === "plan" ? "Goal, steps, who does what, timing…" : "Anything the Ministry should know…"}">${esc(n.body)}</textarea>
+      <div class="pl-meta" id="plMeta">${planMetaHtml(n)}</div>${dl}</div>`
+      : `<div class="rb-empty">Plans, named alliances and notes are kept here for every officer.</div>`}</div>`;
+}
+let planTimer = 0;
+function planQueue() { WR.planDirty = true; $("plMeta").innerHTML = planMetaHtml(planOf(WR.planSel)); clearTimeout(planTimer); planTimer = setTimeout(planSave, 800); }
+async function planSave() {
+  const ed = $("plEditor"); if (!ed) return; if (WR.planSaving) { planTimer = setTimeout(planSave, 400); return; }
+  const n = planOf(ed.dataset.id); if (!n) return;
+  const item = { id:n.id, ver:+ed.dataset.ver, title:$("plTitle").value, body:$("plBody").value, nations:$("plNations") ? planNations($("plNations").value) : n.nations,
+    status:$("plStatus")?.value || n.status, due:$("plDue")?.value || "" };
+  WR.planSaving = true; WR.planDirty = false; $("plMeta").innerHTML = planMetaHtml(n);
+  const ok = await wrSend("update", item, "plans");
+  WR.planSaving = false;
+  const now = planOf(item.id);
+  if (ok && now && $("plEditor")) $("plEditor").dataset.ver = now.upd;
+  // refused because someone else saved first: show their version
+  if (!ok) { document.activeElement?.blur(); showToast(WR.err); WR.err = ""; }
+  renderPlans();
+}
+document.addEventListener("click", async e => {
+  const nw = e.target.closest("[data-plannew]");
+  if (nw) { if (WR.planDirty) await planSave(); const kind = nw.dataset.plannew; if (await wrSend("add", { kind, title:"", body:"", nations:[], status:"idea" }, "plans")) { const mine = [...WR.plans].filter(x => x.kind === kind && (x.by === (WR.me || "Officer"))).sort((a, b) => b.at - a.at)[0]; if (mine) WR.planSel = mine.id; renderPlans(); setTimeout(() => $("plTitle")?.focus(), 20); } return; }
+  const pi = e.target.closest("[data-plan]"); if (pi) { if (WR.planDirty) await planSave(); WR.planSel = pi.dataset.plan; $("plEditor")?.removeAttribute("data-id"); renderPlans(); return; }
+  const pa = e.target.closest("[data-planact]"); if (!pa) return;
+  const n = planOf(WR.planSel); if (!n) return;
+  if (pa.dataset.planact === "pin") await wrSend("update", { id:n.id, pinned:!n.pinned }, "plans");
+  if (pa.dataset.planact === "delete" && confirm(`Delete "${n.title || "this " + n.kind}" for everyone?`)) { clearTimeout(planTimer); WR.planDirty = false; if (await wrSend("delete", { id:n.id }, "plans")) { WR.planSel = null; renderPlans(); } }
+});
+document.addEventListener("input", e => {
+  if (!e.target.closest?.("#plEditor")) return;
+  planQueue();
+  if (e.target.id === "plNations" && $("plTot")) $("plTot").innerHTML = allianceHtml(planNations(e.target.value));
+});
+document.addEventListener("change", e => { if (e.target.closest?.("#plEditor") && (e.target.id === "plStatus" || e.target.id === "plDue")) planQueue(); });
+addEventListener("beforeunload", () => { if (WR.planDirty) planSave(); });
 document.addEventListener("click", async e => {
   const t = e.target.closest("[data-wrtool]"); if (t) { WR.tool = t.dataset.wrtool; if (WR.tool !== "route" && WR.draft?.kind === "route" && !WR.form) WR.draft = null; WR.err = ""; renderWarRoom(); return; }
   const r = e.target.closest("[data-wrsel]"); if (r) { WR.sel = r.dataset.wrsel; WR.tool = "select"; const it = WR.items.find(x => x.id === WR.sel); if (it) flyTo({ c:{ x:it.pts[0][0], z:it.pts[0][1] } }); renderWarRoom(); return; }
@@ -5715,7 +6000,9 @@ function drawWarLayer(zoomR) {
       for (let k = 0; k <= n; k++) { const s = P(a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n); if (s[2] <= 0) { on = false; continue; } on ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); on = true; } }
     ctx.stroke(); ctx.setLineDash([]);
   };
+  const RD_MARK = { target:"C_03", danger:"C_02", rally:"C_01", waypoint:"C_04", note:"MEM_01" };
   const marker = (kind, s, c, r) => {
+    if (RD_MARK[kind] && raidoDraw(RD_MARK[kind], c, s[0], s[1], r * (kind === "note" ? 4.6 : 3.4))) return;
     ctx.strokeStyle = c; ctx.fillStyle = c; ctx.lineWidth = 1.6 * dpr; const [x, y] = s; ctx.beginPath();
     if (kind === "target") { ctx.arc(x, y, r, 0, 7); ctx.moveTo(x - r * 1.6, y); ctx.lineTo(x + r * 1.6, y); ctx.moveTo(x, y - r * 1.6); ctx.lineTo(x, y + r * 1.6); ctx.stroke(); }
     else if (kind === "danger") { ctx.moveTo(x, y - r * 1.2); ctx.lineTo(x + r * 1.1, y + r * 0.8); ctx.lineTo(x - r * 1.1, y + r * 0.8); ctx.closePath(); ctx.globalAlpha *= .35; ctx.fill(); ctx.globalAlpha /= .35; ctx.stroke(); }
@@ -5742,6 +6029,7 @@ function drawWarLayer(zoomR) {
     }
     ctx.globalAlpha = 1;
   };
+  drawRaids(P, dpr);
   for (const it of WR.items) draw(it);
   if (WR.draft) {
     draw({ ...WR.draft, name:"" }, true);
@@ -5831,7 +6119,7 @@ function populationPara(doc, n) {
 let ruinTab = "soon";
 const PAGES = {
   ruins: { kicker:"Ministry of Attack — Ruins", title:"RUIN HUNTER", tag:"Find the next town to fall, and be first through the gates.", sort:"Soonest to fall", empty:"Pick a town." },
-  dossier: { kicker:"Ministry of Intelligence — Nations", title:"NATION INTELLIGENCE", tag:"Risk, stance and strength of every nation, scored fresh from each scan.", sort:"", empty:"Pick a nation." },
+  dossier: { kicker:"Ministry of Intelligence — Nations", title:"NATION INTELLIGENCE", tag:"Collapse risk, stance and strength of every nation, scored fresh from each scan.", sort:"", empty:"Pick a nation." },
   briefings: { kicker:"Ministry of Intelligence — Briefing Room", title:"BRIEFING ROOM", tag:"Intelligence assessments and daily summaries, ready to brief the Crown or hand to allies.", sort:"", empty:"" },
   moves: { kicker:"Ministry of Intelligence — Movements", title:"MOVEMENT WATCH", tag:"Who is walking into whose land, and why. Read live from the server map.", sort:"", empty:"" },
   forecasts: { kicker:"Ministry of Intelligence — Forecast Lab", title:"FORECAST LAB", tag:"Predictions that check themselves against what happened, and learn from every result.", sort:"", empty:"" },
@@ -5991,7 +6279,7 @@ const pageFromHash = () => ({ "#overclaim":"over", "#warroom":"warroom", "#dossi
 function labelTabs() {
   document.querySelectorAll(".pages a[data-tip], .m-switch a[data-tip]").forEach(a => { if (!a.querySelector(".pg-l")) a.insertAdjacentHTML("beforeend", `<span class="pg-l">${esc(a.dataset.tip)}</span>`); a.removeAttribute("data-tip"); });
 }
-labelTabs(); setTimeout(labelTabs, 1500); // the server adds its "Hourly reports" tab a moment later
+labelTabs();
 let lastHash = location.hash;
 addEventListener("hashchange", () => {
   const pg = pageFromHash(), m = MINISTRY[pg], target = location.hash;

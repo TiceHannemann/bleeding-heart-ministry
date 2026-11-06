@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="b" data-name="Warstwa 2" xmlns="http://www.w3.org/2000/svg" width="142.742" height="53.073" viewBox="0 0 142.742 53.073">
+  <g id="c" data-name="Warstwa 1">
+    <g id="d" data-name="MEM_01">
+      <polygon points="142.443 7 142.443 42.44 132.118 52.775 .298 52.775 .298 13.142 67.559 13.142 73.692 7 142.443 7" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".597"/>
+      <polygon points=".298 9.731 65.884 9.731 75.615 0 .298 0 .298 9.731" fill="#fff"/>
+      <circle cx="9.321" cy="44.141" r="4.005" fill="#fff"/>
+      <circle cx="20.517" cy="44.141" r="4.005" fill="#fff"/>
+      <line x1="2.954" y1="4.866" x2="60.471" y2="4.866" fill="none" stroke="#000" stroke-linejoin="round" stroke-width=".597"/>
+      <line x1="18.233" y1="2.453" x2="18.233" y2="7" fill="none" stroke="#000" stroke-linejoin="round" stroke-width=".597"/>
+      <g>
+        <path d="M125.472,16.042v6.005l-1.131,1.13h-5.753l-1.13-1.13v-6.005l1.13-1.13h5.753l1.131,1.13ZM124.342,16.042h-5.754v5.081l4.515-4.515h1.239v-.566ZM124.342,16.967l-4.515,4.514h-1.239v.566h5.754v-5.081Z" fill="#fff"/>
+        <path d="M135.291,23.177h-6.884l-1.13-1.13v-2.33l1.13-1.13h5.754v-2.546h-5.754v1.13h-1.13v-1.13l1.13-1.13h5.754l1.13,1.13v2.546l-1.13,1.13h-5.754v2.33h6.884v1.13Z" fill="#fff"/>
+      </g>
+    </g>
+  </g>
+</svg>

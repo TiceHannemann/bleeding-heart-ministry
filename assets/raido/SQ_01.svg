@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="b" data-name="Warstwa 2" xmlns="http://www.w3.org/2000/svg" width="64.371" height="64.135" viewBox="0 0 64.371 64.135">
+  <g id="c" data-name="Warstwa 1">
+    <g id="d" data-name="SQ_01">
+      <circle cx="10.769" cy="53.366" r="10.375" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <circle cx="10.769" cy="53.366" r="5.286" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <circle cx="53.602" cy="53.366" r="10.375" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <circle cx="53.602" cy="53.366" r="5.286" fill="#fff"/>
+      <circle cx="10.769" cy="10.769" r="10.375" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <circle cx="10.769" cy="10.769" r="5.286" fill="#fff"/>
+      <circle cx="53.602" cy="10.769" r="10.375" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <circle cx="53.602" cy="10.769" r="5.286" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <circle cx="32.186" cy="32.068" r="10.375" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <line x1="21.536" y1="11.043" x2="42.835" y2="11.043" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <line x1="21.536" y1="53.092" x2="42.835" y2="53.092" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <line x1="53.21" y1="21.418" x2="53.21" y2="42.717" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+      <line x1="11.161" y1="42.717" x2="11.161" y2="21.418" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".787"/>
+    </g>
+  </g>
+</svg>

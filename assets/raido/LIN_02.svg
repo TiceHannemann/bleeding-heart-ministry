@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="b" data-name="Warstwa 2" xmlns="http://www.w3.org/2000/svg" width="257.372" height="103.301" viewBox="0 0 257.372 103.301">
+  <g id="c" data-name="Warstwa 1">
+    <g id="d" data-name="LIN_02">
+      <g>
+        <path d="M117.43,103.301h-1.066v-7.796h1.066v4.001l.727-.727h4.701v-3.274h1.066v7.796h-1.066v-3.457h-5.429v3.457Z" fill="#fff"/>
+        <path d="M133.133,95.504v7.796h-1.067v-3.459.002h-5.428l-1.066-1.067v-3.273h1.066v3.273h5.428v-3.273h1.067Z" fill="#fff"/>
+      </g>
+      <g>
+        <path d="M248.462,4.569v2.566l-1.066,1.066h-5.427v3.099h-1.066V3.503h6.493l1.066,1.066ZM247.396,4.569h-5.428v3.294l.727-.729h4.701v-2.566Z" fill="#fff"/>
+        <path d="M256.306,5.634v-1.065h-5.429v2.935l.729-.727h4.701l1.066,1.067v2.391l-1.066,1.065h-5.428l-1.067-1.065v-5.665l1.066-1.065h5.427l1.068,1.065v1.065h-1.066ZM250.876,7.843v2.391h5.429v-2.391h-5.429Z" fill="#fff"/>
+      </g>
+      <g>
+        <path d="M0,56.306v-5.029h1.066v4.588l2.138,2.138h1.151l2.138-2.138v-4.588h1.066v5.029l-2.764,2.764h-.001s-2.03-.001-2.03-.001h-.001s-2.764-2.763-2.764-2.763Z" fill="#fff"/>
+        <path d="M16.591,54.41l-.673.673.673.673v2.252l-1.066,1.066h-5.429l-1.065-1.066v-1.066h1.065v1.066h5.429v-2.392h-4.876v-1.065h4.876v-2.208h-5.429v1.066h-1.065v-1.066l1.065-1.065h5.429l1.066,1.065v2.067Z" fill="#fff"/>
+      </g>
+      <path d="M37.616,53.041c15.646-5.846,56.342-15.246,87.393,28.739" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".811"/>
+      <circle cx="125.008" cy="81.78" r="7.108" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".811"/>
+      <circle cx="125.008" cy="81.78" r="4.253" fill="#fff"/>
+      <circle cx="31.101" cy="55.88" r="7.108" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".811"/>
+      <line x1="125.008" y1="81.78" x2="220.587" y2="11.783" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".811"/>
+      <circle cx="226.417" cy="7.513" r="7.108" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".811"/>
+    </g>
+  </g>
+</svg>

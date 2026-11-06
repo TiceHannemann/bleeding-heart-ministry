@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="b" data-name="Warstwa 2" xmlns="http://www.w3.org/2000/svg" width="280.418" height="242.766" viewBox="0 0 280.418 242.766">
+  <g id="c" data-name="Warstwa 1">
+    <g id="d" data-name="CIR_HUD">
+      <g>
+        <g>
+          <path d="M6.067,118.57v5.398h-.855v-2.486H.855v2.486h-.855v-5.398l.855-.855h4.357l.855.855ZM5.212,118.57H.855v2.641l.584-.584h3.773v-2.058Z" fill="#fff"/>
+          <path d="M10.629,122.45v1.518h-.855v-1.873l2.671-2.671v-.855h-5.211v-.855h6.064v.542h.002v1.522l-2.671,2.671Z" fill="#fff"/>
+        </g>
+        <g>
+          <path d="M38.555,30.005v-4.034h.855v3.68l1.715,1.715h.923l1.716-1.715v-3.68h.855v4.034l-2.217,2.217h0s-1.628,0-1.628,0h0s-2.217-2.216-2.217-2.216Z" fill="#fff"/>
+          <path d="M51.906,26.826v4.543l-.855.855h-4.353l-.855-.855v-.855h.855v.855h4.353v-1.772h-4.353l-.855-.855v-1.917l.855-.855h4.352l.856.855ZM51.051,26.826h-4.353v1.917h3.77l.583.585v-2.502Z" fill="#fff"/>
+        </g>
+        <g>
+          <path d="M39.615,215.796v.406h-.855v-.76l2.837-2.837h-.819l-2.018-2.018v-.639h.855v.284l2.177,2.177,2.177-2.177v-.284h.855v.639l-2.434,2.433,2.434,2.434v.747h-.855v-.394l-2.183-2.183-.809.809-1.362,1.362Z" fill="#fff"/>
+          <path d="M51.906,210.804v4.543l-.856.855h-4.353l-.855-.855v-4.543l.855-.855h4.353l.856.855ZM51.051,210.804h-4.354v3.845l3.416-3.417h.938v-.428ZM51.051,211.503l-3.416,3.416h-.938v.428h4.354v-3.844Z" fill="#fff"/>
+        </g>
+        <circle cx="180.679" cy="121.383" r="92.777" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="177.307" y1=".677" x2="184.051" y2=".677" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="177.307" y1="242.089" x2="184.051" y2="242.089" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="273.674" y1="47.998" x2="280.418" y2="47.998" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="273.674" y1="194.768" x2="280.418" y2="194.768" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="31.734" y1="121.418" x2="42.974" y2="121.418" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="95.101" y1="156.358" x2="114.477" y2="148.448" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="70.026" y1="29.115" x2="72.836" y2="29.115" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="69.963" y1="213.722" x2="72.773" y2="213.722" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="50.756" y1="182.954" x2="53.566" y2="182.954" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="39.321" y1="152.186" x2="42.131" y2="152.186" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="50.819" y1="59.883" x2="53.629" y2="59.883" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <line x1="39.321" y1="90.65" x2="42.131" y2="90.65" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+        <g>
+          <circle cx="225.508" cy="194.378" r="2.974" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".451"/>
+          <circle cx="225.508" cy="194.378" r="1.515" fill="#fff"/>
+        </g>
+        <g>
+          <circle cx="232.419" cy="189.435" r="2.974" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width=".451"/>
+          <circle cx="232.419" cy="189.435" r="1.515" fill="#fff"/>
+        </g>
+      </g>
+      <circle cx="180.679" cy="121.383" r="92.777" fill="none" stroke="#fff" stroke-miterlimit="10" stroke-width="1.354"/>
+    </g>
+  </g>
+</svg>

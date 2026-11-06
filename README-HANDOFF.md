@@ -12,7 +12,6 @@ The project is an intelligence and attack website for the nation **Bleeding_Hear
 |---|---|
 | `app/kingdom-of-the-bleeding-heart.html` | **The public website.** A standalone white government site (~80 KB): services, a live directory of Kingdom towns, government offices, notices. It contains no intelligence code or data and reads only public facts from the EarthMC API. |
 | `app/earthmc-ruin-scanner.html` | **The government website** (the ministries). Single standalone file (~540 KB), the source of truth. It opens on a password-protected sign-in page. No server or build step. |
-| `app/war-room.html` | Source of the hosted **War Room** page: a shared target board, intel trends, notes and alliance plans. It runs only inside the claude.ai artifact runtime (see §8). |
 | `github-pages/index.html` | The public website prepared for GitHub Pages: the same page with the "Government staff" link removed. Upload it as `index.html` to a public repository and turn on Pages. |
 | `app/relay.py` | Small Python 3 relay for Movement Watch. It is needed when the browser refuses to let the local file read the live map's player feed (CORS). It is also built into the app as a download button. |
 | `assets/logo/` | National crest/logo: SVG, PDF, PNGs, and the JPEG used inside PDFs. These are already embedded as data URIs in the app. |
@@ -196,14 +195,9 @@ There are three document types, each built as one structure that renders both on
 
 ---
 
-## 8. War Room (hosted shared page)
+## 8. War Room
 
-- **Published at:** https://claude.ai/artifact/DrxXKg6uDf1GANPMDZcdWH (owned by the user's claude.ai account). `app/war-room.html` is its source.
-- **Runtime:** it uses the claude.ai artifact runtime capabilities `db`, `user` and `room` through `claude.use(...)`. Outside claude.ai those resolve to nothing, so the page shows but can't save. To host it elsewhere, replace the `db` and `user` calls with your own backend (for example Firebase or Supabase).
-- **Tabs:** board (target claims with leases), intel (trends and stance from imported scans), notes (named alliances and plans, autosaved), import.
-- **Data flow:** hosted pages can't call outside hosts, so the main site's **"Send to war room"** button copies a JSON package (`kind:"bleeding-heart-intel"`), which is pasted into the War Room's import tab.
-
----
+The War Room is now a page of the site itself (Ministry of Attack): the shared map with marks and routes, the raid board, and plans and alliances, kept by the server (`server/warroom.js`). The old claude.ai artifact version has been retired. See `server/DEPLOY.md`.
 
 ## 9. Known limits
 

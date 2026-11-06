@@ -9,10 +9,20 @@ The server in this folder hosts both websites and scans EarthMC every hour on it
 | `/` | The public website. Its "Government staff" links go to `/gov`. |
 | `/login` | Sign-in. The password is checked **on the server**; the ministries' page is never sent to anyone who isn't signed in. |
 | `/gov` | The ministries (the same `app/earthmc-ruin-scanner.html`). On opening, it loads the server's latest hourly scan and full archive, so every page, dossier, forecast and briefing runs on the server's data. |
-| `/gov/reports` | The hourly reports: the Daily Intelligence Summary (eyes-only and releasable), Intelligence Assessments of the five leading threats, and Support Assessments for allies, as PDFs and text. Also "Scan now" and "Send an archive to the server". |
 | `/healthz` | Health check and collector status. |
 
 **How the hourly scan works.** Every hour (three minutes past), the collector opens the ministries' page in headless Chromium and presses Scan. The page does everything it already did: archives the scan, logs events, runs and grades the Forecast Lab, and writes the briefings. The browser profile is stored on the data volume, so the archive keeps growing between hours and across restarts. The collector then saves the reports and exports the archive for visitors. Nothing in the intelligence system was rewritten, so changes made to the HTML automatically apply to the hourly reports.
+
+**The Briefing Room** (Intelligence) is where every report lives, on one page:
+
+- **Today's briefing:** the Daily Intelligence Summary, an Intelligence Assessment of each of the five leading threats (nations showing hostility to the Kingdom, the number beside each is that hostility), and a Support Assessment for the allies most at risk of collapse (the number is their collapse risk). The server writes this same set as PDFs after every scan.
+- **Any nation:** an Assessment or a Support Assessment of any nation, and for an assessment, which nation it is seen from.
+- **Earlier editions:** the PDFs the server saved, one edition a day for two weeks.
+- Either classification, Kingdom eyes only or Releasable to allies, as a PDF or copied as text. With a password set, an archive from another browser can be sent to the server from here too.
+
+`/gov/reports`, the old reports page, now opens the Briefing Room.
+
+**Two scores, two directions.** *Collapse risk* is how likely a nation is to lose towns or land itself: towns about to ruin, land that can be overclaimed, inactive members, an absent leader, decline and a thin bank. *Hostility to us* is how set against the Kingdom it is: enmity with us, alliances with our enemies, hostility to our allies, towns near ours. A rival with high collapse risk is an opportunity; one with high hostility is a threat.
 
 **Data kept** (in `DATA_DIR`): `profile/` (the archive itself), `archive.json.gz` (what visitors download), `runs/<time>/` (reports; every run for seven days, then one a day), `imports/` (uploaded browser archives, merged at the next scan), `status.json`.
 
@@ -130,11 +140,12 @@ Fighters are followed by the server's browser: every sighting of a ranked fighte
 
 ## War Room
 
-The War Room (Attack) is the live map with drawing tools: waypoints, routes, targets, danger marks, rally points and notes.
+The War Room (Attack) is the Ministry's shared plan, on the site itself (it replaces the old War Room page on claude.ai):
 
-- **Routes** show their length and travel time walking, sprinting, on a horse, by boat and by elytra.
-- **Marks** show their block coordinates and the town they fall in, and can be copied, edited, marked done or removed.
-- **Sharing:** every open map picks up changes within a few seconds, and the plan is kept in `/data/warroom`.
+- **The map** with drawing tools: waypoints, routes, targets, danger marks, rally points and notes. Routes show their length and travel time walking, sprinting, on a horse, by boat and by elytra; marks show their block coordinates and the town they fall in, and can be copied, edited, marked done or removed.
+- **The raid board:** towns to hit, suggested from the latest scan (enemy and neutral towns falling at the next two purges, then the most land to overclaim) or added by hand. An officer claims a raid, and only one can hold it; when it's done they log what was taken. Open raids show on the map, and the board keeps a tally of the week's raids by officer.
+- **Plans and alliances:** written plans (with a status, a date and the nations involved), named alliances (with their combined active members, towns, land and gold from the latest scan) and notes. They save a moment after typing stops; if two officers edit the same plan at once, the second save is refused and the newer version shown, so nobody's words are overwritten.
+- **Sharing:** every open page picks up changes within a few seconds, and everything is kept in `/data/warroom`. Officers set their name once on the page; it is shown on their marks, claims and edits.
 
 **Changing the plan needs a key.** Anyone who can open the ministries can see the plan. To change it, an officer needs one of these:
 

@@ -43,7 +43,7 @@ const { chromium } = require('playwright');
   console.log('lab summary:', (await p.locator('#labSum').innerText()).replace(/\n/g, ' '));
   await p.screenshot({ path:'lab.png', fullPage:false });
   await p.evaluate(() => { location.hash = '#briefings'; }); await p.waitForTimeout(500);
-  await p.click('#brKinds [data-kind="intsum"]'); await p.waitForTimeout(500);
+  await p.click('#brToday [data-today="intsum"]'); await p.waitForTimeout(500);
   console.log('INTSUM forecast lines:', (await p.locator('.paper p').allInnerTexts()).filter(l => /Forecast Lab|its models/.test(l)).join(' || ').slice(0, 500));
   await p.click('#brKinds [data-kind="nation"]'); await p.locator('#brNations [data-brn="Carthage"]').click(); await p.waitForTimeout(400);
   console.log('KJ:', (await p.locator('.paper p.np', { hasText:'The Ministry judges' }).allInnerTexts()).join(' / ').slice(0, 600));

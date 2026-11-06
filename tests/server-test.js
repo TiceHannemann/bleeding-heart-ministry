@@ -224,6 +224,22 @@ global.__collectorRoutes = async ctx => {
   await p.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.5); await p.waitForTimeout(300);
   await p.fill('#wrName', 'Raid Town2'); await p.fill('#wrNote', 'Tonight, 21:00'); await p.click('[data-wract="save"]'); await p.waitForTimeout(1500);
   console.log('war room after placing:', (await p.textContent('#wrList')).replace(/\s+/g, ' ').slice(0, 220), '| server has:', (await (await p.request.get(base + '/api/warroom')).json()).items.map(x => `${x.kind}:${x.name} by ${x.by}`).join(', '));
+  // the raid board and plans, moved from the old claude.ai War Room: one claim at a time, and no silent overwrite of a plan
+  const wr = async (op, item, coll, by = 'Officer Test') => { const r = await p.request.post(base + '/api/warroom', { data:{ op, item, coll, by } }); return { s:r.status(), j:await r.json() }; };
+  await p.click('[data-raidsug="0"]').catch(() => {}); await p.waitForTimeout(1500);
+  let ws = await (await p.request.get(base + '/api/warroom')).json();
+  console.log('raid suggested and added:', ws.raids.map(r => `${r.kind}:${r.town}:${r.status}`).join(', ') || 'none');
+  const add = await wr('add', { kind:'scout', town:'Town3', note:'watch the gate' }, 'raids');
+  ws = await (await p.request.get(base + '/api/warroom')).json(); const rid = ws.raids.find(r => r.town === 'Town3')?.id;
+  console.log('raid by hand:', add.s, '| same town twice:', (await wr('add', { kind:'scout', town:'town3' }, 'raids')).j.error,
+    '| claim:', (await wr('claim', { id:rid }, 'raids')).s, '| second claim:', (await wr('claim', { id:rid }, 'raids', 'Other')).j.error,
+    '| done:', (await wr('done', { id:rid, loot:'two chests' }, 'raids')).s);
+  await wr('add', { kind:'alliance', title:'Northern Pact', nations:['Rome', 'Gaul', 'Nowhere'] }, 'plans');
+  ws = await (await p.request.get(base + '/api/warroom')).json(); const pl = ws.plans[0];
+  console.log('plan saved:', (await wr('update', { id:pl.id, ver:pl.upd, body:'Terms agreed.' }, 'plans')).s, '| stale save refused:', (await wr('update', { id:pl.id, ver:pl.upd, body:'Old text' }, 'plans', 'Other')).j.error);
+  await p.waitForTimeout(5000);
+  console.log('board on page:', (await p.textContent('#wrRaids')).replace(/\s+/g, ' ').slice(0, 260));
+  console.log('plans on page:', (await p.textContent('#wrPlans')).replace(/\s+/g, ' ').slice(0, 200));
   await shot('warroom');
   await p.click('.m-switch a[data-m="attack"]'); await p.waitForTimeout(1200); await shot('attack');
   console.log('purge countdown:', await p.textContent('#sysPurge'), '| new day known:', await p.evaluate(() => !!KEYED?.newDayAt));
@@ -235,8 +251,13 @@ global.__collectorRoutes = async ctx => {
   await p.evaluate(() => { location.hash = '#moves'; }); await p.waitForTimeout(16000);
   console.log('visitor live feed:', await p.evaluate(() => MOVES.lastOk > 0 ? `ok, ${MOVES.online} online` : 'none: ' + MOVES.err));
   console.log('hourly link in nav:', await p.locator('nav.pages [data-hourly]').count());
-  await p.goto(base + '/gov/reports');
-  console.log('reports listed:', (await p.locator('ol li').allInnerTexts()).map(t => t.split('\n')[0]).join(' | '));
+  await p.evaluate(() => { location.hash = '#briefings'; }); await p.waitForTimeout(1500);
+  console.log("today's briefing:", (await p.locator('#brToday button').allInnerTexts()).map(t => t.replace(/\s+/g, ' ')).join(' | '));
+  console.log('earlier editions:', (await p.locator('#brEditions a').allTextContents()).map(t => t.replace(/\s+/g, ' ')).join(' | '));
+  await p.locator('#brToday [data-today="nation"]').first().click(); await p.waitForTimeout(400);
+  console.log('threat brief opens:', await p.evaluate(() => `${BR.kind} · ${BR.nation} · ${brDoc?.docTitle}`));
+  await p.goto(base + '/gov/reports'); await p.waitForTimeout(500);
+  console.log('old reports address goes to:', p.url());
   const pdf = await p.request.get(base + '/reports/latest/intsum.pdf');
   console.log('intsum pdf:', pdf.status(), (await pdf.body()).slice(0, 8).toString());
   console.log('home page is the ministries:', await (await p.request.get(base + '/')).text().then(t => t.includes('MINISTRY_HOME') || /\/login/.test(t)));

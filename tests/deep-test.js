@@ -73,7 +73,7 @@ const fs = require('fs');
   console.log('support sections:', (await p.locator('.paper h4').allInnerTexts()).join(' | '));
   const [dl2] = await Promise.all([p.waitForEvent('download'), p.click('#brPdf')]);
   await dl2.saveAs(__dirname + '/br-support.pdf');
-  await p.click('#brKinds [data-kind="intsum"]'); await p.click('.br-class [data-rel="0"]'); await p.waitForTimeout(200);
+  await p.click('#brToday [data-today="intsum"]'); await p.click('.br-class [data-rel="0"]'); await p.waitForTimeout(200);
   const [dl3] = await Promise.all([p.waitForEvent('download'), p.click('#brPdf')]);
   await dl3.saveAs(__dirname + '/br-intsum.pdf');
   // automatic scans: always on, no checkbox
