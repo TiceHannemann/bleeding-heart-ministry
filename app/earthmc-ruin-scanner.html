@@ -1254,7 +1254,7 @@ async function readJSON(r, url) {
   catch {
     const snippet = text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160);
     const hint = /cloudflare|just a moment|cf-/i.test(text) ? " (Cloudflare challenge: open the API link in a new tab once, then retry)"
-      : r.status === 429 ? " (rate limited)" : r.status === 404 ? " (endpoint not found; API address may have changed)" : "";
+      : r.status === 429 ? " (rate limited)" : r.status === 401 || r.status === 403 ? " (EarthMC needs an API key on every request from 19 November 2026; the Ministry server adds its key, so scan from there)" : r.status === 404 ? " (endpoint not found; API address may have changed)" : "";
     throw new Error(`${url} returned HTTP ${r.status}, not JSON${hint}. Response starts: "${snippet || "(empty)"}"`);
   }
 }
@@ -1324,6 +1324,8 @@ const saveCache = () => {
 const TOWN_UNUSED = ["quarters", "outlaws", "trusted", "perms", "ranks", "bankhistory", "warps"];
 function slimRecord(path, x) {
   if (path === "towns") { const t = { ...x }; for (const k of TOWN_UNUSED) delete t[k]; return t; }
+  // the server's key shows our own nation's bank history; the archive is open, so it isn't kept
+  if (path === "nations" && x?.bankhistory) { const n = { ...x }; delete n.bankhistory; return n; }
   if (path === "players" && window.BH_COLLECTOR) return { name:x.name, status:{ isOnline:!!x.status?.isOnline, isNPC:!!(x.status?.isNPC || x.isNPC) },
     timestamps:{ lastOnline:x.timestamps?.lastOnline ?? null }, premium:isPremium(x) };
   return x;

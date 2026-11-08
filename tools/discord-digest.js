@@ -29,7 +29,9 @@ const nationList = () => {
 async function nations() {
   let list = nationList();
   if (!list.length) {
-    try { list = (await (await fetch("https://api.earthmc.net/v4/nations")).json()).map(n => n.name); fs.mkdirSync(OUT, { recursive:true }); fs.writeFileSync(path.join(OUT, "nations.json"), JSON.stringify(list)); }
+    // EarthMC wants a key on every request from 19 November 2026: set EMC_KEY to yours before running this
+    const key = (process.env.EMC_KEY || "").trim();
+    try { list = (await (await fetch("https://api.earthmc.net/v4/nations", { headers:key ? { Authorization:"Bearer " + key } : {} })).json()).map(n => n.name); fs.mkdirSync(OUT, { recursive:true }); fs.writeFileSync(path.join(OUT, "nations.json"), JSON.stringify(list)); }
     catch (e) { console.warn("nation list unavailable:", e.message); }
   }
   // names that are also everyday words would match everything

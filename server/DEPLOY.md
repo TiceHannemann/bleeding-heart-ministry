@@ -75,6 +75,8 @@ Settings: `FINANCE_EVERY_HOURS` (default `3`). Data is kept in `/data/finance`.
 
 ## EarthMC API key
 
+**Required from 19 November 2026.** From that day EarthMC refuses every API request that has no key, including the towns, nations and players the hourly scan reads. Without `EMC_KEY` the server logs a warning at boot, and after the 19th no scan succeeds. The server sends the key on every request it makes, in the `Authorization` header and in the body of each POST. That includes the requests from the page the collector runs: the collector adds the key on their way out, so the page never holds it (`server/emc.js`). The rate limit is unchanged at 180 requests a minute, now counted against the key. The standalone HTML file opened on its own has no key, so after the 19th it can't scan; use the server.
+
 Make a key in game with `/api key create`. It belongs to your account, so keep it out of this repository (it is public) and out of `docker-compose.yml`. On the server, put it in a file the rebuild doesn't delete:
 
 ```bash

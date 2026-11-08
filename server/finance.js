@@ -13,7 +13,7 @@ const { DATA, readJSON, writeJSON } = require("./paths");
 const DIR = path.join(DATA, "finance");
 fs.mkdirSync(DIR, { recursive:true });
 const STATE = path.join(DIR, "state.json");
-const API = (process.env.EMC_API || "https://api.earthmc.net/v4").replace(/\/+$/, "");
+const { emcFetch } = require("./emc");
 const DEEP_EVERY = Math.max(1, +process.env.FINANCE_EVERY_HOURS || 3) * 36e5;
 const RATE = 150;            // requests per minute, under EarthMC's 180
 const MIN_FLOW = 50;         // smallest balance change worth matching into a flow, in gold
@@ -38,8 +38,7 @@ async function api(p, body) {
     for (;;) { const now = Date.now(); while (sent.length && now - sent[0] > 60e3) sent.shift(); if (sent.length < RATE && now - (sent[sent.length - 1] || 0) >= 60e3 / RATE) break; await sleep(100); }
     sent.push(Date.now());
     try {
-      const r = await fetch(API + p, { method:body ? "POST" : "GET", headers:{ "Content-Type":"application/json", "User-Agent":"BleedingHeart-Ministry" },
-        body:body ? JSON.stringify(body) : undefined, signal:AbortSignal.timeout(30e3) });
+      const r = await emcFetch(p, body); // with the key, which EarthMC needs on every request from 19 November 2026
       if (!r.ok) throw new Error(`${p} answered HTTP ${r.status}`);
       return asList(await r.json());
     } catch (e) {

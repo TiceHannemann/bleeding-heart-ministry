@@ -11,7 +11,7 @@ const now = Date.now(), off = (k, j) => [2, 20 + (k % 25), 35 + (k % 9), 50][j];
 const NAT = ['Bleeding_Heart', 'Rome', 'Carthage', 'Gaul', 'Persia', 'Sparta', 'Troy', 'Ithaca'];
 const A = { Bleeding_Heart:['Rome', 'Gaul'], Rome:['Bleeding_Heart', 'Sparta'], Gaul:['Bleeding_Heart'], Carthage:['Persia', 'Troy'], Persia:['Carthage', 'Ithaca'], Sparta:['Rome'], Troy:['Carthage'], Ithaca:['Persia'] };
 const E = { Bleeding_Heart:['Carthage'], Carthage:['Bleeding_Heart', 'Rome'], Rome:['Carthage', 'Persia'], Persia:['Rome'], Sparta:['Troy'], Troy:['Sparta'], Gaul:[], Ithaca:[] };
-let apiCalls = 0;
+let apiCalls = 0, pageKeyed = 0;
 // a fake live map: one Rome player stands at the spawn of the Kingdom's capital for a while, then logs off
 let feedOn = true, feedHits = 0;
 require('http').createServer((req, res) => { feedHits++; res.setHeader('Content-Type', 'application/json');
@@ -45,6 +45,8 @@ require('http').createServer((req, res) => {
   let raw = ''; req.on('data', c => raw += c); req.on('end', () => {
     const b = raw ? JSON.parse(raw) : {}, q = b.query, u = req.url;
     if (b.key === KEY) seen.bodyKey++;
+    // from 19 November 2026 EarthMC refuses every request without a key
+    if (req.headers.authorization !== 'Bearer ' + KEY) return send(401, 'API key required', 'text/plain');
     const keyed = ['/mcmmo-top', '/pursuits', '/shop', '/mcmmo'].includes(u);
     if (keyed && b.key !== KEY) return send(401, 'Invalid API key', 'text/plain');
     if (u === '/mcmmo-top') {
@@ -82,6 +84,8 @@ global.__collectorRoutes = async ctx => {
   await ctx.route('https://api.earthmc.net/**', async r => {
     apiCalls++;
     const req = r.request(), u = req.url();
+    // the collector adds the key to the page's requests: in the header, and in the body of a POST
+    if (req.headers().authorization === 'Bearer ' + KEY && (req.method() !== 'POST' || JSON.parse(req.postData()).key === KEY)) pageKeyed++;
     if (req.method() === 'GET' && u.endsWith('/nations')) return r.fulfill({ json:NAT.map(name => ({ name })) });
     if (req.method() === 'GET') return r.fulfill({ json:Array.from({ length:200 }, (_, i) => ({ name:i ? 'Town' + i : 'Bleeding_Heart' })) });
     const q = JSON.parse(req.postData()).query;
@@ -99,7 +103,7 @@ global.__collectorRoutes = async ctx => {
   const t0 = Date.now();
   while (!collector.status().lastOk && !collector.status().lastError && Date.now() - t0 < 10 * 6e4) await new Promise(r => setTimeout(r, 2000));
   const st = collector.status();
-  console.log('collector:', st.lastOk ? 'ok' : 'FAILED ' + st.lastError, '| api calls', apiCalls);
+  console.log('collector:', st.lastOk ? 'ok' : 'FAILED ' + st.lastError, '| api calls', apiCalls, '| with the key', pageKeyed);
   // positions are recorded between scans: let the player stand there, leave, then export with a second scan
   await new Promise(r => setTimeout(r, 35000)); feedOn = false; await new Promise(r => setTimeout(r, 60000));
   while (collector.status().running) await new Promise(r => setTimeout(r, 1000)); // the new-day scan may be under way

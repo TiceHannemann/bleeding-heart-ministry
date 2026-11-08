@@ -12,6 +12,7 @@ const { DATA, readJSON, writeJSON } = require("./paths");
 const signals = require("./signals");
 const finance = require("./finance");
 const keyed = require("./keyed");
+const emc = require("./emc");
 const history = require("./history");
 const population = require("./population");
 const combat = require("./combat");
@@ -107,6 +108,7 @@ function browser() {
     // map tiles, skins and web fonts aren't needed to scan or to write PDFs
     await ctx.route(/map\.earthmc\.net\/tiles\/.*\.png|mc-heads\.net|fonts\.(googleapis|gstatic)\.com/, r => r.abort());
     if (global.__collectorRoutes) await global.__collectorRoutes(ctx); // tests install a fake EarthMC API here
+    await emc.keyPage(ctx); // the page's API requests get the key on their way out (after the routes above, so it runs first)
     const page = ctx.pages()[0] || await ctx.newPage();
     page.on("pageerror", e => { B.logs.push("page error: " + e.message); B.logs = B.logs.slice(-20); });
     // a crashed or closed browser is shut down and reopened in half a minute, so position tracking resumes by itself.

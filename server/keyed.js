@@ -9,6 +9,7 @@
 const fs = require("fs");
 const path = require("path");
 const { DATA, readJSON, writeJSON } = require("./paths");
+const { emcFetch } = require("./emc");
 
 const DIR = path.join(DATA, "keyed");
 fs.mkdirSync(DIR, { recursive:true });
@@ -43,8 +44,7 @@ const save = () => {
 /* ---------- requests ---------- */
 // The key travels in the request body (or the event stream's header) and is never put in an error message.
 async function call(p, body) {
-  const r = await fetch(API + p, { method:body ? "POST" : "GET", headers:{ "Content-Type":"application/json", "User-Agent":"BleedingHeart-Ministry" },
-    body:body ? JSON.stringify(body) : undefined, signal:AbortSignal.timeout(30e3) });
+  const r = await emcFetch(p, body);
   const t = await r.text();
   if (r.status === 429) { const e = new Error(`${p} is cooling down`); e.wait = (+(t.match(/(\d+)\s*second/) || [])[1] || 60) * 1000; throw e; }
   if (!r.ok) { const e = new Error(`${p} answered HTTP ${r.status}${t.length < 160 ? ": " + t : ""}`); e.status = r.status; throw e; }
